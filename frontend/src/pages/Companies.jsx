@@ -197,12 +197,7 @@ export const Companies = () => {
       toast.error(error.response?.data?.detail || 'Gagal update domain');
     } finally {
       setFormLoading(false);
-    }
-  };
-      fetchCompanies();
-    } catch (error) {
-      console.error('Failed to delete company:', error);
-      toast.error(t('error'));
+    setFormLoading(false);
     }
   };
 
