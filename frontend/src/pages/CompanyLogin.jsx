@@ -66,19 +66,23 @@ export const CompanyLogin = () => {
     try {
       const userData = await login(email, password);
       
-      // Check if user belongs to this company
+      // Check if user is Super Admin - they should use main login page
       if (userData.role === 'super_admin') {
+        logout(); // Clear the session
         setLoginError(language === 'id' 
-          ? 'Super Admin harus login di halaman utama' 
-          : 'Super Admin must login on main page');
+          ? 'Super Admin harus login di halaman utama /login' 
+          : 'Super Admin must login on main page /login');
+        setSubmitting(false);
         return;
       }
       
       // Verify company_id matches
       if (userData.company_id !== company.id) {
+        logout(); // Clear the session
         setLoginError(language === 'id' 
           ? 'Akun tidak terdaftar di perusahaan ini' 
           : 'Account not registered with this company');
+        setSubmitting(false);
         return;
       }
       
