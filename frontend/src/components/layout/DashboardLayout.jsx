@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '../../contexts/AuthContext';
-import { Toaster } from '../ui/sonner';
+import { Toaster } from 'sonner';
 
 export const DashboardLayout = ({ children, title }) => {
   const { user, loading } = useAuth();

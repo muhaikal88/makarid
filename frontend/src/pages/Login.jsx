@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
-import { Toaster } from '../components/ui/sonner';
+import { Toaster } from 'sonner';
 
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_cea08fa0-5c14-4b0d-bcc8-350a4e47c0ce/artifacts/hf5ag1pw_LOGO%20LUCKY%20HD_page-0001.jpg";
 const BG_IMAGE = "https://images.unsplash.com/photo-1588209134368-81591fd1a36c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBnbGFzcyUyMG9mZmljZSUyMGJ1aWxkaW5nJTIwc3VubnklMjBkYXklMjBkaXZlcnNlJTIwYXNpYW4lMjBidXNpbmVzcyUyMHRlYW0lMjBtZWV0aW5nJTIwcHJvZmVzc2lvbmFsfGVufDB8fHx8MTc3MDE4NjE3OHww&ixlib=rb-4.1.0&q=85";
