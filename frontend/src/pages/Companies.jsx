@@ -225,7 +225,79 @@ export const Companies = () => {
       toast.error(error.response?.data?.detail || 'Gagal update domain');
     } finally {
       setFormLoading(false);
-    setFormLoading(false);
+    }
+  };
+
+  // License management
+  const handleOpenLicense = (company) => {
+    setSelectedCompany(company);
+    setLicenseData({
+      license_type: company.license_type || 'trial',
+      license_end: company.license_end ? company.license_end.split('T')[0] : '',
+      is_active: company.is_active !== false
+    });
+    setIsLicenseOpen(true);
+  };
+
+  const handleSaveLicense = async () => {
+    setFormLoading(true);
+    try {
+      await axios.put(`${API}/companies/${selectedCompany.id}/license`, {
+        license_type: licenseData.license_type,
+        license_end: licenseData.license_end ? new Date(licenseData.license_end).toISOString() : null,
+        is_active: licenseData.is_active
+      }, {
+        headers: getAuthHeaders()
+      });
+      toast.success('Lisensi berhasil diupdate');
+      setIsLicenseOpen(false);
+      fetchCompanies();
+    } catch (error) {
+      console.error('Failed to update license:', error);
+      toast.error(error.response?.data?.detail || 'Gagal update lisensi');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleExtendLicense = async (days) => {
+    setFormLoading(true);
+    try {
+      await axios.post(`${API}/companies/${selectedCompany.id}/license/extend?days=${days}`, {}, {
+        headers: getAuthHeaders()
+      });
+      toast.success(`Lisensi diperpanjang ${days} hari`);
+      fetchCompanies();
+      // Update license data in dialog
+      const response = await axios.get(`${API}/companies/${selectedCompany.id}`, {
+        headers: getAuthHeaders()
+      });
+      setLicenseData({
+        license_type: response.data.license_type || 'trial',
+        license_end: response.data.license_end ? response.data.license_end.split('T')[0] : '',
+        is_active: response.data.is_active !== false
+      });
+      setSelectedCompany(response.data);
+    } catch (error) {
+      console.error('Failed to extend license:', error);
+      toast.error(error.response?.data?.detail || 'Gagal perpanjang lisensi');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleToggleActive = async (company) => {
+    try {
+      const endpoint = company.is_active 
+        ? `${API}/companies/${company.id}/suspend`
+        : `${API}/companies/${company.id}/activate`;
+      
+      await axios.post(endpoint, {}, { headers: getAuthHeaders() });
+      toast.success(company.is_active ? 'Perusahaan dinonaktifkan' : 'Perusahaan diaktifkan');
+      fetchCompanies();
+    } catch (error) {
+      console.error('Failed to toggle company status:', error);
+      toast.error(error.response?.data?.detail || 'Gagal mengubah status');
     }
   };
 
