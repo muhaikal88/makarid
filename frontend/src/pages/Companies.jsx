@@ -72,6 +72,7 @@ export const Companies = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDomainsOpen, setIsDomainsOpen] = useState(false);
+  const [isLicenseOpen, setIsLicenseOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   
@@ -80,6 +81,13 @@ export const Companies = () => {
     main: '',
     careers: '',
     hr: ''
+  });
+
+  // License form state
+  const [licenseData, setLicenseData] = useState({
+    license_type: 'trial',
+    license_end: '',
+    is_active: true
   });
   
   // Form state
