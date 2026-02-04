@@ -739,6 +739,119 @@ async def update_company_domains(
     
     return {"message": "Domains updated successfully", "domains": domains}
 
+# ============ LICENSE MANAGEMENT ROUTES ============
+
+class LicenseUpdate(BaseModel):
+    license_start: Optional[str] = None
+    license_end: Optional[str] = None
+    license_type: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@api_router.put("/companies/{company_id}/license")
+async def update_company_license(
+    company_id: str, 
+    data: LicenseUpdate,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Update company license settings"""
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.companies.update_one({"id": company_id}, {"$set": update_data})
+    
+    updated = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    emp_count = await db.users.count_documents({"company_id": company_id})
+    
+    return build_company_response(updated, emp_count)
+
+@api_router.post("/companies/{company_id}/license/extend")
+async def extend_company_license(
+    company_id: str,
+    days: int = 30,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Extend company license by specified days"""
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Calculate new end date
+    current_end = company.get("license_end")
+    if current_end:
+        try:
+            end_date = datetime.fromisoformat(current_end.replace('Z', '+00:00'))
+            # If expired, start from now
+            if end_date < datetime.now(timezone.utc):
+                end_date = datetime.now(timezone.utc)
+        except:
+            end_date = datetime.now(timezone.utc)
+    else:
+        end_date = datetime.now(timezone.utc)
+    
+    new_end = (end_date + timedelta(days=days)).isoformat()
+    
+    await db.companies.update_one(
+        {"id": company_id},
+        {"$set": {
+            "license_end": new_end,
+            "is_active": True,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    updated = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    emp_count = await db.users.count_documents({"company_id": company_id})
+    
+    return {
+        "message": f"License extended by {days} days",
+        "new_end_date": new_end,
+        "company": build_company_response(updated, emp_count)
+    }
+
+@api_router.post("/companies/{company_id}/suspend")
+async def suspend_company(
+    company_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Suspend a company (deactivate all access)"""
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    await db.companies.update_one(
+        {"id": company_id},
+        {"$set": {
+            "is_active": False,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Company suspended successfully"}
+
+@api_router.post("/companies/{company_id}/activate")
+async def activate_company(
+    company_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Activate a suspended company"""
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    await db.companies.update_one(
+        {"id": company_id},
+        {"$set": {
+            "is_active": True,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Company activated successfully"}
+
 # ============ PUBLIC COMPANY PROFILE ROUTES ============
 
 @api_router.get("/public/company/{domain}", response_model=CompanyProfileResponse)
