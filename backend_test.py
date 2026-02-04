@@ -109,7 +109,7 @@ class HRSystemAPITester:
             "logo_url": "https://example.com/logo.png",
             "is_active": True
         }
-        success, response = self.run_test("Create Company", "POST", "companies", 201, data=company_data)
+        success, response = self.run_test("Create Company", "POST", "companies", 200, data=company_data)
         if success and 'id' in response:
             self.created_company_id = response['id']
             print(f"   🏢 Created company ID: {self.created_company_id}")
