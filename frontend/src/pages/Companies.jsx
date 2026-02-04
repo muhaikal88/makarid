@@ -173,6 +173,39 @@ export const Companies = () => {
     }
   };
 
+  const handleOpenDomains = (company) => {
+    setSelectedCompany(company);
+    setDomainData({
+      main: company.custom_domains?.main || company.domain || '',
+      careers: company.custom_domains?.careers || '',
+      hr: company.custom_domains?.hr || ''
+    });
+    setIsDomainsOpen(true);
+  };
+
+  const handleSaveDomains = async () => {
+    setFormLoading(true);
+    try {
+      await axios.put(`${API}/companies/${selectedCompany.id}/domains`, domainData, {
+        headers: getAuthHeaders()
+      });
+      toast.success('Domain berhasil diupdate');
+      setIsDomainsOpen(false);
+      fetchCompanies();
+    } catch (error) {
+      console.error('Failed to update domains:', error);
+      toast.error(error.response?.data?.detail || 'Gagal update domain');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+      fetchCompanies();
+    } catch (error) {
+      console.error('Failed to delete company:', error);
+      toast.error(t('error'));
+    }
+  };
+
   const filteredCompanies = companies.filter(company =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     company.domain.toLowerCase().includes(searchTerm.toLowerCase())
