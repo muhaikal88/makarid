@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { Building2, Plus, Pencil, Trash2, Search, Users, Globe } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, Search, Users, Globe, Link2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
