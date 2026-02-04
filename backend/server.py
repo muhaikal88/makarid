@@ -542,7 +542,8 @@ async def create_company(data: CompanyCreate, current_user: dict = Depends(requi
         is_active=doc["is_active"],
         created_at=doc["created_at"],
         updated_at=doc["updated_at"],
-        employee_count=0
+        employee_count=0,
+        custom_domains=doc.get("custom_domains")
     )
 
 @api_router.get("/companies/{company_id}", response_model=CompanyResponse)
