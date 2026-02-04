@@ -552,20 +552,7 @@ async def get_companies(current_user: dict = Depends(require_super_admin)):
     result = []
     for company in companies:
         emp_count = await db.users.count_documents({"company_id": company["id"]})
-        result.append(CompanyResponse(
-            id=company["id"],
-            name=company["name"],
-            domain=company["domain"],
-            address=company.get("address"),
-            phone=company.get("phone"),
-            email=company.get("email"),
-            logo_url=company.get("logo_url"),
-            is_active=company["is_active"],
-            created_at=company["created_at"] if isinstance(company["created_at"], str) else company["created_at"].isoformat(),
-            updated_at=company["updated_at"] if isinstance(company["updated_at"], str) else company["updated_at"].isoformat(),
-            employee_count=emp_count,
-            custom_domains=company.get("custom_domains")
-        ))
+        result.append(build_company_response(company, emp_count))
     
     return result
 
@@ -580,6 +567,11 @@ async def create_company(data: CompanyCreate, current_user: dict = Depends(requi
     doc = company.model_dump()
     doc["created_at"] = doc["created_at"].isoformat()
     doc["updated_at"] = doc["updated_at"].isoformat()
+    
+    # Set default license (30-day trial)
+    doc["license_start"] = datetime.now(timezone.utc).isoformat()
+    doc["license_end"] = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    doc["license_type"] = data.license_type if hasattr(data, 'license_type') and data.license_type else "trial"
     
     # Initialize profile fields
     doc["profile"] = {
@@ -610,14 +602,7 @@ async def create_company(data: CompanyCreate, current_user: dict = Depends(requi
         field["company_id"] = doc["id"]
         await db.form_fields.insert_one(field)
     
-    return CompanyResponse(
-        id=doc["id"],
-        name=doc["name"],
-        domain=doc["domain"],
-        address=doc.get("address"),
-        phone=doc.get("phone"),
-        email=doc.get("email"),
-        logo_url=doc.get("logo_url"),
+    return build_company_response(doc, 0)
         is_active=doc["is_active"],
         created_at=doc["created_at"],
         updated_at=doc["updated_at"],
