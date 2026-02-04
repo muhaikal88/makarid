@@ -19,7 +19,7 @@ const LOGO_URL = "https://customer-assets.emergentagent.com/job_cea08fa0-5c14-4b
 
 export const Login = () => {
   const { t, language, setLanguage } = useLanguage();
-  const { user, login } = useAuth();
+  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
   
   const [email, setEmail] = useState('');
