@@ -603,12 +603,6 @@ async def create_company(data: CompanyCreate, current_user: dict = Depends(requi
         await db.form_fields.insert_one(field)
     
     return build_company_response(doc, 0)
-        is_active=doc["is_active"],
-        created_at=doc["created_at"],
-        updated_at=doc["updated_at"],
-        employee_count=0,
-        custom_domains=doc.get("custom_domains")
-    )
 
 @api_router.get("/companies/{company_id}", response_model=CompanyResponse)
 async def get_company(company_id: str, current_user: dict = Depends(require_super_admin)):
@@ -618,20 +612,7 @@ async def get_company(company_id: str, current_user: dict = Depends(require_supe
     
     emp_count = await db.users.count_documents({"company_id": company_id})
     
-    return CompanyResponse(
-        id=company["id"],
-        name=company["name"],
-        domain=company["domain"],
-        address=company.get("address"),
-        phone=company.get("phone"),
-        email=company.get("email"),
-        logo_url=company.get("logo_url"),
-        is_active=company["is_active"],
-        created_at=company["created_at"] if isinstance(company["created_at"], str) else company["created_at"].isoformat(),
-        updated_at=company["updated_at"] if isinstance(company["updated_at"], str) else company["updated_at"].isoformat(),
-        employee_count=emp_count,
-        custom_domains=company.get("custom_domains")
-    )
+    return build_company_response(company, emp_count)
 
 @api_router.put("/companies/{company_id}", response_model=CompanyResponse)
 async def update_company(company_id: str, data: CompanyUpdate, current_user: dict = Depends(require_super_admin)):
@@ -647,20 +628,7 @@ async def update_company(company_id: str, data: CompanyUpdate, current_user: dic
     updated = await db.companies.find_one({"id": company_id}, {"_id": 0})
     emp_count = await db.users.count_documents({"company_id": company_id})
     
-    return CompanyResponse(
-        id=updated["id"],
-        name=updated["name"],
-        domain=updated["domain"],
-        address=updated.get("address"),
-        phone=updated.get("phone"),
-        email=updated.get("email"),
-        logo_url=updated.get("logo_url"),
-        is_active=updated["is_active"],
-        created_at=updated["created_at"] if isinstance(updated["created_at"], str) else updated["created_at"].isoformat(),
-        updated_at=updated["updated_at"] if isinstance(updated["updated_at"], str) else updated["updated_at"].isoformat(),
-        employee_count=emp_count,
-        custom_domains=updated.get("custom_domains")
-    )
+    return build_company_response(updated, emp_count)
 
 @api_router.delete("/companies/{company_id}")
 async def delete_company(company_id: str, current_user: dict = Depends(require_super_admin)):
