@@ -312,7 +312,16 @@ export const Companies = () => {
                         {formatDate(company.created_at)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenDomains(company)}
+                            title="Manage Domains"
+                            data-testid={`domains-company-${company.id}`}
+                          >
+                            <Link2 className="w-4 h-4 text-[#2E4DA7]" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
