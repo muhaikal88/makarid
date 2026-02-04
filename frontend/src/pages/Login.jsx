@@ -47,9 +47,11 @@ export const Login = () => {
       
       // Only Super Admin can login here
       if (userData.role !== 'super_admin') {
+        logout(); // Clear the session
         setError(language === 'id' 
           ? 'Halaman ini khusus Super Admin. Silakan login di halaman perusahaan Anda.' 
           : 'This page is for Super Admin only. Please login at your company page.');
+        setLoading(false);
         return;
       }
       
