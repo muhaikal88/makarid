@@ -395,24 +395,47 @@ export const Companies = () => {
                         </div>
                       </TableCell>
                       <TableCell>
+                        <div className="space-y-1">
+                          <Badge className={licenseTypeLabels[company.license_type]?.color || 'bg-gray-100'}>
+                            {licenseTypeLabels[company.license_type]?.label || company.license_type}
+                          </Badge>
+                          {company.days_remaining !== null && company.days_remaining !== undefined && (
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <Clock className="w-3 h-3" />
+                              {company.days_remaining >= 0 
+                                ? `${company.days_remaining} hari lagi`
+                                : `Expired ${Math.abs(company.days_remaining)} hari`}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge className={licenseStatusColors[company.license_status] || 'bg-gray-100'}>
+                            {company.license_status === 'active' && <CheckCircle className="w-3 h-3 mr-1" />}
+                            {company.license_status === 'expired' && <AlertTriangle className="w-3 h-3 mr-1" />}
+                            {company.license_status === 'suspended' && <XCircle className="w-3 h-3 mr-1" />}
+                            {company.license_status === 'active' ? 'Aktif' : company.license_status === 'expired' ? 'Expired' : 'Suspended'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2 text-gray-600">
                           <Users className="w-4 h-4" />
                           {company.employee_count}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={company.is_active ? 'default' : 'secondary'}
-                          className={company.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : ''}
-                        >
-                          {company.is_active ? t('active') : t('inactive')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-gray-500">
-                        {formatDate(company.created_at)}
-                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenLicense(company)}
+                            title="Manage License"
+                            data-testid={`license-company-${company.id}`}
+                          >
+                            <Key className="w-4 h-4 text-amber-600" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
