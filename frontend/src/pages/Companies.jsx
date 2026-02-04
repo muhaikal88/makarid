@@ -51,8 +51,16 @@ export const Companies = () => {
   // Dialog states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDomainsOpen, setIsDomainsOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
+  
+  // Domain form state
+  const [domainData, setDomainData] = useState({
+    main: '',
+    careers: '',
+    hr: ''
+  });
   
   // Form state
   const [formData, setFormData] = useState({
