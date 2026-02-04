@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -7,15 +8,21 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
 import hashlib
 import jwt
 import secrets
+import json
+import aiofiles
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Create uploads directory
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -34,6 +41,7 @@ app = FastAPI(title="Lucky Cell HR System API")
 api_router = APIRouter(prefix="/api")
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 # ============ MODELS ============
 
@@ -119,6 +127,166 @@ class CompanyResponse(BaseModel):
     updated_at: str
     employee_count: int = 0
 
+# Company Profile Models
+class CompanyProfileUpdate(BaseModel):
+    tagline: Optional[str] = None
+    description: Optional[str] = None
+    vision: Optional[str] = None
+    mission: Optional[str] = None
+    history: Optional[str] = None
+    culture: Optional[str] = None
+    benefits: Optional[List[str]] = None
+    social_links: Optional[Dict[str, str]] = None
+    gallery_images: Optional[List[str]] = None
+    cover_image: Optional[str] = None
+
+class CompanyProfileResponse(BaseModel):
+    id: str
+    name: str
+    domain: str
+    logo_url: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    tagline: Optional[str] = None
+    description: Optional[str] = None
+    vision: Optional[str] = None
+    mission: Optional[str] = None
+    history: Optional[str] = None
+    culture: Optional[str] = None
+    benefits: Optional[List[str]] = None
+    social_links: Optional[Dict[str, str]] = None
+    gallery_images: Optional[List[str]] = None
+    cover_image: Optional[str] = None
+
+# Job Posting Models
+class JobStatus:
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    CLOSED = "closed"
+
+class JobType:
+    FULL_TIME = "full_time"
+    PART_TIME = "part_time"
+    CONTRACT = "contract"
+    INTERNSHIP = "internship"
+
+class JobCreate(BaseModel):
+    title: str
+    department: Optional[str] = None
+    location: Optional[str] = None
+    job_type: str = JobType.FULL_TIME
+    description: str
+    requirements: Optional[List[str]] = None
+    responsibilities: Optional[List[str]] = None
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    show_salary: bool = False
+    status: str = JobStatus.DRAFT
+
+class JobUpdate(BaseModel):
+    title: Optional[str] = None
+    department: Optional[str] = None
+    location: Optional[str] = None
+    job_type: Optional[str] = None
+    description: Optional[str] = None
+    requirements: Optional[List[str]] = None
+    responsibilities: Optional[List[str]] = None
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    show_salary: Optional[bool] = None
+    status: Optional[str] = None
+
+class JobResponse(BaseModel):
+    id: str
+    company_id: str
+    title: str
+    department: Optional[str] = None
+    location: Optional[str] = None
+    job_type: str
+    description: str
+    requirements: Optional[List[str]] = None
+    responsibilities: Optional[List[str]] = None
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    show_salary: bool
+    status: str
+    application_count: int = 0
+    created_at: str
+    updated_at: str
+
+# Application Form Field Models
+class FieldType:
+    TEXT = "text"
+    TEXTAREA = "textarea"
+    EMAIL = "email"
+    PHONE = "phone"
+    NUMBER = "number"
+    DATE = "date"
+    SELECT = "select"
+    CHECKBOX = "checkbox"
+    FILE = "file"
+
+class FormFieldCreate(BaseModel):
+    field_name: str
+    field_label: str
+    field_type: str = FieldType.TEXT
+    is_required: bool = True
+    options: Optional[List[str]] = None  # For select fields
+    placeholder: Optional[str] = None
+    order: int = 0
+
+class FormFieldUpdate(BaseModel):
+    field_label: Optional[str] = None
+    field_type: Optional[str] = None
+    is_required: Optional[bool] = None
+    options: Optional[List[str]] = None
+    placeholder: Optional[str] = None
+    order: Optional[int] = None
+
+class FormFieldResponse(BaseModel):
+    id: str
+    company_id: str
+    field_name: str
+    field_label: str
+    field_type: str
+    is_required: bool
+    options: Optional[List[str]] = None
+    placeholder: Optional[str] = None
+    order: int
+
+# Application Models
+class ApplicationStatus:
+    PENDING = "pending"
+    REVIEWING = "reviewing"
+    SHORTLISTED = "shortlisted"
+    INTERVIEWED = "interviewed"
+    OFFERED = "offered"
+    HIRED = "hired"
+    REJECTED = "rejected"
+
+class ApplicationCreate(BaseModel):
+    job_id: str
+    form_data: Dict[str, Any]
+
+class ApplicationUpdateStatus(BaseModel):
+    status: str
+    notes: Optional[str] = None
+
+class ApplicationResponse(BaseModel):
+    id: str
+    job_id: str
+    company_id: str
+    job_title: str
+    applicant_name: str
+    applicant_email: str
+    form_data: Dict[str, Any]
+    resume_url: Optional[str] = None
+    status: str
+    notes: Optional[str] = None
+    created_at: str
+    updated_at: str
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -142,10 +310,11 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return hash_password(password) == hashed
 
-def create_token(user_id: str, role: str) -> str:
+def create_token(user_id: str, role: str, company_id: str = None) -> str:
     payload = {
         "user_id": user_id,
         "role": role,
+        "company_id": company_id,
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -167,9 +336,27 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(optional_security)):
+    if not credentials:
+        return None
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("user_id")
+        if not user_id:
+            return None
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        return user
+    except:
+        return None
+
 async def require_super_admin(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=403, detail="Super Admin access required")
+    return current_user
+
+async def require_admin_or_super(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
 # ============ STARTUP ============
@@ -207,7 +394,7 @@ async def login(data: LoginRequest):
     if not user.get("is_active", True):
         raise HTTPException(status_code=401, detail="Account is deactivated")
     
-    token = create_token(user["id"], user["role"])
+    token = create_token(user["id"], user["role"], user.get("company_id"))
     
     return LoginResponse(
         token=token,
@@ -310,7 +497,34 @@ async def create_company(data: CompanyCreate, current_user: dict = Depends(requi
     doc["created_at"] = doc["created_at"].isoformat()
     doc["updated_at"] = doc["updated_at"].isoformat()
     
+    # Initialize profile fields
+    doc["profile"] = {
+        "tagline": None,
+        "description": None,
+        "vision": None,
+        "mission": None,
+        "history": None,
+        "culture": None,
+        "benefits": [],
+        "social_links": {},
+        "gallery_images": [],
+        "cover_image": None
+    }
+    
     await db.companies.insert_one(doc)
+    
+    # Create default form fields for this company
+    default_fields = [
+        {"field_name": "full_name", "field_label": "Nama Lengkap", "field_type": "text", "is_required": True, "order": 1},
+        {"field_name": "email", "field_label": "Email", "field_type": "email", "is_required": True, "order": 2},
+        {"field_name": "phone", "field_label": "No. Telepon", "field_type": "phone", "is_required": True, "order": 3},
+        {"field_name": "resume", "field_label": "Upload CV (PDF)", "field_type": "file", "is_required": True, "order": 4},
+    ]
+    
+    for field in default_fields:
+        field["id"] = str(uuid.uuid4())
+        field["company_id"] = doc["id"]
+        await db.form_fields.insert_one(field)
     
     return CompanyResponse(
         id=doc["id"],
@@ -382,11 +596,481 @@ async def delete_company(company_id: str, current_user: dict = Depends(require_s
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    # Delete all users associated with this company
+    # Delete all related data
     await db.users.delete_many({"company_id": company_id})
+    await db.jobs.delete_many({"company_id": company_id})
+    await db.applications.delete_many({"company_id": company_id})
+    await db.form_fields.delete_many({"company_id": company_id})
     await db.companies.delete_one({"id": company_id})
     
     return {"message": "Company deleted successfully"}
+
+# ============ PUBLIC COMPANY PROFILE ROUTES ============
+
+@api_router.get("/public/company/{domain}", response_model=CompanyProfileResponse)
+async def get_public_company_profile(domain: str):
+    company = await db.companies.find_one({"domain": domain, "is_active": True}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    profile = company.get("profile", {})
+    
+    return CompanyProfileResponse(
+        id=company["id"],
+        name=company["name"],
+        domain=company["domain"],
+        logo_url=company.get("logo_url"),
+        address=company.get("address"),
+        phone=company.get("phone"),
+        email=company.get("email"),
+        tagline=profile.get("tagline"),
+        description=profile.get("description"),
+        vision=profile.get("vision"),
+        mission=profile.get("mission"),
+        history=profile.get("history"),
+        culture=profile.get("culture"),
+        benefits=profile.get("benefits"),
+        social_links=profile.get("social_links"),
+        gallery_images=profile.get("gallery_images"),
+        cover_image=profile.get("cover_image")
+    )
+
+@api_router.put("/companies/{company_id}/profile", response_model=CompanyProfileResponse)
+async def update_company_profile(company_id: str, data: CompanyProfileUpdate, current_user: dict = Depends(require_admin_or_super)):
+    # Check access
+    if current_user["role"] == UserRole.ADMIN and current_user.get("company_id") != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    profile_update = {f"profile.{k}": v for k, v in data.model_dump().items() if v is not None}
+    profile_update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.companies.update_one({"id": company_id}, {"$set": profile_update})
+    
+    updated = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    profile = updated.get("profile", {})
+    
+    return CompanyProfileResponse(
+        id=updated["id"],
+        name=updated["name"],
+        domain=updated["domain"],
+        logo_url=updated.get("logo_url"),
+        address=updated.get("address"),
+        phone=updated.get("phone"),
+        email=updated.get("email"),
+        tagline=profile.get("tagline"),
+        description=profile.get("description"),
+        vision=profile.get("vision"),
+        mission=profile.get("mission"),
+        history=profile.get("history"),
+        culture=profile.get("culture"),
+        benefits=profile.get("benefits"),
+        social_links=profile.get("social_links"),
+        gallery_images=profile.get("gallery_images"),
+        cover_image=profile.get("cover_image")
+    )
+
+# ============ JOB POSTING ROUTES ============
+
+@api_router.get("/jobs", response_model=List[JobResponse])
+async def get_jobs(current_user: dict = Depends(require_admin_or_super)):
+    query = {}
+    if current_user["role"] == UserRole.ADMIN:
+        query["company_id"] = current_user.get("company_id")
+    
+    jobs = await db.jobs.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    result = []
+    for job in jobs:
+        app_count = await db.applications.count_documents({"job_id": job["id"]})
+        result.append(JobResponse(
+            id=job["id"],
+            company_id=job["company_id"],
+            title=job["title"],
+            department=job.get("department"),
+            location=job.get("location"),
+            job_type=job["job_type"],
+            description=job["description"],
+            requirements=job.get("requirements"),
+            responsibilities=job.get("responsibilities"),
+            salary_min=job.get("salary_min"),
+            salary_max=job.get("salary_max"),
+            show_salary=job.get("show_salary", False),
+            status=job["status"],
+            application_count=app_count,
+            created_at=job["created_at"],
+            updated_at=job["updated_at"]
+        ))
+    
+    return result
+
+@api_router.post("/jobs", response_model=JobResponse)
+async def create_job(data: JobCreate, current_user: dict = Depends(require_admin_or_super)):
+    company_id = current_user.get("company_id")
+    if current_user["role"] == UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=400, detail="Super Admin must specify company")
+    
+    if not company_id:
+        raise HTTPException(status_code=400, detail="No company assigned")
+    
+    job_doc = {
+        "id": str(uuid.uuid4()),
+        "company_id": company_id,
+        **data.model_dump(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.jobs.insert_one(job_doc)
+    
+    return JobResponse(
+        id=job_doc["id"],
+        company_id=job_doc["company_id"],
+        title=job_doc["title"],
+        department=job_doc.get("department"),
+        location=job_doc.get("location"),
+        job_type=job_doc["job_type"],
+        description=job_doc["description"],
+        requirements=job_doc.get("requirements"),
+        responsibilities=job_doc.get("responsibilities"),
+        salary_min=job_doc.get("salary_min"),
+        salary_max=job_doc.get("salary_max"),
+        show_salary=job_doc.get("show_salary", False),
+        status=job_doc["status"],
+        application_count=0,
+        created_at=job_doc["created_at"],
+        updated_at=job_doc["updated_at"]
+    )
+
+@api_router.put("/jobs/{job_id}", response_model=JobResponse)
+async def update_job(job_id: str, data: JobUpdate, current_user: dict = Depends(require_admin_or_super)):
+    job = await db.jobs.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if current_user["role"] == UserRole.ADMIN and job["company_id"] != current_user.get("company_id"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.jobs.update_one({"id": job_id}, {"$set": update_data})
+    
+    updated = await db.jobs.find_one({"id": job_id}, {"_id": 0})
+    app_count = await db.applications.count_documents({"job_id": job_id})
+    
+    return JobResponse(
+        id=updated["id"],
+        company_id=updated["company_id"],
+        title=updated["title"],
+        department=updated.get("department"),
+        location=updated.get("location"),
+        job_type=updated["job_type"],
+        description=updated["description"],
+        requirements=updated.get("requirements"),
+        responsibilities=updated.get("responsibilities"),
+        salary_min=updated.get("salary_min"),
+        salary_max=updated.get("salary_max"),
+        show_salary=updated.get("show_salary", False),
+        status=updated["status"],
+        application_count=app_count,
+        created_at=updated["created_at"],
+        updated_at=updated["updated_at"]
+    )
+
+@api_router.delete("/jobs/{job_id}")
+async def delete_job(job_id: str, current_user: dict = Depends(require_admin_or_super)):
+    job = await db.jobs.find_one({"id": job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if current_user["role"] == UserRole.ADMIN and job["company_id"] != current_user.get("company_id"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    await db.applications.delete_many({"job_id": job_id})
+    await db.jobs.delete_one({"id": job_id})
+    
+    return {"message": "Job deleted successfully"}
+
+# ============ PUBLIC JOB ROUTES ============
+
+@api_router.get("/public/careers/{domain}/jobs")
+async def get_public_jobs(domain: str):
+    company = await db.companies.find_one({"domain": domain, "is_active": True}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    jobs = await db.jobs.find(
+        {"company_id": company["id"], "status": JobStatus.PUBLISHED}, 
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    result = []
+    for job in jobs:
+        job_data = {
+            "id": job["id"],
+            "title": job["title"],
+            "department": job.get("department"),
+            "location": job.get("location"),
+            "job_type": job["job_type"],
+            "description": job["description"],
+            "requirements": job.get("requirements"),
+            "responsibilities": job.get("responsibilities"),
+            "created_at": job["created_at"]
+        }
+        if job.get("show_salary"):
+            job_data["salary_min"] = job.get("salary_min")
+            job_data["salary_max"] = job.get("salary_max")
+        result.append(job_data)
+    
+    return {
+        "company": {
+            "id": company["id"],
+            "name": company["name"],
+            "domain": company["domain"],
+            "logo_url": company.get("logo_url"),
+            "tagline": company.get("profile", {}).get("tagline"),
+            "culture": company.get("profile", {}).get("culture"),
+            "benefits": company.get("profile", {}).get("benefits")
+        },
+        "jobs": result
+    }
+
+@api_router.get("/public/careers/{domain}/jobs/{job_id}")
+async def get_public_job_detail(domain: str, job_id: str):
+    company = await db.companies.find_one({"domain": domain, "is_active": True}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    job = await db.jobs.find_one(
+        {"id": job_id, "company_id": company["id"], "status": JobStatus.PUBLISHED}, 
+        {"_id": 0}
+    )
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Get form fields
+    form_fields = await db.form_fields.find(
+        {"company_id": company["id"]}, 
+        {"_id": 0}
+    ).sort("order", 1).to_list(100)
+    
+    job_data = {
+        "id": job["id"],
+        "title": job["title"],
+        "department": job.get("department"),
+        "location": job.get("location"),
+        "job_type": job["job_type"],
+        "description": job["description"],
+        "requirements": job.get("requirements"),
+        "responsibilities": job.get("responsibilities"),
+        "created_at": job["created_at"]
+    }
+    if job.get("show_salary"):
+        job_data["salary_min"] = job.get("salary_min")
+        job_data["salary_max"] = job.get("salary_max")
+    
+    return {
+        "company": {
+            "id": company["id"],
+            "name": company["name"],
+            "domain": company["domain"],
+            "logo_url": company.get("logo_url")
+        },
+        "job": job_data,
+        "form_fields": form_fields
+    }
+
+# ============ FORM FIELDS ROUTES ============
+
+@api_router.get("/form-fields", response_model=List[FormFieldResponse])
+async def get_form_fields(current_user: dict = Depends(require_admin_or_super)):
+    company_id = current_user.get("company_id")
+    if current_user["role"] == UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=400, detail="Super Admin must specify company")
+    
+    fields = await db.form_fields.find({"company_id": company_id}, {"_id": 0}).sort("order", 1).to_list(100)
+    
+    return [FormFieldResponse(**field) for field in fields]
+
+@api_router.post("/form-fields", response_model=FormFieldResponse)
+async def create_form_field(data: FormFieldCreate, current_user: dict = Depends(require_admin_or_super)):
+    company_id = current_user.get("company_id")
+    if current_user["role"] == UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=400, detail="Super Admin must specify company")
+    
+    field_doc = {
+        "id": str(uuid.uuid4()),
+        "company_id": company_id,
+        **data.model_dump()
+    }
+    
+    await db.form_fields.insert_one(field_doc)
+    
+    return FormFieldResponse(**field_doc)
+
+@api_router.put("/form-fields/{field_id}", response_model=FormFieldResponse)
+async def update_form_field(field_id: str, data: FormFieldUpdate, current_user: dict = Depends(require_admin_or_super)):
+    field = await db.form_fields.find_one({"id": field_id}, {"_id": 0})
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+    
+    if current_user["role"] == UserRole.ADMIN and field["company_id"] != current_user.get("company_id"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    await db.form_fields.update_one({"id": field_id}, {"$set": update_data})
+    
+    updated = await db.form_fields.find_one({"id": field_id}, {"_id": 0})
+    return FormFieldResponse(**updated)
+
+@api_router.delete("/form-fields/{field_id}")
+async def delete_form_field(field_id: str, current_user: dict = Depends(require_admin_or_super)):
+    field = await db.form_fields.find_one({"id": field_id})
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+    
+    if current_user["role"] == UserRole.ADMIN and field["company_id"] != current_user.get("company_id"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    await db.form_fields.delete_one({"id": field_id})
+    return {"message": "Field deleted successfully"}
+
+# ============ APPLICATION ROUTES ============
+
+@api_router.post("/public/apply")
+async def submit_application(
+    job_id: str = Form(...),
+    form_data: str = Form(...),
+    resume: Optional[UploadFile] = File(None)
+):
+    job = await db.jobs.find_one({"id": job_id, "status": JobStatus.PUBLISHED}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    company = await db.companies.find_one({"id": job["company_id"]}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    try:
+        parsed_data = json.loads(form_data)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid form data")
+    
+    resume_url = None
+    if resume:
+        # Save resume file
+        file_ext = resume.filename.split(".")[-1] if "." in resume.filename else "pdf"
+        file_name = f"{uuid.uuid4()}.{file_ext}"
+        file_path = UPLOAD_DIR / file_name
+        
+        async with aiofiles.open(file_path, 'wb') as f:
+            content = await resume.read()
+            await f.write(content)
+        
+        resume_url = f"/api/uploads/{file_name}"
+    
+    application_doc = {
+        "id": str(uuid.uuid4()),
+        "job_id": job_id,
+        "company_id": job["company_id"],
+        "form_data": parsed_data,
+        "resume_url": resume_url,
+        "status": ApplicationStatus.PENDING,
+        "notes": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.applications.insert_one(application_doc)
+    
+    return {"message": "Application submitted successfully", "id": application_doc["id"]}
+
+@api_router.get("/applications", response_model=List[ApplicationResponse])
+async def get_applications(
+    job_id: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: dict = Depends(require_admin_or_super)
+):
+    query = {}
+    if current_user["role"] == UserRole.ADMIN:
+        query["company_id"] = current_user.get("company_id")
+    if job_id:
+        query["job_id"] = job_id
+    if status:
+        query["status"] = status
+    
+    applications = await db.applications.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    result = []
+    for app in applications:
+        job = await db.jobs.find_one({"id": app["job_id"]}, {"_id": 0})
+        job_title = job["title"] if job else "Unknown"
+        
+        form_data = app.get("form_data", {})
+        applicant_name = form_data.get("full_name", form_data.get("name", "Unknown"))
+        applicant_email = form_data.get("email", "Unknown")
+        
+        result.append(ApplicationResponse(
+            id=app["id"],
+            job_id=app["job_id"],
+            company_id=app["company_id"],
+            job_title=job_title,
+            applicant_name=applicant_name,
+            applicant_email=applicant_email,
+            form_data=form_data,
+            resume_url=app.get("resume_url"),
+            status=app["status"],
+            notes=app.get("notes"),
+            created_at=app["created_at"],
+            updated_at=app["updated_at"]
+        ))
+    
+    return result
+
+@api_router.put("/applications/{app_id}/status")
+async def update_application_status(app_id: str, data: ApplicationUpdateStatus, current_user: dict = Depends(require_admin_or_super)):
+    application = await db.applications.find_one({"id": app_id}, {"_id": 0})
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    if current_user["role"] == UserRole.ADMIN and application["company_id"] != current_user.get("company_id"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    update_data = {
+        "status": data.status,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    if data.notes is not None:
+        update_data["notes"] = data.notes
+    
+    await db.applications.update_one({"id": app_id}, {"$set": update_data})
+    
+    return {"message": "Application status updated"}
+
+@api_router.delete("/applications/{app_id}")
+async def delete_application(app_id: str, current_user: dict = Depends(require_admin_or_super)):
+    application = await db.applications.find_one({"id": app_id})
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    if current_user["role"] == UserRole.ADMIN and application["company_id"] != current_user.get("company_id"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    await db.applications.delete_one({"id": app_id})
+    return {"message": "Application deleted"}
+
+# ============ FILE UPLOAD ROUTES ============
+
+@api_router.get("/uploads/{filename}")
+async def get_uploaded_file(filename: str):
+    file_path = UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path)
 
 # ============ USER ROUTES ============
 
