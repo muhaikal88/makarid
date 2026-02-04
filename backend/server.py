@@ -95,6 +95,10 @@ class CompanyBase(BaseModel):
     email: Optional[EmailStr] = None
     logo_url: Optional[str] = None
     is_active: bool = True
+    # License management
+    license_start: Optional[str] = None  # ISO date string
+    license_end: Optional[str] = None    # ISO date string
+    license_type: str = "trial"  # trial, monthly, yearly, lifetime
     # Custom domain settings for white-label
     custom_domains: Optional[Dict[str, str]] = None  # {"main": "luckycell.co.id", "careers": "careers.luckycell.co.id", "hr": "hr.luckycell.co.id"}
 
@@ -109,6 +113,9 @@ class CompanyUpdate(BaseModel):
     email: Optional[EmailStr] = None
     logo_url: Optional[str] = None
     is_active: Optional[bool] = None
+    license_start: Optional[str] = None
+    license_end: Optional[str] = None
+    license_type: Optional[str] = None
     custom_domains: Optional[Dict[str, str]] = None
 
 class Company(CompanyBase):
@@ -126,6 +133,11 @@ class CompanyResponse(BaseModel):
     email: Optional[str] = None
     logo_url: Optional[str] = None
     is_active: bool
+    license_start: Optional[str] = None
+    license_end: Optional[str] = None
+    license_type: Optional[str] = None
+    license_status: Optional[str] = None  # active, expired, suspended
+    days_remaining: Optional[int] = None
     created_at: str
     updated_at: str
     employee_count: int = 0
