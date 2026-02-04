@@ -479,6 +479,128 @@ export const Companies = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Domain Management Dialog */}
+      <Dialog open={isDomainsOpen} onOpenChange={setIsDomainsOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="w-5 h-5 text-[#2E4DA7]" />
+              Custom Domains - {selectedCompany?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Setup custom domain untuk white-label. Client perlu mengarahkan DNS ke server Anda.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+              <p className="font-medium mb-2">Instruksi DNS untuk Client:</p>
+              <p>Client perlu menambahkan CNAME record yang mengarah ke server Anda.</p>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="domain_main">
+                Main Domain (Company Profile)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="domain_main"
+                  value={domainData.main}
+                  onChange={(e) => setDomainData({ ...domainData, main: e.target.value })}
+                  placeholder="luckycell.co.id"
+                />
+                {domainData.main && (
+                  <a 
+                    href={`/company/${selectedCompany?.domain}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="p-2 hover:bg-gray-100 rounded"
+                  >
+                    <ExternalLink className="w-5 h-5 text-gray-500" />
+                  </a>
+                )}
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="domain_careers">
+                Careers Domain (Recruitment Page)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="domain_careers"
+                  value={domainData.careers}
+                  onChange={(e) => setDomainData({ ...domainData, careers: e.target.value })}
+                  placeholder="careers.luckycell.co.id"
+                />
+                {domainData.careers && (
+                  <a 
+                    href={`/careers/${selectedCompany?.domain}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="p-2 hover:bg-gray-100 rounded"
+                  >
+                    <ExternalLink className="w-5 h-5 text-gray-500" />
+                  </a>
+                )}
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="domain_hr">
+                HR Domain (Employee Login)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="domain_hr"
+                  value={domainData.hr}
+                  onChange={(e) => setDomainData({ ...domainData, hr: e.target.value })}
+                  placeholder="hr.luckycell.co.id"
+                />
+                {domainData.hr && (
+                  <a 
+                    href={`/login/${selectedCompany?.domain}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="p-2 hover:bg-gray-100 rounded"
+                  >
+                    <ExternalLink className="w-5 h-5 text-gray-500" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {selectedCompany?.custom_domains && (
+              <div className="p-4 bg-emerald-50 rounded-lg">
+                <p className="text-sm font-medium text-emerald-800 mb-2">Current Active Domains:</p>
+                <ul className="text-sm text-emerald-700 space-y-1">
+                  {selectedCompany.custom_domains.main && (
+                    <li>• Main: {selectedCompany.custom_domains.main}</li>
+                  )}
+                  {selectedCompany.custom_domains.careers && (
+                    <li>• Careers: {selectedCompany.custom_domains.careers}</li>
+                  )}
+                  {selectedCompany.custom_domains.hr && (
+                    <li>• HR: {selectedCompany.custom_domains.hr}</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsDomainsOpen(false)}>
+              {t('cancel')}
+            </Button>
+            <Button 
+              onClick={handleSaveDomains}
+              className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+              disabled={formLoading}
+            >
+              {formLoading ? t('loading') : t('save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
