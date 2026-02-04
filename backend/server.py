@@ -129,6 +129,7 @@ class CompanyResponse(BaseModel):
     created_at: str
     updated_at: str
     employee_count: int = 0
+    custom_domains: Optional[Dict[str, str]] = None
 
 # Company Profile Models
 class CompanyProfileUpdate(BaseModel):
