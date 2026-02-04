@@ -724,6 +724,140 @@ export const Companies = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* License Management Dialog */}
+      <Dialog open={isLicenseOpen} onOpenChange={setIsLicenseOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-amber-600" />
+              Manajemen Lisensi - {selectedCompany?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Kelola masa aktif lisensi dan status akses perusahaan
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Current Status */}
+            <div className={`p-4 rounded-lg ${
+              selectedCompany?.license_status === 'active' ? 'bg-emerald-50' :
+              selectedCompany?.license_status === 'expired' ? 'bg-red-50' : 'bg-gray-50'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Status Saat Ini</p>
+                  <p className={`text-lg font-bold ${
+                    selectedCompany?.license_status === 'active' ? 'text-emerald-700' :
+                    selectedCompany?.license_status === 'expired' ? 'text-red-700' : 'text-gray-700'
+                  }`}>
+                    {selectedCompany?.license_status === 'active' ? 'Aktif' : 
+                     selectedCompany?.license_status === 'expired' ? 'Expired' : 'Suspended'}
+                  </p>
+                </div>
+                {selectedCompany?.days_remaining !== null && selectedCompany?.days_remaining !== undefined && (
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">Sisa Waktu</p>
+                    <p className={`text-lg font-bold ${selectedCompany?.days_remaining < 7 ? 'text-red-600' : 'text-gray-900'}`}>
+                      {selectedCompany?.days_remaining >= 0 
+                        ? `${selectedCompany?.days_remaining} hari`
+                        : `Expired ${Math.abs(selectedCompany?.days_remaining)} hari`}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Extend Buttons */}
+            <div className="space-y-2">
+              <Label>Perpanjang Cepat</Label>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleExtendLicense(30)} disabled={formLoading}>
+                  +30 Hari
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleExtendLicense(90)} disabled={formLoading}>
+                  +3 Bulan
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleExtendLicense(365)} disabled={formLoading}>
+                  +1 Tahun
+                </Button>
+              </div>
+            </div>
+
+            {/* License Type */}
+            <div className="grid gap-2">
+              <Label>Tipe Lisensi</Label>
+              <Select
+                value={licenseData.license_type}
+                onValueChange={(value) => setLicenseData({ ...licenseData, license_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="trial">Trial (30 hari)</SelectItem>
+                  <SelectItem value="monthly">Bulanan</SelectItem>
+                  <SelectItem value="yearly">Tahunan</SelectItem>
+                  <SelectItem value="lifetime">Lifetime</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* License End Date */}
+            <div className="grid gap-2">
+              <Label htmlFor="license_end">Tanggal Berakhir</Label>
+              <Input
+                id="license_end"
+                type="date"
+                value={licenseData.license_end}
+                onChange={(e) => setLicenseData({ ...licenseData, license_end: e.target.value })}
+              />
+              <p className="text-xs text-gray-500">Kosongkan untuk lifetime license</p>
+            </div>
+
+            {/* Active Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+              <div>
+                <Label>Status Aktif</Label>
+                <p className="text-sm text-gray-500">
+                  {licenseData.is_active 
+                    ? 'Perusahaan dapat mengakses semua layanan' 
+                    : 'Semua akses diblokir (suspended)'}
+                </p>
+              </div>
+              <Switch
+                checked={licenseData.is_active}
+                onCheckedChange={(checked) => setLicenseData({ ...licenseData, is_active: checked })}
+              />
+            </div>
+
+            {!licenseData.is_active && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-red-800">Perusahaan Dinonaktifkan</p>
+                    <p className="text-sm text-red-600">
+                      Semua halaman publik (company profile, careers, login) akan menampilkan pesan error.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsLicenseOpen(false)}>
+              {t('cancel')}
+            </Button>
+            <Button 
+              onClick={handleSaveLicense}
+              className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+              disabled={formLoading}
+            >
+              {formLoading ? t('loading') : t('save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
