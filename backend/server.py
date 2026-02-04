@@ -981,9 +981,12 @@ async def get_public_jobs(domain: str):
 
 @api_router.get("/public/careers/{domain}/jobs/{job_id}")
 async def get_public_job_detail(domain: str, job_id: str):
-    company = await db.companies.find_one({"domain": domain, "is_active": True}, {"_id": 0})
+    company = await db.companies.find_one({"domain": domain}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check license status
+    await check_company_license(company_id=company["id"])
     
     job = await db.jobs.find_one(
         {"id": job_id, "company_id": company["id"], "status": JobStatus.PUBLISHED}, 
