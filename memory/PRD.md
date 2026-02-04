@@ -36,7 +36,7 @@ Ada 3 role: Super Admin, Admin (untuk perusahaan), dan Karyawan.
 ## What's Been Implemented
 
 ### Phase 1: Super Admin Dashboard ✅ (Feb 4, 2026)
-- Login page dengan Lucky Cell branding
+- Login page khusus Super Admin dengan dark theme
 - Dashboard dengan statistik cards
 - Companies management (CRUD)
 - Users management (CRUD)
@@ -53,6 +53,21 @@ Ada 3 role: Super Admin, Admin (untuk perusahaan), dan Karyawan.
 - Job Posting CRUD (title, department, location, salary, requirements)
 - Custom Form Fields configuration per company
 - Application management dengan status tracking
+
+### Phase 3: Login Separation & White-Label Domain ✅ (Feb 4, 2026)
+**Login Separation:**
+- `/login` - Super Admin only (dengan security check)
+- `/login/{domain}` - Company Admin/Employee dengan branding perusahaan
+- `/admin/dashboard` - Admin Dashboard untuk company
+
+**White-Label Custom Domain:**
+- Support custom domain per company untuk white-label
+- Main domain → Company Profile
+- Careers subdomain → Recruitment page
+- HR subdomain → Employee portal/login
+- Domain lookup API untuk routing
+- Super Admin UI untuk manage custom domains
+- Dokumentasi setup DNS untuk client
 
 **Backend APIs:**
 - Public: `/api/public/company/{domain}`, `/api/public/careers/{domain}/jobs`
