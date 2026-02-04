@@ -21,7 +21,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export const CompanyLogin = () => {
   const { domain } = useParams();
   const { t, language, setLanguage } = useLanguage();
-  const { user, login } = useAuth();
+  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
   
   const [company, setCompany] = useState(null);
