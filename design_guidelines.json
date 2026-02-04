@@ -1,0 +1,154 @@
+{
+  "project_name": "Lucky Cell HR System",
+  "design_philosophy": {
+    "identity": "Corporate Efficiency",
+    "core_principles": [
+      "Trust & Reliability (Blue)",
+      "Urgency & Attention (Red)",
+      "Clarity & Space (White/Gray)",
+      "Bilingual-First Architecture"
+    ],
+    "mood": "Professional, Clean, Secure, Organized"
+  },
+  "typography": {
+    "font_family": {
+      "primary": "Manrope, sans-serif",
+      "secondary": "Inter, sans-serif"
+    },
+    "scale": {
+      "h1": "text-4xl font-bold tracking-tight",
+      "h2": "text-3xl font-bold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-tight",
+      "p": "text-base leading-relaxed text-muted-foreground",
+      "small": "text-sm font-medium leading-none"
+    },
+    "installation_command": "npm install @fontsource/manrope @fontsource/inter"
+  },
+  "colors": {
+    "brand": {
+      "blue": "#2E4DA7",
+      "red": "#E31E24",
+      "white": "#FFFFFF"
+    },
+    "tailwind_mapping": {
+      "primary": {
+        "DEFAULT": "hsl(224, 57%, 42%)",
+        "foreground": "hsl(0, 0%, 100%)"
+      },
+      "destructive": {
+        "DEFAULT": "hsl(358, 80%, 50%)",
+        "foreground": "hsl(0, 0%, 100%)"
+      },
+      "secondary": {
+        "DEFAULT": "hsl(210, 40%, 96.1%)",
+        "foreground": "hsl(222.2, 47.4%, 11.2%)"
+      },
+      "accent": {
+        "DEFAULT": "hsl(210, 40%, 96.1%)",
+        "foreground": "hsl(222.2, 47.4%, 11.2%)"
+      },
+      "background": "hsl(0, 0%, 100%)",
+      "foreground": "hsl(222.2, 84%, 4.9%)"
+    }
+  },
+  "layout_strategy": {
+    "dashboard": {
+      "structure": "Sidebar Layout",
+      "sidebar": {
+        "width": "w-64",
+        "bg": "bg-[#1e3a8a]",
+        "text": "text-white",
+        "active_item": "bg-white/10 text-white font-medium"
+      },
+      "header": {
+        "height": "h-16",
+        "bg": "bg-white",
+        "border": "border-b border-gray-200"
+      },
+      "content": {
+        "bg": "bg-slate-50",
+        "padding": "p-8"
+      }
+    },
+    "grid_system": {
+      "stats_cards": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6",
+      "main_charts": "grid grid-cols-1 lg:grid-cols-7 gap-6",
+      "chart_main": "col-span-4",
+      "chart_side": "col-span-3"
+    }
+  },
+  "components": {
+    "buttons": {
+      "default": "rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+      "primary": "bg-[#2E4DA7] text-white hover:bg-[#2E4DA7]/90 shadow-sm",
+      "destructive": "bg-[#E31E24] text-white hover:bg-[#E31E24]/90 shadow-sm",
+      "outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+    },
+    "cards": {
+      "base": "rounded-xl border bg-card text-card-foreground shadow-sm",
+      "header": "flex flex-col space-y-1.5 p-6",
+      "content": "p-6 pt-0"
+    },
+    "inputs": {
+      "base": "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    }
+  },
+  "assets": {
+    "logo": {
+      "url": "https://customer-assets.emergentagent.com/job_cea08fa0-5c14-4b0d-bcc8-350a4e47c0ce/artifacts/hf5ag1pw_LOGO%20LUCKY%20HD_page-0001.jpg",
+      "alt": "Lucky Cell Logo",
+      "usage": "Top left of sidebar (White version if possible, or container with white bg)"
+    },
+    "images": [
+      {
+        "category": "Login Background",
+        "url": "https://images.unsplash.com/photo-1588209134368-81591fd1a36c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBnbGFzcyUyMG9mZmljZSUyMGJ1aWxkaW5nJTIwc3VubnklMjBkYXklMjBkaXZlcnNlJTIwYXNpYW4lMjBidXNpbmVzcyUyMHRlYW0lMjBtZWV0aW5nJTIwcHJvZmVzc2lvbmFsfGVufDB8fHx8MTc3MDE4NjE3OHww&ixlib=rb-4.1.0&q=85",
+        "description": "Modern white and blue glass office building, perfect for login screen side panel."
+      },
+      {
+        "category": "Meeting Placeholder",
+        "url": "https://images.unsplash.com/photo-1745920770891-b46fc1799646?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBnbGFzcyUyMG9mZmljZSUyMGJ1aWxkaW5nJTIwc3VubnklMjBkYXklMjBkaXZlcnNlJTIwYXNpYW4lMjBidXNpbmVzcyUyMHRlYW0lMjBtZWV0aW5nJTIwcHJvZmVzc2lvbmFsfGVufDB8fHx8MTc3MDE4NjE3OHww&ixlib=rb-4.1.0&q=85",
+        "description": "Modern conference room, useful for empty states or company profile headers."
+      }
+    ]
+  },
+  "feature_guidelines": {
+    "bilingual": {
+      "strategy": "Use a context provider for language state (ID/EN).",
+      "ui_element": "Dropdown in Top Header (Flag icon + Language Code).",
+      "text_handling": "Ensure all text containers allow for 20-30% expansion (Indonesian is often longer than English)."
+    },
+    "charts": {
+      "library": "Recharts (via Shadcn)",
+      "palette": ["#2E4DA7", "#E31E24", "#10b981", "#f59e0b", "#6366f1"]
+    }
+  },
+  "instructions_to_main_agent": {
+    "setup": [
+      "Install 'lucide-react' for icons.",
+      "Install 'recharts' for dashboard charts.",
+      "Install 'clsx' and 'tailwind-merge' for class handling (standard in shadcn).",
+      "Use 'sonner' for toast notifications."
+    ],
+    "file_structure": [
+      "Create /components/layout/Sidebar.jsx",
+      "Create /components/layout/Header.jsx",
+      "Create /pages/Dashboard.jsx",
+      "Create /pages/Login.jsx",
+      "Create /pages/Companies.jsx"
+    ],
+    "theming": "Update tailwind.config.js to use the HSL values provided in 'colors.tailwind_mapping'. This is CRITICAL for the brand look."
+  },
+  "universal_guidelines": {
+    "do_not": [
+      "Do NOT use gradients for the main background. Keep it clean.",
+      "Do NOT use generic 'Inter' font if possible, use 'Manrope'.",
+      "Do NOT center text in tables. Left align text, right align numbers."
+    ],
+    "must": [
+      "MUST include 'data-testid' on all interactive elements.",
+      "MUST use the specific Brand Blue (#2E4DA7) for primary actions.",
+      "MUST provide a distinct visual cue for the active sidebar item."
+    ]
+  }
+}
