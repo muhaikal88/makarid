@@ -28,6 +28,13 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -35,13 +42,26 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { Building2, Plus, Pencil, Trash2, Search, Users, Globe, Link2, ExternalLink } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, Search, Users, Globe, Link2, ExternalLink, Key, Calendar, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const licenseTypeLabels = {
+  trial: { label: 'Trial', color: 'bg-amber-100 text-amber-700' },
+  monthly: { label: 'Bulanan', color: 'bg-blue-100 text-blue-700' },
+  yearly: { label: 'Tahunan', color: 'bg-emerald-100 text-emerald-700' },
+  lifetime: { label: 'Lifetime', color: 'bg-purple-100 text-purple-700' }
+};
+
+const licenseStatusColors = {
+  active: 'bg-emerald-100 text-emerald-700',
+  expired: 'bg-red-100 text-red-700',
+  suspended: 'bg-gray-100 text-gray-700'
+};
+
 export const Companies = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { getAuthHeaders } = useAuth();
   
   const [companies, setCompanies] = useState([]);
