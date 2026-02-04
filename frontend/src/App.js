@@ -8,6 +8,9 @@ import { Dashboard } from "./pages/Dashboard";
 import { Companies } from "./pages/Companies";
 import { Users } from "./pages/Users";
 import { Settings } from "./pages/Settings";
+import { CompanyProfile } from "./pages/CompanyProfile";
+import { Careers } from "./pages/Careers";
+import { ApplyJob } from "./pages/ApplyJob";
 
 function App() {
   return (
@@ -15,11 +18,21 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Auth */}
             <Route path="/login" element={<Login />} />
+            
+            {/* Super Admin Dashboard */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/companies" element={<Companies />} />
             <Route path="/users" element={<Users />} />
             <Route path="/settings" element={<Settings />} />
+            
+            {/* Public Pages */}
+            <Route path="/company/:domain" element={<CompanyProfile />} />
+            <Route path="/careers/:domain" element={<Careers />} />
+            <Route path="/careers/:domain/apply/:jobId" element={<ApplyJob />} />
+            
+            {/* Redirects */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
