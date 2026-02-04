@@ -89,12 +89,14 @@ class UserResponse(BaseModel):
 
 class CompanyBase(BaseModel):
     name: str
-    domain: str
+    domain: str  # Primary identifier (e.g., luckycell.co.id)
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
     logo_url: Optional[str] = None
     is_active: bool = True
+    # Custom domain settings for white-label
+    custom_domains: Optional[Dict[str, str]] = None  # {"main": "luckycell.co.id", "careers": "careers.luckycell.co.id", "hr": "hr.luckycell.co.id"}
 
 class CompanyCreate(CompanyBase):
     pass
@@ -107,6 +109,7 @@ class CompanyUpdate(BaseModel):
     email: Optional[EmailStr] = None
     logo_url: Optional[str] = None
     is_active: Optional[bool] = None
+    custom_domains: Optional[Dict[str, str]] = None
 
 class Company(CompanyBase):
     model_config = ConfigDict(extra="ignore")
