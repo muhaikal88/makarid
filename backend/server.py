@@ -594,7 +594,8 @@ async def update_company(company_id: str, data: CompanyUpdate, current_user: dic
         is_active=updated["is_active"],
         created_at=updated["created_at"] if isinstance(updated["created_at"], str) else updated["created_at"].isoformat(),
         updated_at=updated["updated_at"] if isinstance(updated["updated_at"], str) else updated["updated_at"].isoformat(),
-        employee_count=emp_count
+        employee_count=emp_count,
+        custom_domains=updated.get("custom_domains")
     )
 
 @api_router.delete("/companies/{company_id}")
