@@ -367,9 +367,9 @@ export const Companies = () => {
                   <TableRow className="bg-slate-50 hover:bg-slate-50">
                     <TableHead className="font-semibold">{t('companyName')}</TableHead>
                     <TableHead className="font-semibold">{t('domain')}</TableHead>
-                    <TableHead className="font-semibold">{t('employees')}</TableHead>
+                    <TableHead className="font-semibold">Lisensi</TableHead>
                     <TableHead className="font-semibold">{t('status')}</TableHead>
-                    <TableHead className="font-semibold">{t('createdAt')}</TableHead>
+                    <TableHead className="font-semibold">{t('employees')}</TableHead>
                     <TableHead className="text-right font-semibold">{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
