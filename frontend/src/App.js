@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Login } from "./pages/Login";
+import { CompanyLogin } from "./pages/CompanyLogin";
 import { Dashboard } from "./pages/Dashboard";
 import { Companies } from "./pages/Companies";
 import { Users } from "./pages/Users";
@@ -11,6 +12,7 @@ import { Settings } from "./pages/Settings";
 import { CompanyProfile } from "./pages/CompanyProfile";
 import { Careers } from "./pages/Careers";
 import { ApplyJob } from "./pages/ApplyJob";
+import { AdminDashboard } from "./pages/AdminDashboard";
 
 function App() {
   return (
@@ -18,14 +20,20 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Auth */}
+            {/* Auth - Super Admin */}
             <Route path="/login" element={<Login />} />
+            
+            {/* Auth - Company Admin/Employee */}
+            <Route path="/login/:domain" element={<CompanyLogin />} />
             
             {/* Super Admin Dashboard */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/companies" element={<Companies />} />
             <Route path="/users" element={<Users />} />
             <Route path="/settings" element={<Settings />} />
+            
+            {/* Company Admin Dashboard */}
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             
             {/* Public Pages */}
             <Route path="/company/:domain" element={<CompanyProfile />} />
