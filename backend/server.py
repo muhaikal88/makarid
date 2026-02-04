@@ -936,9 +936,12 @@ async def delete_job(job_id: str, current_user: dict = Depends(require_admin_or_
 
 @api_router.get("/public/careers/{domain}/jobs")
 async def get_public_jobs(domain: str):
-    company = await db.companies.find_one({"domain": domain, "is_active": True}, {"_id": 0})
+    company = await db.companies.find_one({"domain": domain}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check license status
+    await check_company_license(company_id=company["id"])
     
     jobs = await db.jobs.find(
         {"company_id": company["id"], "status": JobStatus.PUBLISHED}, 
