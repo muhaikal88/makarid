@@ -60,9 +60,13 @@ Ada 3 role: Super Admin, Admin (untuk perusahaan), dan Karyawan.
 - File upload untuk CV/Resume
 
 ## URL Pattern
-- Company Profile: `/company/{domain}` (e.g., `/company/luckycell.co.id`)
-- Careers Page: `/careers/{domain}` (e.g., `/careers/luckycell.co.id`)
-- Apply Job: `/careers/{domain}/apply/{jobId}`
+- **Super Admin Login**: `/login` - Khusus untuk Super Admin
+- **Company Login**: `/login/{domain}` (e.g., `/login/luckycell.co.id`) - Untuk Admin & Employee perusahaan
+- **Company Admin Dashboard**: `/admin/dashboard`
+- **Super Admin Dashboard**: `/dashboard`, `/companies`, `/users`, `/settings`
+- **Public Company Profile**: `/company/{domain}`
+- **Public Careers Page**: `/careers/{domain}`
+- **Apply Job**: `/careers/{domain}/apply/{jobId}`
 
 ## Credentials
 - Super Admin: superadmin@luckycell.co.id / admin123
