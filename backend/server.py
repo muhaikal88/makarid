@@ -743,9 +743,12 @@ async def update_company_domains(
 
 @api_router.get("/public/company/{domain}", response_model=CompanyProfileResponse)
 async def get_public_company_profile(domain: str):
-    company = await db.companies.find_one({"domain": domain, "is_active": True}, {"_id": 0})
+    company = await db.companies.find_one({"domain": domain}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check license status
+    await check_company_license(company_id=company["id"])
     
     profile = company.get("profile", {})
     
