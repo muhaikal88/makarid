@@ -533,19 +533,7 @@ async def get_dashboard_stats(current_user: dict = Depends(require_super_admin))
     recent_with_counts = []
     for company in recent_companies:
         emp_count = await db.users.count_documents({"company_id": company["id"]})
-        recent_with_counts.append(CompanyResponse(
-            id=company["id"],
-            name=company["name"],
-            domain=company["domain"],
-            address=company.get("address"),
-            phone=company.get("phone"),
-            email=company.get("email"),
-            logo_url=company.get("logo_url"),
-            is_active=company["is_active"],
-            created_at=company["created_at"] if isinstance(company["created_at"], str) else company["created_at"].isoformat(),
-            updated_at=company["updated_at"] if isinstance(company["updated_at"], str) else company["updated_at"].isoformat(),
-            employee_count=emp_count
-        ))
+        recent_with_counts.append(build_company_response(company, emp_count))
     
     return DashboardStats(
         total_companies=total_companies,
