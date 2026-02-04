@@ -484,7 +484,8 @@ async def get_companies(current_user: dict = Depends(require_super_admin)):
             is_active=company["is_active"],
             created_at=company["created_at"] if isinstance(company["created_at"], str) else company["created_at"].isoformat(),
             updated_at=company["updated_at"] if isinstance(company["updated_at"], str) else company["updated_at"].isoformat(),
-            employee_count=emp_count
+            employee_count=emp_count,
+            custom_domains=company.get("custom_domains")
         ))
     
     return result
