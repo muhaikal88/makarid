@@ -1,0 +1,171 @@
+import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { DashboardLayout } from '../components/layout/DashboardLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import { Globe, Bell, Shield, Palette } from 'lucide-react';
+
+export const Settings = () => {
+  const { t, language, setLanguage } = useLanguage();
+
+  return (
+    <DashboardLayout title={t('settings')}>
+      <div className="space-y-6 max-w-3xl" data-testid="settings-page">
+        {/* Language Settings */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#2E4DA7]/10 rounded-lg">
+                <Globe className="w-5 h-5 text-[#2E4DA7]" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Language / Bahasa</CardTitle>
+                <CardDescription>Choose your preferred language</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <Label>Interface Language</Label>
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger className="w-[200px]" data-testid="settings-language-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="id">
+                    <span className="flex items-center gap-2">
+                      <span>🇮🇩</span> Bahasa Indonesia
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="en">
+                    <span className="flex items-center gap-2">
+                      <span>🇬🇧</span> English
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Notification Settings */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <Bell className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Notifications</CardTitle>
+                <CardDescription>Manage notification preferences</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Email Notifications</Label>
+                <p className="text-sm text-gray-500">Receive email updates</p>
+              </div>
+              <Switch data-testid="email-notifications-switch" defaultChecked />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>New Company Alerts</Label>
+                <p className="text-sm text-gray-500">Get notified when new companies register</p>
+              </div>
+              <Switch data-testid="company-alerts-switch" defaultChecked />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>System Updates</Label>
+                <p className="text-sm text-gray-500">Receive system maintenance notifications</p>
+              </div>
+              <Switch data-testid="system-updates-switch" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security Settings */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <Shield className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Security</CardTitle>
+                <CardDescription>Security and authentication settings</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Two-Factor Authentication</Label>
+                <p className="text-sm text-gray-500">Add an extra layer of security</p>
+              </div>
+              <Switch data-testid="2fa-switch" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Session Timeout</Label>
+                <p className="text-sm text-gray-500">Automatically logout after inactivity</p>
+              </div>
+              <Select defaultValue="24">
+                <SelectTrigger className="w-[150px]" data-testid="session-timeout-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 hour</SelectItem>
+                  <SelectItem value="8">8 hours</SelectItem>
+                  <SelectItem value="24">24 hours</SelectItem>
+                  <SelectItem value="168">1 week</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Appearance Settings */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Palette className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Appearance</CardTitle>
+                <CardDescription>Customize the look and feel</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Compact Mode</Label>
+                <p className="text-sm text-gray-500">Use smaller spacing and fonts</p>
+              </div>
+              <Switch data-testid="compact-mode-switch" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Animations</Label>
+                <p className="text-sm text-gray-500">Enable interface animations</p>
+              </div>
+              <Switch data-testid="animations-switch" defaultChecked />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+};
