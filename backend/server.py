@@ -326,6 +326,85 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return hash_password(password) == hashed
 
+def get_license_status(company: dict) -> tuple:
+    """
+    Returns (status, days_remaining)
+    status: 'active', 'expired', 'suspended', 'no_license'
+    """
+    if not company.get("is_active"):
+        return ("suspended", None)
+    
+    license_end = company.get("license_end")
+    if not license_end:
+        # No license set - treat as active (trial/lifetime)
+        license_type = company.get("license_type", "trial")
+        if license_type == "lifetime":
+            return ("active", None)
+        return ("active", None)  # Trial without end date
+    
+    try:
+        end_date = datetime.fromisoformat(license_end.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        delta = end_date - now
+        days_remaining = delta.days
+        
+        if days_remaining < 0:
+            return ("expired", days_remaining)
+        return ("active", days_remaining)
+    except:
+        return ("active", None)
+
+def build_company_response(company: dict, emp_count: int = 0) -> CompanyResponse:
+    """Helper to build CompanyResponse with license status"""
+    license_status, days_remaining = get_license_status(company)
+    
+    return CompanyResponse(
+        id=company["id"],
+        name=company["name"],
+        domain=company["domain"],
+        address=company.get("address"),
+        phone=company.get("phone"),
+        email=company.get("email"),
+        logo_url=company.get("logo_url"),
+        is_active=company.get("is_active", True),
+        license_start=company.get("license_start"),
+        license_end=company.get("license_end"),
+        license_type=company.get("license_type", "trial"),
+        license_status=license_status,
+        days_remaining=days_remaining,
+        created_at=company["created_at"] if isinstance(company["created_at"], str) else company["created_at"].isoformat(),
+        updated_at=company["updated_at"] if isinstance(company["updated_at"], str) else company["updated_at"].isoformat(),
+        employee_count=emp_count,
+        custom_domains=company.get("custom_domains")
+    )
+
+async def check_company_license(company_id: str = None, domain: str = None):
+    """Check if company license is valid. Raises HTTPException if not."""
+    if company_id:
+        company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    elif domain:
+        company = await db.companies.find_one({"domain": domain}, {"_id": 0})
+    else:
+        return None
+    
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    status, _ = get_license_status(company)
+    
+    if status == "suspended":
+        raise HTTPException(
+            status_code=403, 
+            detail="Company account is suspended. Please contact administrator."
+        )
+    elif status == "expired":
+        raise HTTPException(
+            status_code=403, 
+            detail="Company license has expired. Please renew your subscription."
+        )
+    
+    return company
+
 def create_token(user_id: str, role: str, company_id: str = None) -> str:
     payload = {
         "user_id": user_id,
