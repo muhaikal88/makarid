@@ -609,6 +609,100 @@ async def delete_company(company_id: str, current_user: dict = Depends(require_s
     
     return {"message": "Company deleted successfully"}
 
+# ============ DOMAIN LOOKUP ROUTES (For White-Label) ============
+
+class DomainLookupResponse(BaseModel):
+    found: bool
+    company_id: Optional[str] = None
+    company_name: Optional[str] = None
+    domain: Optional[str] = None
+    page_type: Optional[str] = None  # "main", "careers", "hr"
+    logo_url: Optional[str] = None
+
+@api_router.get("/public/domain-lookup")
+async def lookup_domain(hostname: str):
+    """
+    Lookup company by hostname for white-label routing.
+    Checks custom_domains.main, custom_domains.careers, custom_domains.hr
+    Also checks primary domain field.
+    """
+    # First check custom_domains
+    company = await db.companies.find_one({
+        "$or": [
+            {"custom_domains.main": hostname},
+            {"custom_domains.careers": hostname},
+            {"custom_domains.hr": hostname},
+            {"domain": hostname}
+        ],
+        "is_active": True
+    }, {"_id": 0})
+    
+    if not company:
+        return DomainLookupResponse(found=False)
+    
+    # Determine page type
+    custom_domains = company.get("custom_domains", {})
+    page_type = "main"  # default
+    
+    if custom_domains:
+        if custom_domains.get("careers") == hostname:
+            page_type = "careers"
+        elif custom_domains.get("hr") == hostname:
+            page_type = "hr"
+        elif custom_domains.get("main") == hostname:
+            page_type = "main"
+    
+    return DomainLookupResponse(
+        found=True,
+        company_id=company["id"],
+        company_name=company["name"],
+        domain=company["domain"],
+        page_type=page_type,
+        logo_url=company.get("logo_url")
+    )
+
+@api_router.put("/companies/{company_id}/domains")
+async def update_company_domains(
+    company_id: str, 
+    domains: Dict[str, str],
+    current_user: dict = Depends(require_super_admin)
+):
+    """
+    Update custom domains for a company.
+    domains: {"main": "luckycell.co.id", "careers": "careers.luckycell.co.id", "hr": "hr.luckycell.co.id"}
+    """
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Validate domains are not used by other companies
+    for domain_type, domain_value in domains.items():
+        if domain_value:
+            existing = await db.companies.find_one({
+                "$or": [
+                    {"custom_domains.main": domain_value},
+                    {"custom_domains.careers": domain_value},
+                    {"custom_domains.hr": domain_value},
+                    {"domain": domain_value}
+                ],
+                "id": {"$ne": company_id}
+            })
+            if existing:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Domain {domain_value} is already used by another company"
+                )
+    
+    await db.companies.update_one(
+        {"id": company_id},
+        {"$set": {
+            "custom_domains": domains,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Domains updated successfully", "domains": domains}
+
 # ============ PUBLIC COMPANY PROFILE ROUTES ============
 
 @api_router.get("/public/company/{domain}", response_model=CompanyProfileResponse)
