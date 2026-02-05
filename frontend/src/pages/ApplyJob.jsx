@@ -251,7 +251,126 @@ export const ApplyJob = () => {
   };
 
   const renderField = (field) => {
+    // Special handling for wilayah fields
+    if (field.field_name === 'province') {
+      return (
+        <Select
+          value={formData.province || ''}
+          onValueChange={(value) => handleFormChange('province', value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Pilih Provinsi" />
+          </SelectTrigger>
+          <SelectContent>
+            {provinces.map(prov => (
+              <SelectItem key={prov.id} value={prov.name}>{prov.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (field.field_name === 'city') {
+      return (
+        <Select
+          value={formData.city || ''}
+          onValueChange={(value) => handleFormChange('city', value)}
+          disabled={!formData.province || cities.length === 0}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={cities.length === 0 ? 'Pilih provinsi dulu' : 'Pilih Kota/Kabupaten'} />
+          </SelectTrigger>
+          <SelectContent>
+            {cities.map(city => (
+              <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (field.field_name === 'district') {
+      return (
+        <Select
+          value={formData.district || ''}
+          onValueChange={(value) => handleFormChange('district', value)}
+          disabled={!formData.city || districts.length === 0}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={districts.length === 0 ? 'Pilih kota dulu' : 'Pilih Kecamatan'} />
+          </SelectTrigger>
+          <SelectContent>
+            {districts.map(dist => (
+              <SelectItem key={dist.id} value={dist.name}>{dist.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (field.field_name === 'village') {
+      return (
+        <Select
+          value={formData.village || ''}
+          onValueChange={(value) => handleFormChange('village', value)}
+          disabled={!formData.district || villages.length === 0}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={villages.length === 0 ? 'Pilih kecamatan dulu' : 'Pilih Kelurahan/Desa'} />
+          </SelectTrigger>
+          <SelectContent>
+            {villages.map(vil => (
+              <SelectItem key={vil.id} value={vil.name}>{vil.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    // Special handling for salary (with thousand separator)
+    if (field.field_name === 'expected_salary') {
+      return (
+        <Input
+          type="tel"
+          inputMode="numeric"
+          id={field.field_name}
+          value={formData[field.field_name] || ''}
+          onChange={(e) => {
+            const formatted = formatSalary(e.target.value);
+            handleInputChange(field.field_name, formatted);
+          }}
+          placeholder="3.000.000"
+          data-testid={`field-${field.field_name}`}
+        />
+      );
+    }
+    
+    // Standard field types
     switch (field.field_type) {
+      case 'date':
+        return (
+          <Input
+            type="date"
+            id={field.field_name}
+            value={formData[field.field_name] || ''}
+            onChange={(e) => handleInputChange(field.field_name, e.target.value)}
+            data-testid={`field-${field.field_name}`}
+          />
+        );
+      
+      case 'number':
+        return (
+          <Input
+            type="tel"
+            inputMode="numeric"
+            id={field.field_name}
+            value={formData[field.field_name] || ''}
+            onChange={(e) => handleInputChange(field.field_name, e.target.value)}
+            placeholder={field.placeholder}
+            data-testid={`field-${field.field_name}`}
+          />
+        );
+      
       case 'textarea':
         return (
           <Textarea
