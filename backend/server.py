@@ -331,6 +331,15 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return hash_password(password) == hashed
 
+def generate_slug(name: str) -> str:
+    """Generate URL-friendly slug from company name"""
+    import re
+    # Convert to lowercase and replace spaces/special chars with hyphens
+    slug = name.lower()
+    slug = re.sub(r'[^a-z0-9]+', '-', slug)
+    slug = slug.strip('-')
+    return slug
+
 def get_license_status(company: dict) -> tuple:
     """
     Returns (status, days_remaining)
