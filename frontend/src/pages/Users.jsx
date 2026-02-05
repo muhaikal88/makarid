@@ -345,7 +345,7 @@ export const Users = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
+                  {paginatedUsers.map((user) => (
                     <TableRow key={user.id} data-testid={`user-row-${user.id}`}>
                       <TableCell>
                         <div className="flex items-center gap-3">
