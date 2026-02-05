@@ -30,6 +30,7 @@ export const Sidebar = () => {
     { to: '/superadmin/admins', icon: Shield, label: language === 'id' ? 'Super Admin' : 'Super Admins' },
     { to: '/superadmin/companies', icon: Building2, label: t('companies') },
     { to: '/superadmin/users', icon: Users, label: t('users') },
+    { to: '/superadmin/logs', icon: FileText, label: language === 'id' ? 'Log Aktivitas' : 'Activity Logs' },
     { to: '/superadmin/settings', icon: Settings, label: t('settings') },
   ];
 
