@@ -2028,6 +2028,52 @@ async def get_applications(
             updated_at=app["updated_at"]
         ))
     
+
+
+@api_router.get("/applications-session", response_model=List[ApplicationResponse])
+async def get_applications_session(
+    request: Request,
+    job_id: Optional[str] = None,
+    status: Optional[str] = None
+):
+    """Get applications using session auth"""
+    session = await require_session_admin(request)
+    
+    query = {"company_id": session["company_id"]}
+    if job_id:
+        query["job_id"] = job_id
+    if status:
+        query["status"] = status
+    
+    applications = await db.applications.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    result = []
+    for app in applications:
+        job = await db.jobs.find_one({"id": app["job_id"]}, {"_id": 0})
+        job_title = job["title"] if job else "Unknown"
+        
+        form_data = app.get("form_data", {})
+        applicant_name = form_data.get("full_name", form_data.get("name", "Unknown"))
+        applicant_email = form_data.get("email", "Unknown")
+        
+        result.append(ApplicationResponse(
+            id=app["id"],
+            job_id=app["job_id"],
+            company_id=app["company_id"],
+            job_title=job_title,
+            applicant_name=applicant_name,
+            applicant_email=applicant_email,
+            form_data=form_data,
+            resume_url=app.get("resume_url"),
+            status=app["status"],
+            notes=app.get("notes"),
+            created_at=app["created_at"],
+            updated_at=app["updated_at"]
+        ))
+    
+    return result
+
+
     return result
 
 @api_router.put("/applications/{app_id}/status")
