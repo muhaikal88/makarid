@@ -39,6 +39,7 @@ function App() {
             
             {/* Company Admin Dashboard */}
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/settings" element={<CompanySettings />} />
             
             {/* Public Pages */}
             <Route path="/company/:domain" element={<CompanyProfile />} />
