@@ -572,12 +572,27 @@ async def get_companies(current_user: dict = Depends(require_super_admin)):
 
 @api_router.post("/companies", response_model=CompanyResponse)
 async def create_company(data: CompanyCreate, current_user: dict = Depends(require_super_admin)):
+    # Auto-generate slug if not provided
+    if not hasattr(data, 'slug') or not data.slug:
+        slug = generate_slug(data.name)
+    else:
+        slug = data.slug
+    
+    # Check if slug already exists
+    existing_slug = await db.companies.find_one({"slug": slug})
+    if existing_slug:
+        # Append random number to make it unique
+        import random
+        slug = f"{slug}-{random.randint(1000, 9999)}"
+    
     # Check if domain already exists
     existing = await db.companies.find_one({"domain": data.domain})
     if existing:
         raise HTTPException(status_code=400, detail="Domain already exists")
     
-    company = Company(**data.model_dump())
+    company_dict = data.model_dump()
+    company_dict["slug"] = slug
+    company = Company(**company_dict)
     doc = company.model_dump()
     doc["created_at"] = doc["created_at"].isoformat()
     doc["updated_at"] = doc["updated_at"].isoformat()
@@ -600,6 +615,9 @@ async def create_company(data: CompanyCreate, current_user: dict = Depends(requi
         "gallery_images": [],
         "cover_image": None
     }
+    
+    # Initialize SMTP settings as null (will use default/system SMTP)
+    doc["smtp_settings"] = None
     
     await db.companies.insert_one(doc)
     
