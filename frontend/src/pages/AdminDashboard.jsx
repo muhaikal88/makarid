@@ -173,6 +173,21 @@ export const AdminDashboard = () => {
   };
 
   const handleSubmitJob = async (e) => {
+
+
+  const handleDeleteJob = async (job) => {
+    if (!window.confirm(`Hapus lowongan "${job.title}"?`)) return;
+    
+    try {
+      await axios.delete(`${API}/jobs-session/${job.id}`, { withCredentials: true });
+      toast.success('Lowongan berhasil dihapus');
+      fetchData();
+    } catch (error) {
+      console.error('Failed to delete job:', error);
+      toast.error(error.response?.data?.detail || 'Gagal menghapus lowongan');
+    }
+  };
+
     e.preventDefault();
     try {
       if (selectedJob) {
