@@ -247,26 +247,67 @@ export const Users = () => {
   return (
     <DashboardLayout title={t('userManagement')}>
       <div className="space-y-6" data-testid="users-page">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder={t('search')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-              data-testid="search-users"
-            />
+        {/* Header with Search & Filters */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder={t('search')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+                data-testid="search-users"
+              />
+            </div>
+            <Button 
+              className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+              onClick={() => handleOpenForm()}
+              data-testid="add-user-btn"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t('addUser')}
+            </Button>
           </div>
-          <Button 
-            className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
-            onClick={() => handleOpenForm()}
-            data-testid="add-user-btn"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {t('addUser')}
-          </Button>
+
+          {/* Filters Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Company Filter */}
+            <div className="flex-1 max-w-xs">
+              <Select value={filterCompany} onValueChange={setFilterCompany}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter Perusahaan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Perusahaan</SelectItem>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Role Filter */}
+            <div className="flex-1 max-w-xs">
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter Peran" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Peran</SelectItem>
+                  <SelectItem value="admin">Admin Perusahaan</SelectItem>
+                  <SelectItem value="employee">Karyawan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Result count */}
+            <div className="flex items-center px-4 py-2 bg-slate-50 rounded-lg text-sm text-gray-600">
+              Menampilkan {paginatedUsers.length} dari {filteredUsers.length} pengguna
+            </div>
+          </div>
         </div>
 
         {/* Table */}
