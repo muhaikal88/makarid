@@ -34,14 +34,14 @@ export const CompanySettings = () => {
     hr: ''
   });
 
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
   // Redirect if not company admin
   if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
     return <Navigate to="/login" replace />;
   }
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
 
   const fetchSettings = async () => {
     try {
