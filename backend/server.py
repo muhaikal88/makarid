@@ -1081,6 +1081,132 @@ async def logout_session(request: Request, response: Response):
         secure=True,
         samesite="none"
     )
+
+
+# ============ PROFILE MANAGEMENT ============
+
+# Super Admin Profile
+@api_router.get("/profile/superadmin")
+async def get_superadmin_profile(current_user: dict = Depends(require_super_admin)):
+    """Get super admin profile"""
+    admin = await db.superadmins.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    if not admin:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return admin
+
+class SuperAdminProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    picture: Optional[str] = None
+
+@api_router.put("/profile/superadmin")
+async def update_superadmin_profile(data: SuperAdminProfileUpdate, current_user: dict = Depends(require_super_admin)):
+    """Update super admin profile"""
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    if "password" in update_data:
+        update_data["password"] = hash_password(update_data["password"])
+    
+    if "email" in update_data:
+        # Check if email already used by another admin
+        existing = await db.superadmins.find_one({"email": update_data["email"], "id": {"$ne": current_user["id"]}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.superadmins.update_one({"id": current_user["id"]}, {"$set": update_data})
+    
+    updated = await db.superadmins.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    return updated
+
+# Session-based Profile (Company Admin & Employee)
+@api_router.get("/profile/me")
+async def get_my_profile(request: Request):
+    """Get current user profile (session-based)"""
+    session = await get_session_user(request)
+    
+    # Get user from appropriate table
+    if session["role"] == "admin":
+        user = await db.company_admins.find_one({"id": session["user_id"]}, {"_id": 0, "password": 0})
+        table = "company_admins"
+    elif session["role"] == "employee":
+        user = await db.employees.find_one({"id": session["user_id"]}, {"_id": 0, "password": 0})
+        table = "employees"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # Get company info for current session
+    company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0})
+    
+    return {
+        **user,
+        "current_company": {
+            "id": session["company_id"],
+            "name": company["name"] if company else None,
+            "slug": company.get("slug") if company else None
+        },
+        "current_role": session["role"],
+        "user_table": table
+    }
+
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    picture: Optional[str] = None
+
+@api_router.put("/profile/me")
+async def update_my_profile(data: ProfileUpdate, request: Request):
+    """Update current user profile (session-based)"""
+    session = await get_session_user(request)
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    if "password" in update_data:
+        update_data["password"] = hash_password(update_data["password"])
+    
+    # Determine table
+    if session["role"] == "admin":
+        table = db.company_admins
+        table_name = "company_admins"
+    elif session["role"] == "employee":
+        table = db.employees
+        table_name = "employees"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    if "email" in update_data:
+        # Check if email already used
+        existing_admin = await db.company_admins.find_one({"email": update_data["email"], "id": {"$ne": session["user_id"]}})
+        existing_emp = await db.employees.find_one({"email": update_data["email"], "id": {"$ne": session["user_id"]}})
+        if existing_admin or existing_emp:
+            raise HTTPException(status_code=400, detail="Email already in use")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await table.update_one({"id": session["user_id"]}, {"$set": update_data})
+    
+    # Update session if name or email changed
+    if "name" in update_data or "email" in update_data:
+        session_update = {}
+        if "name" in update_data:
+            session_update["name"] = update_data["name"]
+        if "email" in update_data:
+            session_update["email"] = update_data["email"]
+        await db.user_sessions.update_many(
+            {"user_id": session["user_id"]},
+            {"$set": session_update}
+        )
+    
+    updated = await table.find_one({"id": session["user_id"]}, {"_id": 0, "password": 0})
+    return updated
+
+
     
 
 async def require_session_admin(request: Request):
