@@ -297,7 +297,9 @@ export const Users = () => {
                       <TableCell>
                         <div className="flex items-center gap-2 text-gray-600">
                           <Building2 className="w-4 h-4" />
-                          {getCompanyName(user.company_id)}
+                          {user.company_names && user.company_names.length > 0 
+                            ? user.company_names.join(', ')
+                            : '-'}
                         </div>
                       </TableCell>
                       <TableCell>
