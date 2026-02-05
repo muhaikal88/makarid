@@ -13,6 +13,7 @@ import { CompanyProfile } from "./pages/CompanyProfile";
 import { Careers } from "./pages/Careers";
 import { ApplyJob } from "./pages/ApplyJob";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { LandingPage } from "./pages/LandingPage";
 
 function App() {
   return (
