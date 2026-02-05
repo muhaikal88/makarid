@@ -1649,6 +1649,41 @@ async def get_jobs(current_user: dict = Depends(require_admin_or_super)):
             updated_at=job["updated_at"]
         ))
     
+
+    
+    return result
+
+# Session-based job endpoints (for new auth system)
+@api_router.get("/jobs-session", response_model=List[JobResponse])
+async def get_jobs_session(request: Request):
+    """Get jobs using session auth"""
+    session = await require_session_admin(request)
+    
+    query = {"company_id": session["company_id"]}
+    jobs = await db.jobs.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    result = []
+    for job in jobs:
+        app_count = await db.applications.count_documents({"job_id": job["id"]})
+        result.append(JobResponse(
+            id=job["id"],
+            company_id=job["company_id"],
+            title=job["title"],
+            department=job.get("department"),
+            location=job.get("location"),
+            job_type=job["job_type"],
+            description=job["description"],
+            requirements=job.get("requirements"),
+            responsibilities=job.get("responsibilities"),
+            salary_min=job.get("salary_min"),
+            salary_max=job.get("salary_max"),
+            show_salary=job.get("show_salary", False),
+            status=job["status"],
+            application_count=app_count,
+            created_at=job["created_at"],
+            updated_at=job["updated_at"]
+        ))
+
     return result
 
 @api_router.post("/jobs", response_model=JobResponse)
