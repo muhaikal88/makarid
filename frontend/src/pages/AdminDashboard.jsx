@@ -80,8 +80,8 @@ export const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       const [jobsRes, appsRes] = await Promise.all([
-        axios.get(`${API}/jobs`, { withCredentials: true }),
-        axios.get(`${API}/applications`, { withCredentials: true })
+        axios.get(`${API}/jobs-session`, { withCredentials: true }),
+        axios.get(`${API}/applications-session`, { withCredentials: true })
       ]);
       setJobs(jobsRes.data);
       setApplications(appsRes.data);
