@@ -414,6 +414,7 @@ def build_company_response(company: dict, emp_count: int = 0) -> CompanyResponse
     return CompanyResponse(
         id=company["id"],
         name=company["name"],
+        slug=company.get("slug"),
         domain=company["domain"],
         address=company.get("address"),
         phone=company.get("phone"),
