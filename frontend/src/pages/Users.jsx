@@ -404,12 +404,34 @@ export const Users = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={user.is_active ? 'default' : 'secondary'}
-                          className={user.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : ''}
-                        >
-                          {user.is_active ? t('active') : t('inactive')}
-                        </Badge>
+                        {user.role === 'admin' ? (
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={user.totp_enabled || false}
+                              onCheckedChange={(checked) => handleToggle2FA(user, checked)}
+                              disabled={!user.totp_secret}
+                            />
+                            <span className="text-xs text-gray-500">
+                              {user.totp_enabled ? 'Aktif' : 'Tidak Aktif'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Badge 
+                            variant={user.is_active ? 'default' : 'secondary'}
+                            className={user.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : ''}
+                          >
+                            {user.is_active ? t('active') : t('inactive')}
+                          </Badge>
+                          <Switch
+                            checked={user.is_active || false}
+                            onCheckedChange={(checked) => handleToggleActive(user, checked)}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="text-gray-500">
                         {formatDate(user.created_at)}
