@@ -17,7 +17,7 @@ import {
 import { Toaster } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_cea08fa0-5c14-4b0d-bcc8-350a4e47c0ce/artifacts/hf5ag1pw_LOGO%20LUCKY%20HD_page-0001.jpg";
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_hr-saas-mvp/artifacts/did1y7v8_ChatGPT%20Image%20Feb%205%2C%202026%2C%2001_21_17%20PM.png";
 
 export const Login = () => {
   const { t, language, setLanguage } = useLanguage();
