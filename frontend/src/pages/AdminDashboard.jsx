@@ -404,7 +404,10 @@ export const AdminDashboard = () => {
               <h2 className="text-xl font-bold text-gray-900">
                 {language === 'id' ? 'Daftar Lowongan' : 'Job Listings'}
               </h2>
-              <Button className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90">
+              <Button 
+                className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+                onClick={() => handleOpenJobForm()}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 {language === 'id' ? 'Tambah Lowongan' : 'Add Job'}
               </Button>
