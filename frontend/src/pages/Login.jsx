@@ -185,6 +185,31 @@ export const Login = () => {
                 </div>
               </div>
 
+              {/* 2FA Code Input - Show only if 2FA required */}
+              {requires2FA && (
+                <div className="space-y-2">
+                  <Label htmlFor="totp_code" className="text-gray-700">
+                    {language === 'id' ? 'Kode Google Authenticator' : '2FA Code'}
+                  </Label>
+                  <Input
+                    id="totp_code"
+                    type="text"
+                    placeholder="000000"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    maxLength={6}
+                    className="h-11 text-center text-lg font-mono tracking-widest"
+                    data-testid="login-2fa"
+                    autoFocus
+                  />
+                  <p className="text-xs text-gray-500 text-center">
+                    {language === 'id' 
+                      ? 'Masukkan 6-digit kode dari aplikasi Google Authenticator'
+                      : 'Enter 6-digit code from Google Authenticator app'}
+                  </p>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full h-11 bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 text-white font-medium"
