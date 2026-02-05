@@ -22,6 +22,7 @@ import { GoogleAuthCallback } from "./pages/GoogleAuthCallback";
 import { EmployeeDashboard } from "./pages/EmployeeDashboard";
 import { SuperAdminProfile } from "./pages/SuperAdminProfile";
 import { UserProfile } from "./pages/UserProfile";
+import { SuperAdmins } from "./pages/SuperAdmins";
 
 function AppRouter() {
   const location = window.location;
