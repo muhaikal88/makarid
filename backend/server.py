@@ -1063,6 +1063,27 @@ async def logout_session(request: Request, response: Response):
         samesite="none"
     )
     
+
+async def require_session_admin(request: Request):
+    """Require session-based admin authentication"""
+    session = await get_session_user(request)
+    if session["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return session
+
+async def require_session_employee(request: Request):
+    """Require session-based employee authentication"""
+    session = await get_session_user(request)
+    if session["role"] != "employee":
+        raise HTTPException(status_code=403, detail="Employee access required")
+    return session
+
+async def require_session_user(request: Request):
+    """Require any session-based authentication (admin or employee)"""
+    session = await get_session_user(request)
+    return session
+
+
     return {"message": "Logged out successfully"}
 
 
