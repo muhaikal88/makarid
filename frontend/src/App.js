@@ -53,13 +53,16 @@ function AppRouter() {
       <Route path="/superadmin/companies" element={<Companies />} />
       <Route path="/superadmin/users" element={<Users />} />
       <Route path="/superadmin/settings" element={<Settings />} />
+      <Route path="/superadmin/profile" element={<SuperAdminProfile />} />
       
       {/* Company Admin Dashboard */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/settings" element={<CompanySettings />} />
+      <Route path="/admin/profile" element={<UserProfile />} />
       
       {/* Employee Dashboard */}
       <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+      <Route path="/employee/profile" element={<UserProfile />} />
       
       {/* Public Pages */}
       <Route path="/company/:domain" element={<CompanyProfile />} />
