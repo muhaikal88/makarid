@@ -1139,6 +1139,10 @@ async def update_superadmin_profile(data: SuperAdminProfileUpdate, current_user:
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     
     if "password" in update_data:
+        # Validate password strength
+        is_valid, message = validate_password_strength(update_data["password"])
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=message)
         update_data["password"] = hash_password(update_data["password"])
     
     if "email" in update_data:
