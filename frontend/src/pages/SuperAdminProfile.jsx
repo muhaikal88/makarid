@@ -267,10 +267,22 @@ export const SuperAdminProfile = () => {
 
               {/* Password */}
               <div className="grid gap-2">
-                <Label htmlFor="password">
-                  <Lock className="w-4 h-4 inline mr-2" />
-                  {language === 'id' ? 'Password Baru' : 'New Password'}
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">
+                    <Lock className="w-4 h-4 inline mr-2" />
+                    {language === 'id' ? 'Password Baru' : 'New Password'}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generatePassword}
+                    className="h-8"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-2" />
+                    Generate
+                  </Button>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
@@ -288,6 +300,58 @@ export const SuperAdminProfile = () => {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                <p className="text-xs text-gray-500">
+                  {language === 'id' 
+                    ? 'Min 8 karakter: huruf besar, kecil, angka & simbol'
+                    : 'Min 8 chars: uppercase, lowercase, number & special char'}
+                </p>
+              </div>
+
+              {/* 2FA Section */}
+              <div className="border-t pt-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-emerald-600" />
+                      Google Authenticator (2FA)
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {language === 'id' 
+                        ? 'Tambah keamanan ekstra dengan verifikasi 2 langkah'
+                        : 'Add extra security with 2-step verification'}
+                    </p>
+                  </div>
+                  {profile?.totp_enabled ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDisable2FA}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Nonaktifkan
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSetup2FA}
+                    >
+                      <Smartphone className="w-4 h-4 mr-2" />
+                      Aktifkan
+                    </Button>
+                  )}
+                </div>
+                
+                {profile?.totp_enabled && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-emerald-600" />
+                    <span className="text-sm font-medium text-emerald-800">
+                      2FA Aktif - Akun Anda terlindungi
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Save Button */}
