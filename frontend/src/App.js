@@ -23,6 +23,7 @@ import { EmployeeDashboard } from "./pages/EmployeeDashboard";
 import { SuperAdminProfile } from "./pages/SuperAdminProfile";
 import { UserProfile } from "./pages/UserProfile";
 import { SuperAdmins } from "./pages/SuperAdmins";
+import { ActivityLogs } from "./pages/ActivityLogs";
 
 function AppRouter() {
   const location = window.location;
