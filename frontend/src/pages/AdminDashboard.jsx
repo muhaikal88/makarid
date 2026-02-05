@@ -557,6 +557,118 @@ export const AdminDashboard = () => {
         </Tabs>
       </main>
 
+
+
+      {/* Job Form Dialog */}
+      <Dialog open={isJobFormOpen} onOpenChange={setIsJobFormOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedJob 
+                ? (language === 'id' ? 'Edit Lowongan' : 'Edit Job')
+                : (language === 'id' ? 'Tambah Lowongan Baru' : 'Add New Job')}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'id' 
+                ? 'Isi informasi lowongan pekerjaan'
+                : 'Fill in the job posting information'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmitJob}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Judul Lowongan *</Label>
+                <Input
+                  id="title"
+                  value={jobFormData.title}
+                  onChange={(e) => setJobFormData({ ...jobFormData, title: e.target.value })}
+                  placeholder="e.g. Software Engineer"
+                  required
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="department">Departemen</Label>
+                  <Input
+                    id="department"
+                    value={jobFormData.department}
+                    onChange={(e) => setJobFormData({ ...jobFormData, department: e.target.value })}
+                    placeholder="e.g. Engineering"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="location">Lokasi</Label>
+                  <Input
+                    id="location"
+                    value={jobFormData.location}
+                    onChange={(e) => setJobFormData({ ...jobFormData, location: e.target.value })}
+                    placeholder="e.g. Jakarta"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="job_type">Tipe Pekerjaan</Label>
+                <Select
+                  value={jobFormData.job_type}
+                  onValueChange={(value) => setJobFormData({ ...jobFormData, job_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full_time">Full Time</SelectItem>
+                    <SelectItem value="part_time">Part Time</SelectItem>
+                    <SelectItem value="contract">Contract</SelectItem>
+                    <SelectItem value="internship">Internship</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="description">Deskripsi Pekerjaan *</Label>
+                <Textarea
+                  id="description"
+                  value={jobFormData.description}
+                  onChange={(e) => setJobFormData({ ...jobFormData, description: e.target.value })}
+                  placeholder="Jelaskan tanggung jawab dan kualifikasi..."
+                  rows={6}
+                  required
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={jobFormData.status}
+                  onValueChange={(value) => setJobFormData({ ...jobFormData, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft (Belum Dipublikasi)</SelectItem>
+                    <SelectItem value="published">Published (Aktif)</SelectItem>
+                    <SelectItem value="closed">Closed (Ditutup)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsJobFormOpen(false)}>
+                Batal
+              </Button>
+              <Button type="submit" className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90">
+                {selectedJob ? 'Update' : 'Simpan'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Toaster position="top-right" richColors />
     </div>
   );
