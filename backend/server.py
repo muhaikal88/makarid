@@ -465,9 +465,20 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get("user_id")
+        role = payload.get("role")
+        
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
         
+        # Check superadmins table first
+        if role == "super_admin":
+            user = await db.superadmins.find_one({"id": user_id}, {"_id": 0})
+            if user:
+                user["role"] = "super_admin"
+                user["company_id"] = None
+                return user
+        
+        # Check users table (company users)
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
@@ -484,8 +495,20 @@ async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get("user_id")
+        role = payload.get("role")
+        
         if not user_id:
             return None
+        
+        # Check superadmins table first
+        if role == "super_admin":
+            user = await db.superadmins.find_one({"id": user_id}, {"_id": 0})
+            if user:
+                user["role"] = "super_admin"
+                user["company_id"] = None
+                return user
+        
+        # Check users table
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         return user
     except:
