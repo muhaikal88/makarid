@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 export const Header = ({ title }) => {
   const { language, setLanguage, t } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const getInitials = (name) => {
     return name
