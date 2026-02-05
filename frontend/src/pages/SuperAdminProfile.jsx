@@ -22,6 +22,11 @@ export const SuperAdminProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [totpSecret, setTotpSecret] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
   
   const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({
