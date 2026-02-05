@@ -29,6 +29,8 @@ export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
 
   // Redirect if already logged in
   if (user) {
@@ -48,7 +50,9 @@ export const Login = () => {
       // Use superadmin login endpoint
       const response = await axios.post(`${API}/auth/superadmin/login`, { 
         email, 
-        password 
+        password,
+        totp_code: totpCode || null
+      }); 
       });
       
       const { token: newToken, user: userData } = response.data;
