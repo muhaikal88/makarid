@@ -720,7 +720,7 @@ export const Companies = () => {
                   id="domain_careers"
                   value={domainData.careers}
                   onChange={(e) => setDomainData({ ...domainData, careers: e.target.value })}
-                  placeholder="careers.luckycell.co.id"
+                  placeholder="careers.company.co.id"
                 />
                 {domainData.careers && (
                   <a 
