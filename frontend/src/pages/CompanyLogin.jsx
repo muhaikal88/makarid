@@ -295,7 +295,7 @@ export const CompanyLogin = () => {
 
         {/* Footer */}
         <div className="p-4 text-center text-sm text-gray-500">
-          © {new Date().getFullYear()} {company?.name}. Powered by Lucky Cell HR System.
+          © {new Date().getFullYear()} {company?.name}. Powered by Makar.id
         </div>
       </div>
       <Toaster position="top-right" richColors />
