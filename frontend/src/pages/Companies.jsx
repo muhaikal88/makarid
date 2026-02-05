@@ -924,6 +924,158 @@ export const Companies = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+
+      {/* Company SMTP Email Dialog */}
+      <Dialog open={isSMTPOpen} onOpenChange={setIsSMTPOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-emerald-600" />
+              Pengaturan Email SMTP - {selectedCompany?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Konfigurasi SMTP khusus untuk perusahaan ini (override Global SMTP)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Info Banner */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">Opsional</p>
+                  <p>
+                    Jika tidak diisi, sistem akan menggunakan Global SMTP (notif@makar.id) yang diset di Settings.
+                    Isi form ini jika perusahaan ingin menggunakan email domain mereka sendiri.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* SMTP Form */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="smtp_host">SMTP Host</Label>
+                <Input
+                  id="smtp_host"
+                  value={smtpData.host}
+                  onChange={(e) => setSmtpData({ ...smtpData, host: e.target.value })}
+                  placeholder="smtp.gmail.com"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="smtp_port">SMTP Port</Label>
+                <Input
+                  id="smtp_port"
+                  type="number"
+                  value={smtpData.port}
+                  onChange={(e) => setSmtpData({ ...smtpData, port: parseInt(e.target.value) })}
+                  placeholder="587"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="smtp_username">SMTP Username / Email</Label>
+              <Input
+                id="smtp_username"
+                value={smtpData.username}
+                onChange={(e) => setSmtpData({ ...smtpData, username: e.target.value })}
+                placeholder="noreply@company.com"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="smtp_password">SMTP Password</Label>
+              <div className="relative">
+                <Input
+                  id="smtp_password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={smtpData.password}
+                  onChange={(e) => setSmtpData({ ...smtpData, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="from_email">From Email</Label>
+                <Input
+                  id="from_email"
+                  type="email"
+                  value={smtpData.from_email}
+                  onChange={(e) => setSmtpData({ ...smtpData, from_email: e.target.value })}
+                  placeholder="noreply@company.com"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="from_name">From Name</Label>
+                <Input
+                  id="from_name"
+                  value={smtpData.from_name}
+                  onChange={(e) => setSmtpData({ ...smtpData, from_name: e.target.value })}
+                  placeholder={selectedCompany?.name}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <Label>Use TLS/SSL</Label>
+                <p className="text-xs text-gray-500">Recommended for security</p>
+              </div>
+              <Switch
+                checked={smtpData.use_tls}
+                onCheckedChange={(checked) => setSmtpData({ ...smtpData, use_tls: checked })}
+              />
+            </div>
+
+            {/* Clear button */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSmtpData({
+                    host: '',
+                    port: 587,
+                    username: '',
+                    password: '',
+                    from_email: '',
+                    from_name: '',
+                    use_tls: true
+                  });
+                }}
+                className="flex-1"
+              >
+                Reset (Gunakan Global SMTP)
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsSMTPOpen(false)}>
+              Batal
+            </Button>
+            <Button 
+              onClick={handleSaveSMTP}
+              className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+              disabled={formLoading}
+            >
+              {formLoading ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </DashboardLayout>
   );
 };
