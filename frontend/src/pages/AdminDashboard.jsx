@@ -113,6 +113,51 @@ export const AdminDashboard = () => {
     }
   };
 
+
+  const handleOpenJobForm = (job = null) => {
+    if (job) {
+      setSelectedJob(job);
+      setJobFormData({
+        title: job.title,
+        department: job.department || '',
+        location: job.location || '',
+        job_type: job.job_type,
+        description: job.description,
+        status: job.status
+      });
+    } else {
+      setSelectedJob(null);
+      setJobFormData({
+        title: '',
+        department: '',
+        location: '',
+        job_type: 'full_time',
+        description: '',
+        status: 'draft'
+      });
+    }
+    setIsJobFormOpen(true);
+  };
+
+  const handleSubmitJob = async (e) => {
+    e.preventDefault();
+    try {
+      if (selectedJob) {
+        await axios.put(`${API}/jobs/${selectedJob.id}`, jobFormData, { withCredentials: true });
+        toast.success('Lowongan berhasil diupdate');
+      } else {
+        await axios.post(`${API}/jobs`, jobFormData, { withCredentials: true });
+        toast.success('Lowongan berhasil ditambahkan');
+      }
+      setIsJobFormOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Failed to save job:', error);
+      toast.error(error.response?.data?.detail || 'Gagal menyimpan lowongan');
+    }
+  };
+
+
   // Show loading while checking auth
   if (authLoading) {
     return (
