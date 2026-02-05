@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -15,11 +16,12 @@ import {
 } from '../components/ui/dropdown-menu';
 import { Toaster } from 'sonner';
 
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_cea08fa0-5c14-4b0d-bcc8-350a4e47c0ce/artifacts/hf5ag1pw_LOGO%20LUCKY%20HD_page-0001.jpg";
 
 export const Login = () => {
   const { t, language, setLanguage } = useLanguage();
-  const { user, login, logout } = useAuth();
+  const { user, setUser, setToken } = useAuth();
   const navigate = useNavigate();
   
   const [email, setEmail] = useState('');
