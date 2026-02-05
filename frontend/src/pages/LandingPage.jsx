@@ -264,13 +264,13 @@ export const LandingPage = () => {
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => window.location.href = '/login'}
+              onClick={() => window.location.href = '/company-login'}
               className="text-sm text-gray-600 hover:text-gray-900"
             >
               {language === 'id' ? 'Masuk' : 'Login'}
             </button>
             <Button
-              onClick={() => window.location.href = '/login'}
+              onClick={() => window.location.href = '/company-login'}
               className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
             >
               {t.hero.cta}
@@ -291,7 +291,7 @@ export const LandingPage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
               size="lg"
-              onClick={() => window.location.href = '/login'}
+              onClick={() => window.location.href = '/company-login'}
               className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 text-base px-8"
             >
               {t.hero.cta}
@@ -300,7 +300,7 @@ export const LandingPage = () => {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => window.location.href = '/login'}
+              onClick={() => window.location.href = '/company-login'}
               className="text-base px-8"
             >
               {t.hero.demo}
@@ -412,7 +412,7 @@ export const LandingPage = () => {
                 <Button
                   className="w-full"
                   variant="outline"
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => window.location.href = '/company-login'}
                 >
                   {t.pricing.trial.cta}
                 </Button>
@@ -444,7 +444,7 @@ export const LandingPage = () => {
                 </ul>
                 <Button
                   className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => window.location.href = '/company-login'}
                 >
                   {t.pricing.monthly.cta}
                 </Button>
@@ -477,7 +477,7 @@ export const LandingPage = () => {
                 <Button
                   className="w-full"
                   variant="outline"
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => window.location.href = '/company-login'}
                 >
                   {t.pricing.yearly.cta}
                 </Button>
@@ -499,7 +499,7 @@ export const LandingPage = () => {
             </p>
             <Button
               size="lg"
-              onClick={() => window.location.href = '/login'}
+              onClick={() => window.location.href = '/company-login'}
               className="bg-white text-[#2E4DA7] hover:bg-gray-100"
             >
               {t.cta.button}
