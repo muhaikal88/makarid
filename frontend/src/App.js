@@ -21,6 +21,9 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Landing Page */}
+            <Route path="/" element={<LandingPage />} />
+            
             {/* Auth - Super Admin */}
             <Route path="/login" element={<Login />} />
             
@@ -28,10 +31,10 @@ function App() {
             <Route path="/login/:domain" element={<CompanyLogin />} />
             
             {/* Super Admin Dashboard */}
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/companies" element={<Companies />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/superadmin/dashboard" element={<Dashboard />} />
+            <Route path="/superadmin/companies" element={<Companies />} />
+            <Route path="/superadmin/users" element={<Users />} />
+            <Route path="/superadmin/settings" element={<Settings />} />
             
             {/* Company Admin Dashboard */}
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -42,8 +45,7 @@ function App() {
             <Route path="/careers/:domain/apply/:jobId" element={<ApplyJob />} />
             
             {/* Redirects */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
