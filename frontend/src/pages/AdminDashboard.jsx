@@ -79,6 +79,11 @@ export const AdminDashboard = () => {
     location: '',
     job_type: 'full_time',
     description: '',
+    requirements: [],
+    responsibilities: [],
+    salary_min: '',
+    salary_max: '',
+    show_salary: false,
     status: 'draft'
   });
 
