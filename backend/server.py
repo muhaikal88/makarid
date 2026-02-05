@@ -169,6 +169,7 @@ class Company(CompanyBase):
 class CompanyResponse(BaseModel):
     id: str
     name: str
+    slug: Optional[str] = None
     domain: str
     address: Optional[str] = None
     phone: Optional[str] = None
@@ -183,6 +184,7 @@ class CompanyResponse(BaseModel):
     created_at: str
     updated_at: str
     employee_count: int = 0
+    custom_domains: Optional[Dict[str, str]] = None
     custom_domains: Optional[Dict[str, str]] = None
 
 # Company Profile Models
