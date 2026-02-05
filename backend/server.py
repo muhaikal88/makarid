@@ -98,6 +98,8 @@ class CompanyAdminBase(BaseModel):
     name: str
     picture: Optional[str] = None
     companies: List[str] = []  # List of company_ids user is admin of
+    totp_secret: Optional[str] = None  # For Google Authenticator
+    totp_enabled: bool = False
     is_active: bool = True
     auth_provider: str = "email"  # "email" or "google"
 
