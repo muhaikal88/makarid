@@ -146,6 +146,11 @@ export const AdminDashboard = () => {
         location: job.location || '',
         job_type: job.job_type,
         description: job.description,
+        requirements: job.requirements || [],
+        responsibilities: job.responsibilities || [],
+        salary_min: job.salary_min || '',
+        salary_max: job.salary_max || '',
+        show_salary: job.show_salary || false,
         status: job.status
       });
     } else {
@@ -156,6 +161,11 @@ export const AdminDashboard = () => {
         location: '',
         job_type: 'full_time',
         description: '',
+        requirements: [],
+        responsibilities: [],
+        salary_min: '',
+        salary_max: '',
+        show_salary: false,
         status: 'draft'
       });
     }
