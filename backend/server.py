@@ -472,6 +472,25 @@ class DashboardStats(BaseModel):
     total_employees: int
     recent_companies: List[CompanyResponse]
 
+
+
+# Activity Log Models
+class ActivityLog(BaseModel):
+    id: str
+    user_id: str
+    user_name: str
+    user_email: str
+    user_role: str  # "super_admin", "admin", "employee"
+    company_id: Optional[str] = None
+    company_name: Optional[str] = None
+    action: str  # "create", "update", "delete", "login", "logout"
+    resource_type: str  # "company", "user", "job", "application", "license", "profile", etc
+    resource_id: Optional[str] = None
+    description: str
+    ip_address: Optional[str] = None
+    timestamp: str
+
+
 # ============ HELPERS ============
 
 def validate_password_strength(password: str) -> tuple[bool, str]:
