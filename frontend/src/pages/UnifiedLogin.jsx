@@ -81,7 +81,7 @@ export const UnifiedLogin = () => {
           <h1 className="text-2xl font-bold text-white">
             {language === 'id' ? 'Login Karyawan' : 'Employee Login'}
           </h1>
-          <p className="text-white/60 mt-2">Makar.id HR System</p>
+          <p className="text-white/60 mt-2">Makar.id - Manajemen Karyawan</p>
         </div>
 
         {/* Login Card */}
