@@ -223,16 +223,17 @@ export const CompanySettings = () => {
             </div>
 
             {/* Custom Domain Form */}
-                    <div className="grid gap-2">
-                      <Label htmlFor="domain_main">
-                        Main Domain (Company Profile)
-                      </Label>
-                      <Input
-                        id="domain_main"
-                        value={customDomains.main}
-                        onChange={(e) => setCustomDomains({ ...customDomains, main: e.target.value })}
-                        placeholder="company.com"
-                      />
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="domain_main">
+                  Main Domain (Company Profile)
+                </Label>
+                <Input
+                  id="domain_main"
+                  value={customDomains.main}
+                  onChange={(e) => setCustomDomains({ ...customDomains, main: e.target.value })}
+                  placeholder="company.com"
+                />
                       <p className="text-xs text-gray-500">
                         {language === 'id' ? 'Contoh: company.com' : 'Example: company.com'}
                       </p>
