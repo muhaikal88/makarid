@@ -1238,6 +1238,14 @@ async def update_my_profile(data: ProfileUpdate, request: Request):
         if "name" in update_data:
             session_update["name"] = update_data["name"]
         if "email" in update_data:
+            session_update["email"] = update_data["email"]
+        await db.user_sessions.update_many(
+            {"user_id": session["user_id"]},
+            {"$set": session_update}
+        )
+    
+    updated = await table.find_one({"id": session["user_id"]}, {"_id": 0, "password": 0})
+    return updated
 
 
 # ============ 2FA / TOTP ENDPOINTS ============
