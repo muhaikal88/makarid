@@ -1958,7 +1958,18 @@ async def create_company(data: CompanyCreate, current_user: dict = Depends(requi
         {"field_name": "full_name", "field_label": "Nama Lengkap", "field_type": "text", "is_required": True, "order": 1},
         {"field_name": "email", "field_label": "Email", "field_type": "email", "is_required": True, "order": 2},
         {"field_name": "phone", "field_label": "No. Telepon", "field_type": "phone", "is_required": True, "order": 3},
-        {"field_name": "resume", "field_label": "Upload CV (PDF)", "field_type": "file", "is_required": True, "order": 4},
+        {"field_name": "birth_place", "field_label": "Tempat Lahir", "field_type": "text", "is_required": True, "order": 4},
+        {"field_name": "birth_date", "field_label": "Tanggal Lahir", "field_type": "date", "is_required": True, "order": 5},
+        {"field_name": "education", "field_label": "Pendidikan Terakhir", "field_type": "select", "is_required": True, "order": 6, 
+         "options": ["SD", "SMP", "SMA/SMK", "D3", "S1", "S2", "S3"]},
+        {"field_name": "major", "field_label": "Jurusan", "field_type": "text", "is_required": True, "order": 7},
+        {"field_name": "province", "field_label": "Provinsi", "field_type": "text", "is_required": True, "order": 8},
+        {"field_name": "city", "field_label": "Kota/Kabupaten", "field_type": "text", "is_required": True, "order": 9},
+        {"field_name": "district", "field_label": "Kecamatan", "field_type": "text", "is_required": True, "order": 10},
+        {"field_name": "village", "field_label": "Kelurahan/Desa", "field_type": "text", "is_required": True, "order": 11},
+        {"field_name": "full_address", "field_label": "Alamat Lengkap (RT/RW)", "field_type": "textarea", "is_required": True, "order": 12},
+        {"field_name": "expected_salary", "field_label": "Gaji yang Diharapkan (Rp)", "field_type": "number", "is_required": True, "order": 13},
+        {"field_name": "resume", "field_label": "Upload CV (PDF)", "field_type": "file", "is_required": True, "order": 14},
     ]
     
     for field in default_fields:
