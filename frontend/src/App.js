@@ -55,6 +55,7 @@ function AppRouter() {
       <Route path="/superadmin/admins" element={<SuperAdmins />} />
       <Route path="/superadmin/companies" element={<Companies />} />
       <Route path="/superadmin/users" element={<Users />} />
+      <Route path="/superadmin/logs" element={<ActivityLogs />} />
       <Route path="/superadmin/settings" element={<Settings />} />
       <Route path="/superadmin/profile" element={<SuperAdminProfile />} />
       
