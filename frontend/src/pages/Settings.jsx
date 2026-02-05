@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import {
   Select,
@@ -11,10 +15,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { Globe, Bell, Shield, Palette } from 'lucide-react';
+import { Globe, Bell, Shield, Palette, Mail, Eye, EyeOff, Server, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const Settings = () => {
   const { t, language, setLanguage } = useLanguage();
+  const { getAuthHeaders } = useAuth();
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const [smtpSettings, setSmtpSettings] = useState({
+    host: '',
+    port: 587,
+    username: '',
+    password: '',
+    from_email: 'notif@makar.id',
+    from_name: 'Makar.id Notifications',
+    use_tls: true
+  });
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/system/settings`, {
+        headers: getAuthHeaders()
+      });
+      if (response.data.smtp_settings) {
+        setSmtpSettings(response.data.smtp_settings);
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveSMTP = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/system/settings`, {
+        smtp_settings: smtpSettings
+      }, {
+        headers: getAuthHeaders()
+      });
+      toast.success('Pengaturan SMTP berhasil disimpan');
+    } catch (error) {
+      console.error('Failed to save SMTP:', error);
+      toast.error('Gagal menyimpan pengaturan SMTP');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <DashboardLayout title={t('settings')}>
