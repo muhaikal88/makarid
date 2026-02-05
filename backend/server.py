@@ -1348,7 +1348,7 @@ async def lookup_domain(hostname: str):
     Also checks primary domain field and slug-based subdomain.
     """
     # Extract slug from subdomain if it's from makar.id
-    # e.g., luckycell.makar.id -> slug=luckycell
+    # e.g., demo.makar.id -> slug=demo
     if '.makar.id' in hostname:
         slug = hostname.replace('.makar.id', '')
         company = await db.companies.find_one({
