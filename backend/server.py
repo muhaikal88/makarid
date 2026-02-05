@@ -57,6 +57,9 @@ class UserRole:
 class SuperAdminBase(BaseModel):
     email: EmailStr
     name: str
+    picture: Optional[str] = None
+    totp_secret: Optional[str] = None  # For Google Authenticator
+    totp_enabled: bool = False
     is_active: bool = True
 
 class SuperAdminCreate(BaseModel):
