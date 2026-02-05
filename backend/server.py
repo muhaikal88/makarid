@@ -981,6 +981,75 @@ async def update_company_profile(company_id: str, data: CompanyProfileUpdate, cu
         cover_image=profile.get("cover_image")
     )
 
+# ============ COMPANY SETTINGS ROUTES (For Company Admin) ============
+
+class CompanySettingsUpdate(BaseModel):
+    custom_domains: Optional[Dict[str, str]] = None
+    smtp_settings: Optional[Dict[str, str]] = None
+
+@api_router.get("/company/settings")
+async def get_company_settings(current_user: dict = Depends(require_admin_or_super)):
+    """Get company settings (custom domains & SMTP) for Company Admin"""
+    company_id = current_user.get("company_id")
+    if not company_id:
+        raise HTTPException(status_code=400, detail="No company assigned")
+    
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    return {
+        "id": company["id"],
+        "name": company["name"],
+        "slug": company.get("slug"),
+        "domain": company["domain"],
+        "custom_domains": company.get("custom_domains"),
+        "smtp_settings": company.get("smtp_settings"),
+        "default_subdomain": f"{company.get('slug')}.makar.id" if company.get('slug') else None
+    }
+
+@api_router.put("/company/settings")
+async def update_company_settings(data: CompanySettingsUpdate, current_user: dict = Depends(require_admin_or_super)):
+    """Update company settings (custom domains & SMTP) by Company Admin"""
+    company_id = current_user.get("company_id")
+    if not company_id:
+        raise HTTPException(status_code=400, detail="No company assigned")
+    
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    update_data = {}
+    
+    if data.custom_domains is not None:
+        # Validate domains are not used by other companies
+        for domain_type, domain_value in data.custom_domains.items():
+            if domain_value:
+                existing = await db.companies.find_one({
+                    "$or": [
+                        {"custom_domains.main": domain_value},
+                        {"custom_domains.careers": domain_value},
+                        {"custom_domains.hr": domain_value},
+                        {"domain": domain_value}
+                    ],
+                    "id": {"$ne": company_id}
+                })
+                if existing:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Domain {domain_value} is already used by another company"
+                    )
+        update_data["custom_domains"] = data.custom_domains
+    
+    if data.smtp_settings is not None:
+        update_data["smtp_settings"] = data.smtp_settings
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.companies.update_one({"id": company_id}, {"$set": update_data})
+    
+    return {"message": "Settings updated successfully", "updated_fields": list(update_data.keys())}
+
 # ============ JOB POSTING ROUTES ============
 
 @api_router.get("/jobs", response_model=List[JobResponse])
