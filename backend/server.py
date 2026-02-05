@@ -1258,6 +1258,90 @@ async def delete_superadmin(admin_id: str, current_user: dict = Depends(require_
     return {"message": "Super admin deleted successfully"}
 
 
+# Toggle features for Super Admin management
+@api_router.post("/superadmins/{admin_id}/toggle-2fa")
+async def toggle_superadmin_2fa(admin_id: str, enable: bool, current_user: dict = Depends(require_super_admin)):
+    """Enable or disable 2FA for another super admin"""
+    admin = await db.superadmins.find_one({"id": admin_id}, {"_id": 0})
+    if not admin:
+        raise HTTPException(status_code=404, detail="Super admin not found")
+    
+    await db.superadmins.update_one(
+        {"id": admin_id},
+        {"$set": {
+            "totp_enabled": False if not enable else admin.get("totp_enabled", False),
+            "totp_secret": None if not enable else admin.get("totp_secret"),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": f"2FA {'enabled' if enable else 'disabled'} successfully"}
+
+@api_router.post("/superadmins/{admin_id}/toggle-active")
+async def toggle_superadmin_active(admin_id: str, active: bool, current_user: dict = Depends(require_super_admin)):
+    """Activate or deactivate super admin"""
+    if admin_id == current_user["id"]:
+        raise HTTPException(status_code=403, detail="Cannot deactivate your own account")
+    
+    await db.superadmins.update_one(
+        {"id": admin_id},
+        {"$set": {
+            "is_active": active,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": f"Account {'activated' if active else 'deactivated'} successfully"}
+
+# Toggle for company admins and employees
+@api_router.post("/users/{user_id}/toggle-2fa")
+async def toggle_user_2fa(user_id: str, enable: bool, user_table: str, current_user: dict = Depends(require_super_admin)):
+    """Enable or disable 2FA for company admin or employee"""
+    if user_table == "company_admins":
+        table = db.company_admins
+    elif user_table == "employees":
+        table = db.employees
+    else:
+        raise HTTPException(status_code=400, detail="Invalid user table")
+    
+    user = await table.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    await table.update_one(
+        {"id": user_id},
+        {"$set": {
+            "totp_enabled": False if not enable else user.get("totp_enabled", False),
+            "totp_secret": None if not enable else user.get("totp_secret"),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": f"2FA {'enabled' if enable else 'disabled'} successfully"}
+
+@api_router.post("/users/{user_id}/toggle-active")
+async def toggle_user_active(user_id: str, active: bool, user_table: str, current_user: dict = Depends(require_super_admin)):
+    """Activate or deactivate company admin or employee"""
+    if user_table == "company_admins":
+        table = db.company_admins
+    elif user_table == "employees":
+        table = db.employees
+    else:
+        raise HTTPException(status_code=400, detail="Invalid user table")
+    
+    await table.update_one(
+        {"id": user_id},
+        {"$set": {
+            "is_active": active,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": f"Account {'activated' if active else 'deactivated'} successfully"}
+
+
+
+
 @api_router.put("/profile/superadmin")
 async def update_superadmin_profile(data: SuperAdminProfileUpdate, current_user: dict = Depends(require_super_admin)):
     """Update super admin profile"""
