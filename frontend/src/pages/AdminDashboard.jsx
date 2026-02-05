@@ -42,9 +42,10 @@ const jobTypeLabels = {
 
 export const AdminDashboard = () => {
   const { t, language, setLanguage } = useLanguage();
-  const { user, logout, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [company, setCompany] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -52,25 +53,38 @@ export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (user?.company_id) {
+    checkSession();
+  }, []);
+
+  const checkSession = async () => {
+    try {
+      const response = await axios.get(`${API}/auth/me-session`, {
+        withCredentials: true
+      });
+      
+      // Verify role is admin
+      if (response.data.role !== 'admin') {
+        navigate('/company-login');
+        return;
+      }
+      
+      setSession(response.data);
+      setAuthLoading(false);
       fetchData();
+    } catch (error) {
+      console.error('Session error:', error);
+      navigate('/company-login');
     }
-  }, [user]);
+  };
 
   const fetchData = async () => {
     try {
       const [jobsRes, appsRes] = await Promise.all([
-        axios.get(`${API}/jobs`, { headers: getAuthHeaders() }),
-        axios.get(`${API}/applications`, { headers: getAuthHeaders() })
+        axios.get(`${API}/jobs`, { withCredentials: true }),
+        axios.get(`${API}/applications`, { withCredentials: true })
       ]);
       setJobs(jobsRes.data);
       setApplications(appsRes.data);
-      
-      // Get company info from public API
-      if (user?.company_id) {
-        // We need to get company domain first - for now we'll use a simple approach
-        // In production, you'd store this in the user object or fetch separately
-      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -78,22 +92,22 @@ export const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
+      navigate('/company-login');
+    } catch (error) {
+      navigate('/company-login');
+    }
   };
 
-  // Redirect if not admin
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (user.role === 'super_admin') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  if (user.role !== 'admin') {
-    return <Navigate to="/login" replace />;
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E4DA7]"></div>
+      </div>
+    );
   }
 
   const getInitials = (name) => {
