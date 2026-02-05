@@ -88,7 +88,10 @@ export const Header = ({ title }) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem data-testid="profile-menu-item">
+            <DropdownMenuItem 
+              onClick={() => navigate('/superadmin/profile')}
+              data-testid="profile-menu-item"
+            >
               <User className="w-4 h-4 mr-2" />
               {t('profile')}
             </DropdownMenuItem>
