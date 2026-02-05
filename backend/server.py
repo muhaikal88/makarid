@@ -1562,7 +1562,7 @@ async def get_uploaded_file(filename: str):
 
 @api_router.get("/users", response_model=List[UserResponse])
 async def get_users(current_user: dict = Depends(require_super_admin)):
-    users = await db.users.find({"role": {"$ne": UserRole.SUPER_ADMIN}}, {"_id": 0, "password": 0}).to_list(1000)
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
     
     return [
         UserResponse(
@@ -1570,7 +1570,7 @@ async def get_users(current_user: dict = Depends(require_super_admin)):
             email=user["email"],
             name=user["name"],
             role=user["role"],
-            company_id=user.get("company_id"),
+            company_id=user["company_id"],
             is_active=user["is_active"],
             created_at=user["created_at"] if isinstance(user["created_at"], str) else user["created_at"].isoformat(),
             updated_at=user["updated_at"] if isinstance(user["updated_at"], str) else user["updated_at"].isoformat()
