@@ -277,9 +277,9 @@ export const CompanySettings = () => {
                   >
                     {saving ? (language === 'id' ? 'Menyimpan...' : 'Saving...') : (language === 'id' ? 'Simpan Domain' : 'Save Domains')}
                   </Button>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <Toaster position="top-right" richColors />
