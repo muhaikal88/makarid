@@ -81,6 +81,8 @@ export const ActivityLogs = () => {
       if (filterResource !== 'all') params.append('resource_type', filterResource);
       if (filterUser !== 'all') params.append('user_id', filterUser);
       if (searchTerm) params.append('search', searchTerm);
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
       params.append('limit', '500');
       
       const response = await axios.get(`${API}/logs?${params.toString()}`, {
