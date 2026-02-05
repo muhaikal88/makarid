@@ -21,42 +21,64 @@ import { CompanySelector } from "./pages/CompanySelector";
 import { GoogleAuthCallback } from "./pages/GoogleAuthCallback";
 import { EmployeeDashboard } from "./pages/EmployeeDashboard";
 
+function AppRouter() {
+  const location = window.location;
+  
+  // Synchronously check for session_id in URL fragment (prevents race conditions)
+  if (location.hash && location.hash.includes('session_id=')) {
+    return <GoogleAuthCallback />;
+  }
+  
+  return (
+    <Routes>
+      {/* Landing Page */}
+      <Route path="/" element={<LandingPage />} />
+      
+      {/* Unified Login - New single login for all company users */}
+      <Route path="/company-login" element={<UnifiedLogin />} />
+      
+      {/* Company/Role Selector */}
+      <Route path="/select-company" element={<CompanySelector />} />
+      
+      {/* Google OAuth Callback */}
+      <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
+      
+      {/* Auth - Super Admin (separate) */}
+      <Route path="/login" element={<Login />} />
+      
+      {/* Super Admin Dashboard */}
+      <Route path="/superadmin/dashboard" element={<Dashboard />} />
+      <Route path="/superadmin/companies" element={<Companies />} />
+      <Route path="/superadmin/users" element={<Users />} />
+      <Route path="/superadmin/settings" element={<Settings />} />
+      
+      {/* Company Admin Dashboard */}
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/settings" element={<CompanySettings />} />
+      
+      {/* Employee Dashboard */}
+      <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+      
+      {/* Public Pages */}
+      <Route path="/company/:domain" element={<CompanyProfile />} />
+      <Route path="/careers/:domain" element={<Careers />} />
+      <Route path="/careers/:domain/apply/:jobId" element={<ApplyJob />} />
+      
+      {/* Old routes - keep for backward compatibility */}
+      <Route path="/login/:domain" element={<CompanyLogin />} />
+      
+      {/* Redirects */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            {/* Landing Page */}
-            <Route path="/" element={<LandingPage />} />
-            
-            {/* Company Login Portal - untuk pilih perusahaan */}
-            <Route path="/company-login" element={<CompanyLoginPortal />} />
-            
-            {/* Auth - Super Admin */}
-            <Route path="/login" element={<Login />} />
-            
-            {/* Auth - Company Admin/Employee */}
-            <Route path="/login/:domain" element={<CompanyLogin />} />
-            
-            {/* Super Admin Dashboard */}
-            <Route path="/superadmin/dashboard" element={<Dashboard />} />
-            <Route path="/superadmin/companies" element={<Companies />} />
-            <Route path="/superadmin/users" element={<Users />} />
-            <Route path="/superadmin/settings" element={<Settings />} />
-            
-            {/* Company Admin Dashboard */}
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/settings" element={<CompanySettings />} />
-            
-            {/* Public Pages */}
-            <Route path="/company/:domain" element={<CompanyProfile />} />
-            <Route path="/careers/:domain" element={<Careers />} />
-            <Route path="/careers/:domain/apply/:jobId" element={<ApplyJob />} />
-            
-            {/* Redirects */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <AppRouter />
         </BrowserRouter>
       </AuthProvider>
     </LanguageProvider>
