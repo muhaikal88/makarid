@@ -565,19 +565,19 @@ async def superadmin_login(data: LoginRequest):
     
     token = create_token(admin["id"], "super_admin", None)
     
-    return LoginResponse(
-        token=token,
-        user=UserResponse(
-            id=admin["id"],
-            email=admin["email"],
-            name=admin["name"],
-            role="super_admin",
-            company_id=None,
-            is_active=admin["is_active"],
-            created_at=admin["created_at"],
-            updated_at=admin["updated_at"]
-        )
-    )
+    return {
+        "token": token,
+        "user": {
+            "id": admin["id"],
+            "email": admin["email"],
+            "name": admin["name"],
+            "role": "super_admin",
+            "company_id": None,
+            "is_active": admin["is_active"],
+            "created_at": admin["created_at"],
+            "updated_at": admin["updated_at"]
+        }
+    }
 
 # Company User Login (Separate endpoint)
 @api_router.post("/auth/login", response_model=LoginResponse)
