@@ -493,7 +493,7 @@ def get_license_status(company: dict) -> tuple:
     except:
         return ("active", None)
 
-def build_company_response(company: dict, emp_count: int = 0) -> CompanyResponse:
+def build_company_response(company: dict, admin_count: int = 0, emp_count: int = 0) -> CompanyResponse:
     """Helper to build CompanyResponse with license status"""
     license_status, days_remaining = get_license_status(company)
     
@@ -514,6 +514,7 @@ def build_company_response(company: dict, emp_count: int = 0) -> CompanyResponse
         days_remaining=days_remaining,
         created_at=company["created_at"] if isinstance(company["created_at"], str) else company["created_at"].isoformat(),
         updated_at=company["updated_at"] if isinstance(company["updated_at"], str) else company["updated_at"].isoformat(),
+        admin_count=admin_count,
         employee_count=emp_count,
         custom_domains=company.get("custom_domains")
     )
