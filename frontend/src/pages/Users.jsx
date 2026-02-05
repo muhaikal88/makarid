@@ -197,6 +197,36 @@ export const Users = () => {
     }
   };
 
+
+  const handleToggle2FA = async (user, enable) => {
+    const userTable = user.role === 'admin' ? 'company_admins' : 'employees';
+    try {
+      await axios.post(`${API}/users/${user.id}/toggle-2fa?enable=${enable}&user_table=${userTable}`, {}, {
+        headers: getAuthHeaders()
+      });
+      toast.success(`2FA ${enable ? 'diaktifkan' : 'dinonaktifkan'}`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Failed to toggle 2FA:', error);
+      toast.error(error.response?.data?.detail || 'Gagal mengubah 2FA');
+    }
+  };
+
+  const handleToggleActive = async (user, active) => {
+    const userTable = user.role === 'admin' ? 'company_admins' : 'employees';
+    try {
+      await axios.post(`${API}/users/${user.id}/toggle-active?active=${active}&user_table=${userTable}`, {}, {
+        headers: getAuthHeaders()
+      });
+      toast.success(`Akun ${active ? 'diaktifkan' : 'dinonaktifkan'}`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Failed to toggle active:', error);
+      toast.error(error.response?.data?.detail || 'Gagal mengubah status');
+    }
+  };
+
+
   const filteredUsers = users.filter(user => {
     // Search filter
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
