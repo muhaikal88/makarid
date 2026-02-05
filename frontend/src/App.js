@@ -26,6 +26,9 @@ function App() {
             {/* Landing Page */}
             <Route path="/" element={<LandingPage />} />
             
+            {/* Company Login Portal - untuk pilih perusahaan */}
+            <Route path="/company-login" element={<CompanyLoginPortal />} />
+            
             {/* Auth - Super Admin */}
             <Route path="/login" element={<Login />} />
             
