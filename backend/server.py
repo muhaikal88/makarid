@@ -1155,6 +1155,109 @@ class SuperAdminProfileUpdate(BaseModel):
     password: Optional[str] = None
     picture: Optional[str] = None
 
+
+
+# ============ SUPER ADMIN MANAGEMENT (Manage other super admins) ============
+
+@api_router.get("/superadmins")
+async def get_all_superadmins(current_user: dict = Depends(require_super_admin)):
+    """Get list of all super admins"""
+    admins = await db.superadmins.find({}, {"_id": 0, "password": 0}).to_list(100)
+    return admins
+
+class SuperAdminCreateRequest(BaseModel):
+    email: EmailStr
+    name: str
+    password: str
+    picture: Optional[str] = None
+
+@api_router.post("/superadmins")
+async def create_superadmin(data: SuperAdminCreateRequest, current_user: dict = Depends(require_super_admin)):
+    """Create new super admin"""
+    # Check if email exists
+    existing = await db.superadmins.find_one({"email": data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already exists")
+    
+    # Validate password
+    is_valid, message = validate_password_strength(data.password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+    
+    admin_doc = {
+        "id": str(uuid.uuid4()),
+        "email": data.email,
+        "name": data.name,
+        "password": hash_password(data.password),
+        "picture": data.picture,
+        "totp_secret": None,
+        "totp_enabled": False,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.superadmins.insert_one(admin_doc)
+    
+    # Remove password from response
+    admin_doc.pop("password")
+    return admin_doc
+
+class SuperAdminUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    picture: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@api_router.put("/superadmins/{admin_id}")
+async def update_superadmin(admin_id: str, data: SuperAdminUpdateRequest, current_user: dict = Depends(require_super_admin)):
+    """Update super admin (by another super admin)"""
+    admin = await db.superadmins.find_one({"id": admin_id}, {"_id": 0})
+    if not admin:
+        raise HTTPException(status_code=404, detail="Super admin not found")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    if "password" in update_data:
+        is_valid, message = validate_password_strength(update_data["password"])
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=message)
+        update_data["password"] = hash_password(update_data["password"])
+    
+    if "email" in update_data:
+        existing = await db.superadmins.find_one({"email": update_data["email"], "id": {"$ne": admin_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.superadmins.update_one({"id": admin_id}, {"$set": update_data})
+    
+    updated = await db.superadmins.find_one({"id": admin_id}, {"_id": 0, "password": 0})
+    return updated
+
+@api_router.delete("/superadmins/{admin_id}")
+async def delete_superadmin(admin_id: str, current_user: dict = Depends(require_super_admin)):
+    """Delete super admin"""
+    # Prevent self-deletion
+    if admin_id == current_user["id"]:
+        raise HTTPException(status_code=403, detail="Cannot delete your own account")
+    
+    admin = await db.superadmins.find_one({"id": admin_id})
+    if not admin:
+        raise HTTPException(status_code=404, detail="Super admin not found")
+    
+    # Check if this is the last admin
+    total_admins = await db.superadmins.count_documents({})
+    if total_admins <= 1:
+        raise HTTPException(status_code=403, detail="Cannot delete the last super admin")
+    
+    await db.superadmins.delete_one({"id": admin_id})
+    
+    return {"message": "Super admin deleted successfully"}
+
+
 @api_router.put("/profile/superadmin")
 async def update_superadmin_profile(data: SuperAdminProfileUpdate, current_user: dict = Depends(require_super_admin)):
     """Update super admin profile"""
