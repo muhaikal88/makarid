@@ -495,11 +495,32 @@ export const AdminDashboard = () => {
                             )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-[#2E4DA7]">{job.application_count}</p>
-                          <p className="text-sm text-gray-500">
-                            {language === 'id' ? 'Lamaran' : 'Applications'}
-                          </p>
+                        <div className="flex flex-col items-end gap-4">
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-[#2E4DA7]">{job.application_count}</p>
+                            <p className="text-sm text-gray-500">
+                              {language === 'id' ? 'Lamaran' : 'Applications'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenJobForm(job)}
+                            >
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteJob(job)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Hapus
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
