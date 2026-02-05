@@ -31,7 +31,7 @@ export const Login = () => {
   // Redirect if already logged in
   if (user) {
     if (user.role === 'super_admin') {
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/superadmin/dashboard" replace />;
     } else {
       return <Navigate to="/admin/dashboard" replace />;
     }
