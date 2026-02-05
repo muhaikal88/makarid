@@ -89,6 +89,7 @@ class UserResponse(BaseModel):
 
 class CompanyBase(BaseModel):
     name: str
+    slug: str  # URL-friendly identifier (e.g., luckycell) - used for subdomain
     domain: str  # Primary identifier (e.g., luckycell.co.id)
     address: Optional[str] = None
     phone: Optional[str] = None
@@ -99,8 +100,10 @@ class CompanyBase(BaseModel):
     license_start: Optional[str] = None  # ISO date string
     license_end: Optional[str] = None    # ISO date string
     license_type: str = "trial"  # trial, monthly, yearly, lifetime
-    # Custom domain settings for white-label
+    # Custom domain settings for white-label (optional)
     custom_domains: Optional[Dict[str, str]] = None  # {"main": "luckycell.co.id", "careers": "careers.luckycell.co.id", "hr": "hr.luckycell.co.id"}
+    # SMTP settings (optional - for custom email notifications)
+    smtp_settings: Optional[Dict[str, str]] = None  # {"host": "smtp.gmail.com", "port": "587", "user": "noreply@company.com", "password": "***", "from_email": "noreply@company.com", "from_name": "Company Name"}
 
 class CompanyCreate(CompanyBase):
     pass
