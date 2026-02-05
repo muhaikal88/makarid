@@ -469,6 +469,32 @@ class DashboardStats(BaseModel):
 
 # ============ HELPERS ============
 
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """
+    Validate password meets ISO 27001 standards:
+    - Minimum 8 characters
+    - At least 1 uppercase letter
+    - At least 1 lowercase letter
+    - At least 1 number
+    - At least 1 special character
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least 1 uppercase letter"
+    
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least 1 lowercase letter"
+    
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least 1 number"
+    
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "Password must contain at least 1 special character"
+    
+    return True, "Password is strong"
+
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
