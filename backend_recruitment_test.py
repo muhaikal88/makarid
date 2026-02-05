@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class RecruitmentAPITester:
-    def __init__(self, base_url="https://talent-system-1.preview.emergentagent.com"):
+    def __init__(self, base_url="https://hr-saas-mvp.preview.emergentagent.com"):
         self.base_url = base_url
         self.super_admin_token = None
         self.admin_token = None
