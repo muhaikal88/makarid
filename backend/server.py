@@ -612,18 +612,18 @@ async def login(data: LoginRequest):
         )
     )
 
-@api_router.get("/auth/me", response_model=UserResponse)
+@api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
-    return UserResponse(
-        id=current_user["id"],
-        email=current_user["email"],
-        name=current_user["name"],
-        role=current_user["role"],
-        company_id=current_user.get("company_id"),
-        is_active=current_user["is_active"],
-        created_at=current_user["created_at"] if isinstance(current_user["created_at"], str) else current_user["created_at"].isoformat(),
-        updated_at=current_user["updated_at"] if isinstance(current_user["updated_at"], str) else current_user["updated_at"].isoformat()
-    )
+    return {
+        "id": current_user["id"],
+        "email": current_user["email"],
+        "name": current_user["name"],
+        "role": current_user["role"],
+        "company_id": current_user.get("company_id"),
+        "is_active": current_user["is_active"],
+        "created_at": current_user["created_at"] if isinstance(current_user["created_at"], str) else current_user["created_at"].isoformat(),
+        "updated_at": current_user["updated_at"] if isinstance(current_user["updated_at"], str) else current_user["updated_at"].isoformat()
+    }
 
 # ============ DASHBOARD ROUTES ============
 
