@@ -553,8 +553,9 @@ async def superadmin_login(data: LoginRequest):
     )
 
 # Company User Login (Separate endpoint)
-@api_router.post("/auth/login")
+@api_router.post("/auth/login", response_model=LoginResponse)
 async def login(data: LoginRequest):
+    """Login for Company Admin/Employee only"""
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -565,6 +566,9 @@ async def login(data: LoginRequest):
     if not user.get("is_active", True):
         raise HTTPException(status_code=401, detail="Account is deactivated")
     
+    # Check company license
+    await check_company_license(company_id=user.get("company_id"))
+    
     token = create_token(user["id"], user["role"], user.get("company_id"))
     
     return LoginResponse(
@@ -574,7 +578,7 @@ async def login(data: LoginRequest):
             email=user["email"],
             name=user["name"],
             role=user["role"],
-            company_id=user.get("company_id"),
+            company_id=user["company_id"],
             is_active=user["is_active"],
             created_at=user["created_at"] if isinstance(user["created_at"], str) else user["created_at"].isoformat(),
             updated_at=user["updated_at"] if isinstance(user["updated_at"], str) else user["updated_at"].isoformat()
