@@ -20,6 +20,8 @@ import { UnifiedLogin } from "./pages/UnifiedLogin";
 import { CompanySelector } from "./pages/CompanySelector";
 import { GoogleAuthCallback } from "./pages/GoogleAuthCallback";
 import { EmployeeDashboard } from "./pages/EmployeeDashboard";
+import { SuperAdminProfile } from "./pages/SuperAdminProfile";
+import { UserProfile } from "./pages/UserProfile";
 
 function AppRouter() {
   const location = window.location;
