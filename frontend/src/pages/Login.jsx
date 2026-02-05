@@ -206,7 +206,7 @@ export const Login = () => {
 
         {/* Footer */}
         <p className="text-center text-sm text-white/50 mt-6">
-          © {new Date().getFullYear()} Lucky Cell HR System
+          © {new Date().getFullYear()} Makar.id - Manajemen Karyawan
         </p>
       </div>
       <Toaster position="top-right" richColors />
