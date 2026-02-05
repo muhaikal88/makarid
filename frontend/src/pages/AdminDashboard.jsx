@@ -51,6 +51,18 @@ export const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Job form states
+  const [isJobFormOpen, setIsJobFormOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [jobFormData, setJobFormData] = useState({
+    title: '',
+    department: '',
+    location: '',
+    job_type: 'full_time',
+    description: '',
+    status: 'draft'
+  });
 
   useEffect(() => {
     checkSession();
