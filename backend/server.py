@@ -1122,8 +1122,19 @@ async def get_companies(current_user: dict = Depends(require_super_admin)):
     
     result = []
     for company in companies:
-        emp_count = await db.users.count_documents({"company_id": company["id"]})
-        result.append(build_company_response(company, emp_count))
+        company_id = company["id"]
+        
+        # Count admins yang punya akses ke company ini
+        admin_count = await db.company_admins.count_documents({
+            "companies": company_id
+        })
+        
+        # Count employees yang punya akses ke company ini
+        emp_count = await db.employees.count_documents({
+            "companies": company_id
+        })
+        
+        result.append(build_company_response(company, admin_count, emp_count))
     
     return result
 
