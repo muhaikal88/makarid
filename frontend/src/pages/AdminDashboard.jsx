@@ -654,6 +654,37 @@ export const AdminDashboard = () => {
                 />
               </div>
 
+              {/* Salary Range */}
+              <div className="grid gap-2">
+                <Label>Range Gaji (Opsional)</Label>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Input
+                    type="number"
+                    value={jobFormData.salary_min}
+                    onChange={(e) => setJobFormData({ ...jobFormData, salary_min: e.target.value })}
+                    placeholder="Min (e.g. 3000000)"
+                  />
+                  <Input
+                    type="number"
+                    value={jobFormData.salary_max}
+                    onChange={(e) => setJobFormData({ ...jobFormData, salary_max: e.target.value })}
+                    placeholder="Max (e.g. 4500000)"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="show_salary"
+                    checked={jobFormData.show_salary}
+                    onChange={(e) => setJobFormData({ ...jobFormData, show_salary: e.target.checked })}
+                    className="rounded"
+                  />
+                  <Label htmlFor="show_salary" className="text-sm cursor-pointer">
+                    Tampilkan gaji di halaman publik
+                  </Label>
+                </div>
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="status">Status</Label>
                 <Select
