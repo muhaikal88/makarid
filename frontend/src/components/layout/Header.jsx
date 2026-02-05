@@ -77,9 +77,13 @@ export const Header = ({ title }) => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 px-2" data-testid="user-menu">
               <Avatar className="w-8 h-8 bg-[#2E4DA7]">
-                <AvatarFallback className="bg-[#2E4DA7] text-white text-sm">
-                  {getInitials(user?.name)}
-                </AvatarFallback>
+                {user?.picture ? (
+                  <AvatarImage src={user.picture} alt={user.name} />
+                ) : (
+                  <AvatarFallback className="bg-[#2E4DA7] text-white text-sm">
+                    {getInitials(user?.name)}
+                  </AvatarFallback>
+                )}
               </Avatar>
               <div className="text-left hidden sm:block">
                 <p className="text-sm font-medium text-gray-700">{user?.name}</p>
