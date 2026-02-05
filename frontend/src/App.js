@@ -16,6 +16,10 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { LandingPage } from "./pages/LandingPage";
 import { CompanySettings } from "./pages/CompanySettings";
 import { CompanyLoginPortal } from "./pages/CompanyLoginPortal";
+import { UnifiedLogin } from "./pages/UnifiedLogin";
+import { CompanySelector } from "./pages/CompanySelector";
+import { GoogleAuthCallback } from "./pages/GoogleAuthCallback";
+import { EmployeeDashboard } from "./pages/EmployeeDashboard";
 
 function App() {
   return (
