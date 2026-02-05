@@ -1481,9 +1481,11 @@ async def get_activity_logs(
     resource_type: Optional[str] = None,
     company_id: Optional[str] = None,
     search: Optional[str] = None,
+    start_date: Optional[str] = None,  # ISO format: 2026-01-01
+    end_date: Optional[str] = None,    # ISO format: 2026-12-31
     limit: int = 100
 ):
-    """Get activity logs (Super Admin only)"""
+    """Get activity logs (Super Admin only) with date range filter"""
     query = {}
     
     if user_id:
@@ -1500,6 +1502,17 @@ async def get_activity_logs(
             {"user_email": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}}
         ]
+    
+    # Date range filter
+    if start_date or end_date:
+        date_query = {}
+        if start_date:
+            date_query["$gte"] = start_date
+        if end_date:
+            # Add one day to include end_date fully
+            end_dt = datetime.fromisoformat(end_date) + timedelta(days=1)
+            date_query["$lt"] = end_dt.isoformat()
+        query["timestamp"] = date_query
     
     logs = await db.activity_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return logs
