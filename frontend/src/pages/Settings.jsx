@@ -114,6 +114,128 @@ export const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Global SMTP Settings */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Server className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Global SMTP Email</CardTitle>
+                <CardDescription>Default email server untuk semua perusahaan</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div className="text-sm text-amber-800">
+                  <p className="font-medium mb-1">Email Default</p>
+                  <p>
+                    Jika perusahaan tidak set custom SMTP, sistem akan menggunakan SMTP ini untuk kirim notifikasi (aplikasi lamaran, dll).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="smtp_host">SMTP Host *</Label>
+                <Input
+                  id="smtp_host"
+                  value={smtpSettings.host}
+                  onChange={(e) => setSmtpSettings({ ...smtpSettings, host: e.target.value })}
+                  placeholder="smtp.gmail.com"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="smtp_port">SMTP Port *</Label>
+                <Input
+                  id="smtp_port"
+                  type="number"
+                  value={smtpSettings.port}
+                  onChange={(e) => setSmtpSettings({ ...smtpSettings, port: parseInt(e.target.value) })}
+                  placeholder="587"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="smtp_username">SMTP Username *</Label>
+              <Input
+                id="smtp_username"
+                value={smtpSettings.username}
+                onChange={(e) => setSmtpSettings({ ...smtpSettings, username: e.target.value })}
+                placeholder="notif@makar.id"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="smtp_password">SMTP Password *</Label>
+              <div className="relative">
+                <Input
+                  id="smtp_password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={smtpSettings.password}
+                  onChange={(e) => setSmtpSettings({ ...smtpSettings, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="from_email">From Email *</Label>
+                <Input
+                  id="from_email"
+                  type="email"
+                  value={smtpSettings.from_email}
+                  onChange={(e) => setSmtpSettings({ ...smtpSettings, from_email: e.target.value })}
+                  placeholder="notif@makar.id"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="from_name">From Name *</Label>
+                <Input
+                  id="from_name"
+                  value={smtpSettings.from_name}
+                  onChange={(e) => setSmtpSettings({ ...smtpSettings, from_name: e.target.value })}
+                  placeholder="Makar.id Notifications"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <Label>Use TLS/SSL</Label>
+                <p className="text-xs text-gray-500">Recommended for security</p>
+              </div>
+              <Switch
+                checked={smtpSettings.use_tls}
+                onCheckedChange={(checked) => setSmtpSettings({ ...smtpSettings, use_tls: checked })}
+              />
+            </div>
+
+            <Button 
+              onClick={handleSaveSMTP}
+              disabled={saving}
+              className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+            >
+              {saving ? 'Menyimpan...' : 'Simpan Pengaturan SMTP'}
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Notification Settings */}
         <Card className="border-0 shadow-sm">
           <CardHeader>
