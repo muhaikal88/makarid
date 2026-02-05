@@ -1232,9 +1232,10 @@ async def update_company(company_id: str, data: CompanyUpdate, current_user: dic
     await db.companies.update_one({"id": company_id}, {"$set": update_data})
     
     updated = await db.companies.find_one({"id": company_id}, {"_id": 0})
-    emp_count = await db.users.count_documents({"company_id": company_id})
+    admin_count = await db.company_admins.count_documents({"companies": company_id})
+    emp_count = await db.employees.count_documents({"companies": company_id})
     
-    return build_company_response(updated, emp_count)
+    return build_company_response(updated, admin_count, emp_count)
 
 @api_router.delete("/companies/{company_id}")
 async def delete_company(company_id: str, current_user: dict = Depends(require_super_admin)):
