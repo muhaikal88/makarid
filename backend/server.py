@@ -1136,6 +1136,55 @@ async def get_dashboard_stats(current_user: dict = Depends(require_super_admin))
         recent_companies=recent_with_counts
     )
 
+
+# ============ SYSTEM SETTINGS ROUTES (Super Admin Only) ============
+
+@api_router.get("/system/settings")
+async def get_system_settings(current_user: dict = Depends(require_super_admin)):
+    """Get global system settings (SMTP, etc.)"""
+    settings = await db.system_settings.find_one({}, {"_id": 0})
+    
+    if not settings:
+        # Return default settings
+        return {
+            "smtp_settings": {
+                "host": "",
+                "port": 587,
+                "username": "",
+                "password": "",
+                "from_email": "notif@makar.id",
+                "from_name": "Makar.id Notifications",
+                "use_tls": True
+            }
+        }
+    
+    return settings
+
+@api_router.put("/system/settings")
+async def update_system_settings(data: SystemSettingsUpdate, current_user: dict = Depends(require_super_admin)):
+    """Update global system settings"""
+    existing = await db.system_settings.find_one({})
+    
+    if existing:
+        await db.system_settings.update_one(
+            {"_id": existing["_id"]},
+            {"$set": {
+                **data.model_dump(exclude_none=True),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+    else:
+        settings_doc = {
+            **data.model_dump(exclude_none=True),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.system_settings.insert_one(settings_doc)
+    
+    return {"message": "System settings updated successfully"}
+
+
+
 # ============ COMPANY ROUTES ============
 
 @api_router.get("/companies", response_model=List[CompanyResponse])
