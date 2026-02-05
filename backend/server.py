@@ -1095,16 +1095,21 @@ async def require_session_user(request: Request):
 async def get_dashboard_stats(current_user: dict = Depends(require_super_admin)):
     total_companies = await db.companies.count_documents({})
     active_companies = await db.companies.count_documents({"is_active": True})
-    total_users = await db.users.count_documents({})  # All company users
-    total_employees = await db.users.count_documents({"role": UserRole.EMPLOYEE})
+    
+    # Count from new tables
+    total_admins = await db.company_admins.count_documents({})
+    total_employees = await db.employees.count_documents({})
+    total_users = total_admins + total_employees
     
     recent_companies_cursor = db.companies.find({}, {"_id": 0}).sort("created_at", -1).limit(5)
     recent_companies = await recent_companies_cursor.to_list(5)
     
     recent_with_counts = []
     for company in recent_companies:
-        emp_count = await db.users.count_documents({"company_id": company["id"]})
-        recent_with_counts.append(build_company_response(company, emp_count))
+        company_id = company["id"]
+        admin_count = await db.company_admins.count_documents({"companies": company_id})
+        emp_count = await db.employees.count_documents({"companies": company_id})
+        recent_with_counts.append(build_company_response(company, admin_count, emp_count))
     
     return DashboardStats(
         total_companies=total_companies,
