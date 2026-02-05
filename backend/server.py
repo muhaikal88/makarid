@@ -86,7 +86,91 @@ class LoginResponseSuperAdmin(BaseModel):
     token: str
     user: dict  # Flexible dict to handle both SuperAdmin and User
 
-# ===== COMPANY USER MODELS (Separate Table) =====
+# ===== COMPANY ADMIN MODELS (New Separate Table) =====
+
+class CompanyAdminBase(BaseModel):
+    email: EmailStr
+    name: str
+    picture: Optional[str] = None
+    companies: List[str] = []  # List of company_ids user is admin of
+    is_active: bool = True
+    auth_provider: str = "email"  # "email" or "google"
+
+class CompanyAdminCreate(BaseModel):
+    email: EmailStr
+    name: str
+    password: Optional[str] = None  # Optional if using Google OAuth
+    company_id: str  # Initial company
+    auth_provider: str = "email"
+
+class CompanyAdmin(CompanyAdminBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: f"admin_{uuid.uuid4().hex[:12]}")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# ===== EMPLOYEE MODELS (New Separate Table) =====
+
+class EmployeeBase(BaseModel):
+    email: EmailStr
+    name: str
+    picture: Optional[str] = None
+    companies: List[str] = []  # List of company_ids user is employee of
+    is_active: bool = True
+    auth_provider: str = "email"  # "email" or "google"
+
+class EmployeeCreate(BaseModel):
+    email: EmailStr
+    name: str
+    password: Optional[str] = None  # Optional if using Google OAuth
+    company_id: str  # Initial company
+    auth_provider: str = "email"
+
+class Employee(EmployeeBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: f"emp_{uuid.uuid4().hex[:12]}")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# ===== UNIFIED LOGIN MODELS =====
+
+class UnifiedLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserAccess(BaseModel):
+    company_id: str
+    company_name: str
+    company_slug: str
+    role: str  # "admin" or "employee"
+    user_table: str  # "company_admins" or "employees"
+    user_id: str
+
+class UnifiedLoginResponse(BaseModel):
+    access_list: List[UserAccess]
+    user_email: str
+    user_name: str
+    user_picture: Optional[str] = None
+    needs_selection: bool
+
+class CompanyRoleSelection(BaseModel):
+    company_id: str
+    role: str
+    user_table: str
+    user_id: str
+
+class SessionResponse(BaseModel):
+    session_token: str
+    user_id: str
+    email: str
+    name: str
+    picture: Optional[str] = None
+    company_id: str
+    company_name: str
+    company_slug: str
+    role: str
+
+# ===== OLD USER MODELS (Keep for backward compatibility) =====
 
 class UserBase(BaseModel):
     email: EmailStr
