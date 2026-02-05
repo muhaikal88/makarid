@@ -191,7 +191,7 @@ export const AdminDashboard = () => {
                   <Button variant="ghost" className="flex items-center gap-2">
                     <Avatar className="w-8 h-8 bg-[#2E4DA7]">
                       <AvatarFallback className="bg-[#2E4DA7] text-white text-sm">
-                        {getInitials(user?.name)}
+                        {getInitials(session?.name)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
