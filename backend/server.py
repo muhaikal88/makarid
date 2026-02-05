@@ -713,6 +713,359 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "updated_at": current_user["updated_at"] if isinstance(current_user["updated_at"], str) else current_user["updated_at"].isoformat()
     }
 
+
+# ============ UNIFIED AUTH (Email-based across tables) ============
+
+@api_router.post("/auth/unified-login", response_model=UnifiedLoginResponse)
+async def unified_login(data: UnifiedLoginRequest):
+    """
+    Unified login for company admins & employees.
+    Check email across both tables and return all access.
+    """
+    access_list = []
+    user_name = None
+    user_picture = None
+    
+    # Check company_admins table
+    admin = await db.company_admins.find_one({"email": data.email}, {"_id": 0})
+    if admin:
+        if admin.get("password") and verify_password(data.password, admin["password"]):
+            user_name = admin["name"]
+            user_picture = admin.get("picture")
+            
+            # Get all companies this admin has access to
+            for company_id in admin.get("companies", []):
+                company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+                if company and company.get("is_active"):
+                    # Check license
+                    status, _ = get_license_status(company)
+                    if status not in ["expired", "suspended"]:
+                        access_list.append(UserAccess(
+                            company_id=company_id,
+                            company_name=company["name"],
+                            company_slug=company.get("slug", company["domain"]),
+                            role="admin",
+                            user_table="company_admins",
+                            user_id=admin["id"]
+                        ))
+    
+    # Check employees table
+    employee = await db.employees.find_one({"email": data.email}, {"_id": 0})
+    if employee:
+        if employee.get("password") and verify_password(data.password, employee["password"]):
+            if not user_name:  # Use employee name if admin not found
+                user_name = employee["name"]
+                user_picture = employee.get("picture")
+            
+            # Get all companies this employee has access to
+            for company_id in employee.get("companies", []):
+                company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+                if company and company.get("is_active"):
+                    status, _ = get_license_status(company)
+                    if status not in ["expired", "suspended"]:
+                        access_list.append(UserAccess(
+                            company_id=company_id,
+                            company_name=company["name"],
+                            company_slug=company.get("slug", company["domain"]),
+                            role="employee",
+                            user_table="employees",
+                            user_id=employee["id"]
+                        ))
+    
+    if not access_list:
+        raise HTTPException(status_code=401, detail="Invalid credentials or no active access")
+    
+    needs_selection = len(access_list) > 1
+    
+    return UnifiedLoginResponse(
+        access_list=access_list,
+        user_email=data.email,
+        user_name=user_name,
+        user_picture=user_picture,
+        needs_selection=needs_selection
+    )
+
+@api_router.post("/auth/select-company", response_model=SessionResponse)
+async def select_company(data: CompanyRoleSelection, response: Response):
+    """
+    After user selects company/role, create session and return session token
+    """
+    # Get user data based on table
+    if data.user_table == "company_admins":
+        user = await db.company_admins.find_one({"id": data.user_id}, {"_id": 0})
+    else:
+        user = await db.employees.find_one({"id": data.user_id}, {"_id": 0})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify user has access to this company
+    if data.company_id not in user.get("companies", []):
+        raise HTTPException(status_code=403, detail="No access to this company")
+    
+    # Get company info
+    company = await db.companies.find_one({"id": data.company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Create session token
+    session_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    
+    session_doc = {
+        "session_token": session_token,
+        "user_id": user["id"],
+        "email": user["email"],
+        "name": user["name"],
+        "picture": user.get("picture"),
+        "company_id": data.company_id,
+        "role": data.role,
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.user_sessions.insert_one(session_doc)
+    
+    # Set httpOnly cookie
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7*24*60*60,  # 7 days
+        path="/"
+    )
+    
+    return SessionResponse(
+        session_token=session_token,
+        user_id=user["id"],
+        email=user["email"],
+        name=user["name"],
+        picture=user.get("picture"),
+        company_id=data.company_id,
+        company_name=company["name"],
+        company_slug=company.get("slug"),
+        role=data.role
+    )
+
+# ============ GOOGLE OAUTH ENDPOINTS ============
+
+EMERGENT_AUTH_API = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
+
+@api_router.post("/auth/google/callback")
+async def google_oauth_callback(session_id: str, response: Response):
+    """
+    Process Google OAuth session_id from Emergent Auth.
+    Return user's access list (companies & roles).
+    """
+    # Get user data from Emergent Auth
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(
+                EMERGENT_AUTH_API,
+                headers={"X-Session-ID": session_id},
+                timeout=10.0
+            )
+            resp.raise_for_status()
+            google_data = resp.json()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to get session data: {str(e)}")
+    
+    email = google_data["email"]
+    name = google_data["name"]
+    picture = google_data.get("picture")
+    
+    access_list = []
+    
+    # Check company_admins table
+    admin = await db.company_admins.find_one({"email": email}, {"_id": 0})
+    if admin:
+        # Update with Google data if needed
+        await db.company_admins.update_one(
+            {"id": admin["id"]},
+            {"$set": {
+                "name": name,
+                "picture": picture,
+                "auth_provider": "google",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Get access list
+        for company_id in admin.get("companies", []):
+            company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+            if company and company.get("is_active"):
+                status, _ = get_license_status(company)
+                if status not in ["expired", "suspended"]:
+                    access_list.append({
+                        "company_id": company_id,
+                        "company_name": company["name"],
+                        "company_slug": company.get("slug", company["domain"]),
+                        "role": "admin",
+                        "user_table": "company_admins",
+                        "user_id": admin["id"]
+                    })
+    
+    # Check employees table
+    employee = await db.employees.find_one({"email": email}, {"_id": 0})
+    if employee:
+        # Update with Google data
+        await db.employees.update_one(
+            {"id": employee["id"]},
+            {"$set": {
+                "name": name,
+                "picture": picture,
+                "auth_provider": "google",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Get access list
+        for company_id in employee.get("companies", []):
+            company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+            if company and company.get("is_active"):
+                status, _ = get_license_status(company)
+                if status not in ["expired", "suspended"]:
+                    access_list.append({
+                        "company_id": company_id,
+                        "company_name": company["name"],
+                        "company_slug": company.get("slug", company["domain"]),
+                        "role": "employee",
+                        "user_table": "employees",
+                        "user_id": employee["id"]
+                    })
+    
+    if not access_list:
+        raise HTTPException(
+            status_code=403, 
+            detail="No company access found. Please contact your administrator."
+        )
+    
+    # If only 1 access, auto-create session
+    if len(access_list) == 1:
+        access = access_list[0]
+        session_token = secrets.token_urlsafe(32)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        
+        session_doc = {
+            "session_token": session_token,
+            "user_id": access["user_id"],
+            "email": email,
+            "name": name,
+            "picture": picture,
+            "company_id": access["company_id"],
+            "role": access["role"],
+            "expires_at": expires_at.isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.user_sessions.insert_one(session_doc)
+        
+        response.set_cookie(
+            key="session_token",
+            value=session_token,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            max_age=7*24*60*60,
+            path="/"
+        )
+        
+        company = await db.companies.find_one({"id": access["company_id"]}, {"_id": 0})
+        
+        return SessionResponse(
+            session_token=session_token,
+            user_id=access["user_id"],
+            email=email,
+            name=name,
+            picture=picture,
+            company_id=access["company_id"],
+            company_name=company["name"],
+            company_slug=company.get("slug"),
+            role=access["role"]
+        )
+    
+    # Multiple access - return list for selection
+    return {
+        "access_list": access_list,
+        "user_email": email,
+        "user_name": name,
+        "user_picture": picture,
+        "needs_selection": True
+    }
+
+# ============ SESSION-BASED AUTH HELPERS ============
+
+async def get_session_user(request: Request):
+    """Get user from session_token (cookie or header)"""
+    # Try cookie first
+    session_token = request.cookies.get("session_token")
+    
+    # Fallback to Authorization header
+    if not session_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            session_token = auth_header.split(" ")[1]
+    
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Get session from database
+    session = await db.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    
+    # Check expiry
+    expires_at = session["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < datetime.now(timezone.utc):
+        await db.user_sessions.delete_one({"session_token": session_token})
+        raise HTTPException(status_code=401, detail="Session expired")
+    
+    return session
+
+@api_router.get("/auth/me-session")
+async def get_me_session(request: Request):
+    """Get current user from session (cookie-based auth)"""
+    session = await get_session_user(request)
+    
+    company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0})
+    
+    return {
+        "user_id": session["user_id"],
+        "email": session["email"],
+        "name": session["name"],
+        "picture": session.get("picture"),
+        "company_id": session["company_id"],
+        "company_name": company["name"] if company else None,
+        "company_slug": company.get("slug") if company else None,
+        "role": session["role"]
+    }
+
+@api_router.post("/auth/logout")
+async def logout_session(request: Request, response: Response):
+    """Logout - delete session and clear cookie"""
+    session_token = request.cookies.get("session_token")
+    
+    if session_token:
+        await db.user_sessions.delete_one({"session_token": session_token})
+    
+    response.delete_cookie(
+        key="session_token",
+        path="/",
+        httponly=True,
+        secure=True,
+        samesite="none"
+    )
+    
+    return {"message": "Logged out successfully"}
+
+
 # ============ DASHBOARD ROUTES ============
 
 @api_router.get("/dashboard/stats", response_model=DashboardStats)
