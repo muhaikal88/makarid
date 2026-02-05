@@ -108,7 +108,7 @@ export const Login = () => {
           <h1 className="text-2xl font-bold text-white font-['Manrope']">
             {language === 'id' ? 'Portal Super Admin' : 'Super Admin Portal'}
           </h1>
-          <p className="text-white/60 mt-2">Lucky Cell HR Management System</p>
+          <p className="text-white/60 mt-2">Makar.id - Manajemen Karyawan</p>
         </div>
 
         {/* Login Card */}
