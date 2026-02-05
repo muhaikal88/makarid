@@ -1409,16 +1409,7 @@ async def disable_user_2fa(password: str, request: Request):
     return {"message": "2FA disabled successfully"}
 
 
-            session_update["email"] = update_data["email"]
-        await db.user_sessions.update_many(
-            {"user_id": session["user_id"]},
-            {"$set": session_update}
-        )
-    
-    updated = await table.find_one({"id": session["user_id"]}, {"_id": 0, "password": 0})
-    return updated
-
-
+# ============ DASHBOARD ROUTES ============
     
 
 async def require_session_admin(request: Request):
