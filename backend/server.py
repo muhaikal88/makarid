@@ -1531,7 +1531,7 @@ async def get_my_activity_logs(
     logs = await db.activity_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return logs
 
-
+class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
