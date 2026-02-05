@@ -369,7 +369,8 @@ export const Companies = () => {
                     <TableHead className="font-semibold">{t('domain')}</TableHead>
                     <TableHead className="font-semibold">Lisensi</TableHead>
                     <TableHead className="font-semibold">{t('status')}</TableHead>
-                    <TableHead className="font-semibold">{t('employees')}</TableHead>
+                    <TableHead className="font-semibold">Admin</TableHead>
+                    <TableHead className="font-semibold">Karyawan</TableHead>
                     <TableHead className="text-right font-semibold">{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
