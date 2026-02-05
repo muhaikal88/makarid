@@ -278,12 +278,10 @@ export const CompanySettings = () => {
                   </Button>
                 </CardContent>
               </Card>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+          </div>
 
-      <Toaster position="top-right" richColors />
-    </div>
-  );
-};
+          <Toaster position="top-right" richColors />
+        </div>
+      );
+    };
