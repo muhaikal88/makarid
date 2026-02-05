@@ -169,7 +169,50 @@ export const ActivityLogs = () => {
             </Button>
           </div>
 
-          {/* Filters Row */}
+          {/* Filters Row 1: Date Range */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 max-w-xs">
+              <Label className="text-sm text-gray-600 mb-2 block">Tanggal Mulai</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); }}
+                className="h-10"
+              />
+            </div>
+            <div className="flex-1 max-w-xs">
+              <Label className="text-sm text-gray-600 mb-2 block">Tanggal Akhir</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); }}
+                className="h-10"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  fetchLogs();
+                }}
+                className="h-10"
+              >
+                Reset Tanggal
+              </Button>
+            </div>
+            <div className="flex items-end">
+              <Button 
+                onClick={fetchLogs}
+                className="h-10 bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+              >
+                Terapkan Filter
+              </Button>
+            </div>
+          </div>
+
+          {/* Filters Row 2: Action, Resource, User */}
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Action Filter */}
             <div className="flex-1 max-w-xs">
