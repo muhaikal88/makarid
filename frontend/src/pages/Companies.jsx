@@ -744,7 +744,7 @@ export const Companies = () => {
                   id="domain_hr"
                   value={domainData.hr}
                   onChange={(e) => setDomainData({ ...domainData, hr: e.target.value })}
-                  placeholder="hr.luckycell.co.id"
+                  placeholder="hr.company.co.id"
                 />
                 {domainData.hr && (
                   <a 
