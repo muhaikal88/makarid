@@ -115,9 +115,7 @@ export const Login = () => {
         <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur">
           <CardHeader className="space-y-1 text-center pb-6">
             <div className="flex justify-center mb-4">
-              <div className="bg-slate-100 rounded-xl p-3">
-                <img src={LOGO_URL} alt="Lucky Cell" className="h-12 w-auto" />
-              </div>
+              <img src={LOGO_URL} alt="Makar.id" className="h-20 w-auto" />
             </div>
             <CardTitle className="text-xl font-bold text-gray-900" data-testid="login-title">
               {t('loginTitle')}
