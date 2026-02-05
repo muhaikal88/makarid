@@ -88,6 +88,84 @@ export const SuperAdminProfile = () => {
       toast.error(error.response?.data?.detail || 'Gagal update profil');
     } finally {
       setSaving(false);
+
+    }
+  };
+
+  const generatePassword = () => {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const special = '!@#$%^&*()';
+    
+    const all = uppercase + lowercase + numbers + special;
+    
+    let password = '';
+    // Ensure at least one of each type
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += special[Math.floor(Math.random() * special.length)];
+    
+    // Fill rest randomly (total 12 characters)
+    for (let i = 0; i < 8; i++) {
+      password += all[Math.floor(Math.random() * all.length)];
+    }
+    
+    // Shuffle
+    password = password.split('').sort(() => Math.random() - 0.5).join('');
+    
+    setFormData({ ...formData, password });
+    setShowPassword(true);
+    toast.success(language === 'id' ? 'Password kuat telah digenerate' : 'Strong password generated');
+  };
+
+  const handleSetup2FA = async () => {
+    try {
+      const response = await axios.post(`${API}/profile/superadmin/2fa/setup`, {}, {
+        headers: getAuthHeaders()
+      });
+      setQrCodeUrl(response.data.qr_code_url);
+      setTotpSecret(response.data.secret);
+      setShow2FASetup(true);
+    } catch (error) {
+      console.error('Failed to setup 2FA:', error);
+      toast.error('Gagal setup 2FA');
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    setVerifying(true);
+    try {
+      await axios.post(`${API}/profile/superadmin/2fa/verify?token=${verificationCode}`, {}, {
+        headers: getAuthHeaders()
+      });
+      toast.success('Google Authenticator berhasil diaktifkan!');
+      setShow2FASetup(false);
+      setVerificationCode('');
+      fetchProfile();
+    } catch (error) {
+      console.error('Failed to verify 2FA:', error);
+      toast.error(error.response?.data?.detail || 'Kode verifikasi salah');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    const password = prompt(language === 'id' ? 'Masukkan password untuk disable 2FA:' : 'Enter password to disable 2FA:');
+    if (!password) return;
+    
+    try {
+      await axios.post(`${API}/profile/superadmin/2fa/disable?password=${password}`, {}, {
+        headers: getAuthHeaders()
+      });
+      toast.success('2FA berhasil dinonaktifkan');
+      fetchProfile();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Password salah');
+    }
+
     }
   };
 
