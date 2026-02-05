@@ -2540,6 +2540,27 @@ async def update_job_session(job_id: str, data: JobUpdate, request: Request):
     )
 
 
+@api_router.delete("/jobs-session/{job_id}")
+async def delete_job_session(job_id: str, request: Request):
+    """Delete job using session auth"""
+    session = await require_session_admin(request)
+    
+    job = await db.jobs.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job["company_id"] != session["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Delete related applications
+    await db.applications.delete_many({"job_id": job_id})
+    await db.jobs.delete_one({"id": job_id})
+    
+    return {"message": "Job deleted successfully"}
+
+
+
+
 
 @api_router.post("/jobs", response_model=JobResponse)
 async def create_job(data: JobCreate, current_user: dict = Depends(require_admin_or_super)):
