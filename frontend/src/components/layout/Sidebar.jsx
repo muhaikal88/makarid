@@ -11,7 +11,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_cea08fa0-5c14-4b0d-bcc8-350a4e47c0ce/artifacts/hf5ag1pw_LOGO%20LUCKY%20HD_page-0001.jpg";
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_hr-saas-mvp/artifacts/did1y7v8_ChatGPT%20Image%20Feb%205%2C%202026%2C%2001_21_17%20PM.png";
 
 export const Sidebar = () => {
   const { t } = useLanguage();
@@ -33,15 +33,13 @@ export const Sidebar = () => {
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-[#1e3a8a] text-white flex flex-col">
       {/* Logo */}
-      <div className="flex items-center justify-center h-20 border-b border-white/10 px-4">
-        <div className="bg-white rounded-lg p-2 flex items-center justify-center">
-          <img 
-            src={LOGO_URL} 
-            alt="Lucky Cell" 
-            className="h-12 w-auto object-contain"
-            data-testid="sidebar-logo"
-          />
-        </div>
+      <div className="flex items-center justify-center h-20 border-b border-white/10 px-4 py-3">
+        <img 
+          src={LOGO_URL} 
+          alt="Makar.id" 
+          className="h-16 w-auto object-contain"
+          data-testid="sidebar-logo"
+        />
       </div>
 
       {/* Navigation */}
