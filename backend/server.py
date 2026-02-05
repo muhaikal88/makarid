@@ -305,6 +305,23 @@ class CompanyProfileResponse(BaseModel):
     gallery_images: Optional[List[str]] = None
     cover_image: Optional[str] = None
 
+# ===== SYSTEM SETTINGS MODELS =====
+
+class SMTPSettings(BaseModel):
+    host: str
+    port: int
+    username: str
+    password: str
+    from_email: str
+    from_name: str
+    use_tls: bool = True
+
+class SystemSettings(BaseModel):
+    smtp_settings: Optional[SMTPSettings] = None
+
+class SystemSettingsUpdate(BaseModel):
+    smtp_settings: Optional[Dict[str, Any]] = None
+
 # Job Posting Models
 class JobStatus:
     DRAFT = "draft"
