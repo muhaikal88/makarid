@@ -118,7 +118,7 @@ export const ActivityLogs = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterAction, filterResource, filterUser]);
+  }, [filterAction, filterResource, filterUser, startDate, endDate]);
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
