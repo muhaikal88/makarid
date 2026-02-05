@@ -278,9 +278,9 @@ export const CompanySettings = () => {
                   </Button>
                 </CardContent>
               </Card>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <Toaster position="top-right" richColors />
