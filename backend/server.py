@@ -46,15 +46,48 @@ optional_security = HTTPBearer(auto_error=False)
 # ============ MODELS ============
 
 class UserRole:
-    SUPER_ADMIN = "super_admin"
     ADMIN = "admin"
     EMPLOYEE = "employee"
+
+# ===== SUPER ADMIN MODELS (Separate Table) =====
+
+class SuperAdminBase(BaseModel):
+    email: EmailStr
+    name: str
+    is_active: bool = True
+
+class SuperAdminCreate(BaseModel):
+    email: EmailStr
+    name: str
+    password: str
+
+class SuperAdminUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    password: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class SuperAdmin(SuperAdminBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class SuperAdminResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    is_active: bool
+    created_at: str
+    updated_at: str
+
+# ===== COMPANY USER MODELS (Separate Table) =====
 
 class UserBase(BaseModel):
     email: EmailStr
     name: str
-    role: str = UserRole.ADMIN
-    company_id: Optional[str] = None
+    role: str = UserRole.ADMIN  # Only 'admin' or 'employee'
+    company_id: str  # REQUIRED - all users must belong to a company
     is_active: bool = True
 
 class UserCreate(BaseModel):
@@ -62,14 +95,14 @@ class UserCreate(BaseModel):
     name: str
     password: str
     role: str = UserRole.ADMIN
-    company_id: Optional[str] = None
+    company_id: str  # REQUIRED
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     name: Optional[str] = None
     password: Optional[str] = None
     is_active: Optional[bool] = None
-    company_id: Optional[str] = None
+    role: Optional[str] = None
 
 class User(UserBase):
     model_config = ConfigDict(extra="ignore")
@@ -82,7 +115,7 @@ class UserResponse(BaseModel):
     email: str
     name: str
     role: str
-    company_id: Optional[str] = None
+    company_id: str
     is_active: bool
     created_at: str
     updated_at: str
