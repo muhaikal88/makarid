@@ -1238,6 +1238,169 @@ async def update_my_profile(data: ProfileUpdate, request: Request):
         if "name" in update_data:
             session_update["name"] = update_data["name"]
         if "email" in update_data:
+
+
+# ============ 2FA / TOTP ENDPOINTS ============
+
+@api_router.post("/profile/superadmin/2fa/setup")
+async def setup_superadmin_2fa(current_user: dict = Depends(require_super_admin)):
+    """Setup Google Authenticator for super admin"""
+    # Generate new TOTP secret
+    secret = pyotp.random_base32()
+    
+    # Create provisioning URI for QR code
+    totp = pyotp.TOTP(secret)
+    provisioning_uri = totp.provisioning_uri(
+        name=current_user["email"],
+        issuer_name="Makar.id Super Admin"
+    )
+    
+    # Save secret (but don't enable yet - will enable after verification)
+    await db.superadmins.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "totp_secret": secret,
+            "totp_enabled": False,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "secret": secret,
+        "provisioning_uri": provisioning_uri,
+        "qr_code_url": f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={provisioning_uri}"
+    }
+
+@api_router.post("/profile/superadmin/2fa/verify")
+async def verify_superadmin_2fa(token: str, current_user: dict = Depends(require_super_admin)):
+    """Verify and enable 2FA"""
+    admin = await db.superadmins.find_one({"id": current_user["id"]}, {"_id": 0})
+    
+    if not admin or not admin.get("totp_secret"):
+        raise HTTPException(status_code=400, detail="2FA not setup. Please setup first.")
+    
+    # Verify token
+    totp = pyotp.TOTP(admin["totp_secret"])
+    if not totp.verify(token, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    # Enable 2FA
+    await db.superadmins.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "totp_enabled": True,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "2FA enabled successfully"}
+
+@api_router.post("/profile/superadmin/2fa/disable")
+async def disable_superadmin_2fa(password: str, current_user: dict = Depends(require_super_admin)):
+    """Disable 2FA (requires password confirmation)"""
+    admin = await db.superadmins.find_one({"id": current_user["id"]}, {"_id": 0})
+    
+    if not verify_password(password, admin["password"]):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    await db.superadmins.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "totp_secret": None,
+            "totp_enabled": False,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "2FA disabled successfully"}
+
+# Company Admin 2FA
+@api_router.post("/profile/me/2fa/setup")
+async def setup_user_2fa(request: Request):
+    """Setup Google Authenticator for company admin"""
+    session = await get_session_user(request)
+    
+    if session["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only company admins can enable 2FA")
+    
+    # Generate secret
+    secret = pyotp.random_base32()
+    totp = pyotp.TOTP(secret)
+    
+    admin = await db.company_admins.find_one({"id": session["user_id"]}, {"_id": 0})
+    provisioning_uri = totp.provisioning_uri(
+        name=admin["email"],
+        issuer_name="Makar.id Company Admin"
+    )
+    
+    # Save secret
+    await db.company_admins.update_one(
+        {"id": session["user_id"]},
+        {"$set": {
+            "totp_secret": secret,
+            "totp_enabled": False,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "secret": secret,
+        "provisioning_uri": provisioning_uri,
+        "qr_code_url": f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={provisioning_uri}"
+    }
+
+@api_router.post("/profile/me/2fa/verify")
+async def verify_user_2fa(token: str, request: Request):
+    """Verify and enable 2FA for company admin"""
+    session = await get_session_user(request)
+    
+    if session["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only company admins can enable 2FA")
+    
+    admin = await db.company_admins.find_one({"id": session["user_id"]}, {"_id": 0})
+    
+    if not admin or not admin.get("totp_secret"):
+        raise HTTPException(status_code=400, detail="2FA not setup")
+    
+    totp = pyotp.TOTP(admin["totp_secret"])
+    if not totp.verify(token, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    await db.company_admins.update_one(
+        {"id": session["user_id"]},
+        {"$set": {
+            "totp_enabled": True,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "2FA enabled successfully"}
+
+@api_router.post("/profile/me/2fa/disable")
+async def disable_user_2fa(password: str, request: Request):
+    """Disable 2FA for company admin"""
+    session = await get_session_user(request)
+    
+    if session["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only company admins can manage 2FA")
+    
+    admin = await db.company_admins.find_one({"id": session["user_id"]}, {"_id": 0})
+    
+    if not verify_password(password, admin["password"]):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    await db.company_admins.update_one(
+        {"id": session["user_id"]},
+        {"$set": {
+            "totp_secret": None,
+            "totp_enabled": False,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "2FA disabled successfully"}
+
+
             session_update["email"] = update_data["email"]
         await db.user_sessions.update_many(
             {"user_id": session["user_id"]},
