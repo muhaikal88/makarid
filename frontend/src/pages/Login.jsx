@@ -55,7 +55,7 @@ export const Login = () => {
         return;
       }
       
-      navigate('/dashboard');
+      navigate('/superadmin/dashboard');
     } catch (err) {
       console.error('Login error:', err);
       setError(t('loginError'));
