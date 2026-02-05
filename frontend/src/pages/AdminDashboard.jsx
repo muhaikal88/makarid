@@ -197,6 +197,9 @@ export const AdminDashboard = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
+                    <User className="w-4 h-4 mr-2" /> Profile
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
                     <Settings className="w-4 h-4 mr-2" /> Settings
                   </DropdownMenuItem>
