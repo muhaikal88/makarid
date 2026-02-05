@@ -369,6 +369,7 @@ export const Users = () => {
                     <TableHead className="font-semibold">{t('email')}</TableHead>
                     <TableHead className="font-semibold">{t('role')}</TableHead>
                     <TableHead className="font-semibold">{t('company')}</TableHead>
+                    <TableHead className="font-semibold">2FA</TableHead>
                     <TableHead className="font-semibold">{t('status')}</TableHead>
                     <TableHead className="font-semibold">{t('createdAt')}</TableHead>
                     <TableHead className="text-right font-semibold">{t('actions')}</TableHead>
