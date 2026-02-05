@@ -211,8 +211,8 @@ class UserResponse(BaseModel):
 
 class CompanyBase(BaseModel):
     name: str
-    slug: str  # URL-friendly identifier (e.g., luckycell) - used for subdomain
-    domain: str  # Primary identifier (e.g., luckycell.co.id)
+    slug: str  # URL-friendly identifier (e.g., demo) - used for subdomain
+    domain: str  # Primary identifier (e.g., company.co.id)
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
