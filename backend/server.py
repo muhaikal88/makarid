@@ -692,9 +692,28 @@ async def lookup_domain(hostname: str):
     """
     Lookup company by hostname for white-label routing.
     Checks custom_domains.main, custom_domains.careers, custom_domains.hr
-    Also checks primary domain field.
+    Also checks primary domain field and slug-based subdomain.
     """
-    # First check custom_domains
+    # Extract slug from subdomain if it's from makar.id
+    # e.g., luckycell.makar.id -> slug=luckycell
+    if '.makar.id' in hostname:
+        slug = hostname.replace('.makar.id', '')
+        company = await db.companies.find_one({
+            "slug": slug,
+            "is_active": True
+        }, {"_id": 0})
+        
+        if company:
+            return DomainLookupResponse(
+                found=True,
+                company_id=company["id"],
+                company_name=company["name"],
+                domain=company["domain"],
+                page_type="main",
+                logo_url=company.get("logo_url")
+            )
+    
+    # Check custom_domains or primary domain
     company = await db.companies.find_one({
         "$or": [
             {"custom_domains.main": hostname},
