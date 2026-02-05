@@ -1460,6 +1460,69 @@ async def get_my_profile(request: Request):
     }
 
 class ProfileUpdate(BaseModel):
+
+
+# ============ ACTIVITY LOGS ============
+
+@api_router.get("/logs")
+async def get_activity_logs(
+    current_user: dict = Depends(require_super_admin),
+    user_id: Optional[str] = None,
+    action: Optional[str] = None,
+    resource_type: Optional[str] = None,
+    company_id: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 100
+):
+    """Get activity logs (Super Admin only)"""
+    query = {}
+    
+    if user_id:
+        query["user_id"] = user_id
+    if action:
+        query["action"] = action
+    if resource_type:
+        query["resource_type"] = resource_type
+    if company_id:
+        query["company_id"] = company_id
+    if search:
+        query["$or"] = [
+            {"user_name": {"$regex": search, "$options": "i"}},
+            {"user_email": {"$regex": search, "$options": "i"}},
+            {"description": {"$regex": search, "$options": "i"}}
+        ]
+    
+    logs = await db.activity_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    return logs
+
+@api_router.get("/logs/me")
+async def get_my_activity_logs(
+    request: Request,
+    action: Optional[str] = None,
+    resource_type: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 100
+):
+    """Get activity logs for current company (Company Admin only)"""
+    session = await require_session_admin(request)
+    
+    query = {"company_id": session["company_id"]}
+    
+    if action:
+        query["action"] = action
+    if resource_type:
+        query["resource_type"] = resource_type
+    if search:
+        query["$or"] = [
+            {"user_name": {"$regex": search, "$options": "i"}},
+            {"user_email": {"$regex": search, "$options": "i"}},
+            {"description": {"$regex": search, "$options": "i"}}
+        ]
+    
+    logs = await db.activity_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    return logs
+
+
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
