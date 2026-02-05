@@ -1470,8 +1470,6 @@ async def get_my_profile(request: Request):
         "user_table": table
     }
 
-class ProfileUpdate(BaseModel):
-
 
 # ============ ACTIVITY LOGS ============
 
