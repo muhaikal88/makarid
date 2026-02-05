@@ -37,11 +37,11 @@ export const Sidebar = () => {
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-[#1e3a8a] text-white flex flex-col">
       {/* Logo */}
-      <div className="flex items-center justify-center h-20 border-b border-white/10 px-4 py-3">
+      <div className="flex items-center justify-center h-24 border-b border-white/10 px-4 py-4">
         <img 
           src={LOGO_URL} 
           alt="Makar.id" 
-          className="h-16 w-auto object-contain"
+          className="h-20 w-auto object-contain"
           data-testid="sidebar-logo"
         />
       </div>
