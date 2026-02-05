@@ -274,25 +274,39 @@ export const SuperAdmins = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {admin.totp_enabled ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-                            <ShieldCheck className="w-3 h-3 mr-1" />
-                            Aktif
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-gray-600">
-                            <ShieldOff className="w-3 h-3 mr-1" />
-                            Tidak Aktif
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {admin.totp_enabled ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                              <ShieldCheck className="w-3 h-3 mr-1" />
+                              Aktif
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-gray-600">
+                              <ShieldOff className="w-3 h-3 mr-1" />
+                              Tidak Aktif
+                            </Badge>
+                          )}
+                          <Switch
+                            checked={admin.totp_enabled || false}
+                            onCheckedChange={(checked) => handleToggle2FA(admin, checked)}
+                            disabled={!admin.totp_secret}
+                            title={admin.totp_secret ? "Toggle 2FA" : "User must setup 2FA first"}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={admin.is_active ? 'default' : 'secondary'}
-                          className={admin.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : ''}
-                        >
-                          {admin.is_active ? 'Aktif' : 'Nonaktif'}
-                        </Badge>
+                        <div className="flex items-center gap-3">
+                          <Badge 
+                            variant={admin.is_active ? 'default' : 'secondary'}
+                            className={admin.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : ''}
+                          >
+                            {admin.is_active ? 'Aktif' : 'Nonaktif'}
+                          </Badge>
+                          <Switch
+                            checked={admin.is_active || false}
+                            onCheckedChange={(checked) => handleToggleActive(admin, checked)}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="text-gray-600">
                         {formatDate(admin.created_at)}
