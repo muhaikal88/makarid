@@ -1642,9 +1642,6 @@ async def delete_user(user_id: str, current_user: dict = Depends(require_super_a
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if user.get("role") == UserRole.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Cannot delete Super Admin")
-    
     await db.users.delete_one({"id": user_id})
     
     return {"message": "User deleted successfully"}
