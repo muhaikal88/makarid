@@ -505,26 +505,55 @@ async def require_admin_or_super(current_user: dict = Depends(get_current_user))
 
 @app.on_event("startup")
 async def startup_event():
-    # Create default super admin if not exists
-    existing_admin = await db.users.find_one({"role": UserRole.SUPER_ADMIN})
+    # Create default super admin if not exists (in superadmins table)
+    existing_admin = await db.superadmins.find_one({"email": "superadmin@makar.id"})
     if not existing_admin:
         super_admin = {
             "id": str(uuid.uuid4()),
-            "email": "superadmin@luckycell.co.id",
+            "email": "superadmin@makar.id",
             "name": "Super Admin",
             "password": hash_password("admin123"),
-            "role": UserRole.SUPER_ADMIN,
-            "company_id": None,
             "is_active": True,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
-        await db.users.insert_one(super_admin)
-        logging.info("Default Super Admin created: superadmin@luckycell.co.id / admin123")
+        await db.superadmins.insert_one(super_admin)
+        logging.info("Default Super Admin created: superadmin@makar.id / admin123")
 
 # ============ AUTH ROUTES ============
 
-@api_router.post("/auth/login", response_model=LoginResponse)
+# Super Admin Login (Separate endpoint)
+@api_router.post("/auth/superadmin/login")
+async def superadmin_login(data: LoginRequest):
+    """Login for Super Admin only"""
+    admin = await db.superadmins.find_one({"email": data.email}, {"_id": 0})
+    if not admin:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    if not verify_password(data.password, admin["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    if not admin.get("is_active", True):
+        raise HTTPException(status_code=401, detail="Account is deactivated")
+    
+    token = create_token(admin["id"], "super_admin", None)
+    
+    return LoginResponse(
+        token=token,
+        user=UserResponse(
+            id=admin["id"],
+            email=admin["email"],
+            name=admin["name"],
+            role="super_admin",
+            company_id=None,
+            is_active=admin["is_active"],
+            created_at=admin["created_at"],
+            updated_at=admin["updated_at"]
+        )
+    )
+
+# Company User Login (Separate endpoint)
+@api_router.post("/auth/login")
 async def login(data: LoginRequest):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user:
