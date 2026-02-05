@@ -110,6 +110,7 @@ class CompanyCreate(CompanyBase):
 
 class CompanyUpdate(BaseModel):
     name: Optional[str] = None
+    slug: Optional[str] = None
     domain: Optional[str] = None
     address: Optional[str] = None
     phone: Optional[str] = None
@@ -120,6 +121,7 @@ class CompanyUpdate(BaseModel):
     license_end: Optional[str] = None
     license_type: Optional[str] = None
     custom_domains: Optional[Dict[str, str]] = None
+    smtp_settings: Optional[Dict[str, str]] = None
 
 class Company(CompanyBase):
     model_config = ConfigDict(extra="ignore")
