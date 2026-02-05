@@ -301,7 +301,7 @@ export const Careers = () => {
             </div>
           </div>
           <p className="text-center text-xs text-gray-400 mt-6">
-            Powered by Lucky Cell HR System
+            Powered by Makar.id
           </p>
         </div>
       </footer>
