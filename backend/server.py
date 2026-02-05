@@ -550,6 +550,40 @@ def get_license_status(company: dict) -> tuple:
             return ("active", None)
         return ("active", None)  # Trial without end date
     
+
+
+async def create_activity_log(
+    user_id: str,
+    user_name: str, 
+    user_email: str,
+    user_role: str,
+    action: str,
+    resource_type: str,
+    description: str,
+    company_id: str = None,
+    company_name: str = None,
+    resource_id: str = None,
+    ip_address: str = None
+):
+    """Helper to create activity log"""
+    log_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "user_name": user_name,
+        "user_email": user_email,
+        "user_role": user_role,
+        "company_id": company_id,
+        "company_name": company_name,
+        "action": action,
+        "resource_type": resource_type,
+        "resource_id": resource_id,
+        "description": description,
+        "ip_address": ip_address,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await db.activity_logs.insert_one(log_doc)
+
+
     try:
         end_date = datetime.fromisoformat(license_end.replace('Z', '+00:00'))
         now = datetime.now(timezone.utc)
