@@ -268,6 +268,7 @@ class CompanyResponse(BaseModel):
     days_remaining: Optional[int] = None
     created_at: str
     updated_at: str
+    admin_count: int = 0
     employee_count: int = 0
     custom_domains: Optional[Dict[str, str]] = None
     custom_domains: Optional[Dict[str, str]] = None
