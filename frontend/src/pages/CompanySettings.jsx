@@ -169,95 +169,60 @@ export const CompanySettings = () => {
                 : 'Use your own domain for stronger branding. SMTP email settings are managed by Super Admin.'}
             </CardDescription>
           </CardHeader>
-              <Mail className="w-4 h-4" />
-              SMTP Email
-            </TabsTrigger>
-          </TabsList>
+          <CardContent className="space-y-6">
+            {/* Default Domain Info */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    {language === 'id' ? 'Subdomain Anda' : 'Your Subdomain'}
+                  </p>
+                  <p className="text-lg font-mono font-semibold text-emerald-700">
+                    {settings?.default_subdomain || `${settings?.slug}.makar.id`}
+                  </p>
+                </div>
+                <Check className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                <div className="p-3 bg-slate-50 rounded">
+                  <p className="text-gray-600 mb-1">Company Profile</p>
+                  <p className="font-mono text-xs text-[#2E4DA7]">
+                    {settings?.default_subdomain}
+                  </p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded">
+                  <p className="text-gray-600 mb-1">Careers Page</p>
+                  <p className="font-mono text-xs text-[#2E4DA7]">
+                    {settings?.default_subdomain}/careers
+                  </p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded">
+                  <p className="text-gray-600 mb-1">Login Page</p>
+                  <p className="font-mono text-xs text-[#2E4DA7]">
+                    {settings?.default_subdomain}/login
+                  </p>
+                </div>
+              </div>
+            </div>
 
-          {/* Custom Domain Settings */}
-          <TabsContent value="domains">
-            <div className="grid gap-6">
-              {/* Default Domain Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="w-5 h-5" />
-                    {language === 'id' ? 'Domain Default' : 'Default Domain'}
-                  </CardTitle>
-                  <CardDescription>
-                    {language === 'id' 
-                      ? 'Domain default yang disediakan oleh sistem' 
-                      : 'Default domain provided by the system'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">
-                          {language === 'id' ? 'Subdomain Anda' : 'Your Subdomain'}
-                        </p>
-                        <p className="text-lg font-mono font-semibold text-emerald-700">
-                          {settings?.default_subdomain || `${settings?.slug}.makar.id`}
-                        </p>
-                      </div>
-                      <Check className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                      <div className="p-3 bg-slate-50 rounded">
-                        <p className="text-gray-600 mb-1">Company Profile</p>
-                        <p className="font-mono text-xs text-[#2E4DA7]">
-                          {settings?.default_subdomain}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-slate-50 rounded">
-                        <p className="text-gray-600 mb-1">Careers Page</p>
-                        <p className="font-mono text-xs text-[#2E4DA7]">
-                          {settings?.default_subdomain}/careers
-                        </p>
-                      </div>
-                      <div className="p-3 bg-slate-50 rounded">
-                        <p className="text-gray-600 mb-1">Login Page</p>
-                        <p className="font-mono text-xs text-[#2E4DA7]">
-                          {settings?.default_subdomain}/login
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Custom Domain Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Link2 className="w-5 h-5" />
-                    {language === 'id' ? 'Custom Domain (Opsional)' : 'Custom Domain (Optional)'}
-                  </CardTitle>
-                  <CardDescription>
+            {/* DNS Instructions */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">
+                    {language === 'id' ? 'Instruksi DNS' : 'DNS Instructions'}
+                  </p>
+                  <p>
                     {language === 'id'
-                      ? 'Gunakan domain sendiri untuk branding yang lebih kuat'
-                      : 'Use your own domain for stronger branding'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">
-                          {language === 'id' ? 'Instruksi DNS' : 'DNS Instructions'}
-                        </p>
-                        <p>
-                          {language === 'id'
-                            ? 'Untuk menggunakan custom domain, Anda perlu menambahkan CNAME record di DNS provider Anda yang mengarah ke server kami.'
-                            : 'To use custom domain, you need to add a CNAME record in your DNS provider pointing to our server.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                      ? 'Untuk menggunakan custom domain, Anda perlu menambahkan CNAME record di DNS provider Anda yang mengarah ke server kami.'
+                      : 'To use custom domain, you need to add a CNAME record in your DNS provider pointing to our server.'}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-                  <div className="grid gap-4">
+            {/* Custom Domain Form */}
                     <div className="grid gap-2">
                       <Label htmlFor="domain_main">
                         Main Domain (Company Profile)
