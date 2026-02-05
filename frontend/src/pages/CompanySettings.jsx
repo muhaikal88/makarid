@@ -7,19 +7,12 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Globe, 
-  Mail, 
   Settings, 
   ArrowLeft, 
-  Building2,
   Link2,
-  Server,
-  Eye,
-  EyeOff,
   Check,
-  AlertCircle,
   Info
 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
@@ -27,13 +20,12 @@ import { Toaster, toast } from 'sonner';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const CompanySettings = () => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const { user, getAuthHeaders } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
   
   // Domain settings
   const [customDomains, setCustomDomains] = useState({
@@ -41,25 +33,15 @@ export const CompanySettings = () => {
     careers: '',
     hr: ''
   });
-  
-  // SMTP settings
-  const [smtpSettings, setSmtpSettings] = useState({
-    host: '',
-    port: '587',
-    user: '',
-    password: '',
-    from_email: '',
-    from_name: ''
-  });
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
 
   // Redirect if not company admin
   if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
     return <Navigate to="/login" replace />;
   }
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   const fetchSettings = async () => {
     try {
@@ -68,14 +50,8 @@ export const CompanySettings = () => {
       });
       setSettings(response.data);
       
-      // Set custom domains
       if (response.data.custom_domains) {
         setCustomDomains(response.data.custom_domains);
-      }
-      
-      // Set SMTP settings
-      if (response.data.smtp_settings) {
-        setSmtpSettings(response.data.smtp_settings);
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -98,24 +74,6 @@ export const CompanySettings = () => {
     } catch (error) {
       console.error('Failed to save domains:', error);
       toast.error(error.response?.data?.detail || 'Gagal menyimpan domain');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveSMTP = async () => {
-    setSaving(true);
-    try {
-      await axios.put(`${API}/company/settings`, {
-        smtp_settings: smtpSettings
-      }, {
-        headers: getAuthHeaders()
-      });
-      toast.success(language === 'id' ? 'Pengaturan SMTP berhasil disimpan' : 'SMTP settings saved successfully');
-      fetchSettings();
-    } catch (error) {
-      console.error('Failed to save SMTP:', error);
-      toast.error(error.response?.data?.detail || 'Gagal menyimpan SMTP');
     } finally {
       setSaving(false);
     }
@@ -155,18 +113,17 @@ export const CompanySettings = () => {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-8">
-        {/* Only Custom Domain - SMTP removed (Super Admin only) */}
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="w-5 h-5" />
-              {language === 'id' ? 'Custom Domain (Opsional)' : 'Custom Domain (Optional)'}
+              {language === 'id' ? 'Custom Domain' : 'Custom Domain'}
             </CardTitle>
             <CardDescription>
               {language === 'id'
-                ? 'Gunakan domain sendiri untuk branding yang lebih kuat. Pengaturan SMTP email dikelola oleh Super Admin.'
-                : 'Use your own domain for stronger branding. SMTP email settings are managed by Super Admin.'}
+                ? 'Gunakan domain sendiri untuk branding. Pengaturan SMTP email dikelola oleh Super Admin.'
+                : 'Use your own domain for branding. SMTP email settings are managed by Super Admin.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -175,33 +132,13 @@ export const CompanySettings = () => {
               <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
                 <div>
                   <p className="text-sm font-medium text-gray-700">
-                    {language === 'id' ? 'Subdomain Anda' : 'Your Subdomain'}
+                    {language === 'id' ? 'Subdomain Default Anda' : 'Your Default Subdomain'}
                   </p>
                   <p className="text-lg font-mono font-semibold text-emerald-700">
                     {settings?.default_subdomain || `${settings?.slug}.makar.id`}
                   </p>
                 </div>
                 <Check className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                <div className="p-3 bg-slate-50 rounded">
-                  <p className="text-gray-600 mb-1">Company Profile</p>
-                  <p className="font-mono text-xs text-[#2E4DA7]">
-                    {settings?.default_subdomain}
-                  </p>
-                </div>
-                <div className="p-3 bg-slate-50 rounded">
-                  <p className="text-gray-600 mb-1">Careers Page</p>
-                  <p className="font-mono text-xs text-[#2E4DA7]">
-                    {settings?.default_subdomain}/careers
-                  </p>
-                </div>
-                <div className="p-3 bg-slate-50 rounded">
-                  <p className="text-gray-600 mb-1">Login Page</p>
-                  <p className="font-mono text-xs text-[#2E4DA7]">
-                    {settings?.default_subdomain}/login
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -215,8 +152,8 @@ export const CompanySettings = () => {
                   </p>
                   <p>
                     {language === 'id'
-                      ? 'Untuk menggunakan custom domain, Anda perlu menambahkan CNAME record di DNS provider Anda yang mengarah ke server kami.'
-                      : 'To use custom domain, you need to add a CNAME record in your DNS provider pointing to our server.'}
+                      ? 'Untuk menggunakan custom domain, Anda perlu menambahkan CNAME record di DNS provider Anda.'
+                      : 'To use custom domain, you need to add a CNAME record in your DNS provider.'}
                   </p>
                 </div>
               </div>
@@ -225,64 +162,48 @@ export const CompanySettings = () => {
             {/* Custom Domain Form */}
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="domain_main">
-                  Main Domain (Company Profile)
-                </Label>
+                <Label htmlFor="domain_main">Main Domain (Company Profile)</Label>
                 <Input
                   id="domain_main"
                   value={customDomains.main}
                   onChange={(e) => setCustomDomains({ ...customDomains, main: e.target.value })}
                   placeholder="company.com"
                 />
-                      <p className="text-xs text-gray-500">
-                        {language === 'id' ? 'Contoh: company.com' : 'Example: company.com'}
-                      </p>
-                    </div>
+              </div>
 
-                    <div className="grid gap-2">
-                      <Label htmlFor="domain_careers">
-                        Careers Domain (Recruitment Page)
-                      </Label>
-                      <Input
-                        id="domain_careers"
-                        value={customDomains.careers}
-                        onChange={(e) => setCustomDomains({ ...customDomains, careers: e.target.value })}
-                        placeholder="careers.company.com"
-                      />
-                      <p className="text-xs text-gray-500">
-                        {language === 'id' ? 'Contoh: careers.company.com' : 'Example: careers.company.com'}
-                      </p>
-                    </div>
+              <div className="grid gap-2">
+                <Label htmlFor="domain_careers">Careers Domain (Recruitment)</Label>
+                <Input
+                  id="domain_careers"
+                  value={customDomains.careers}
+                  onChange={(e) => setCustomDomains({ ...customDomains, careers: e.target.value })}
+                  placeholder="careers.company.com"
+                />
+              </div>
 
-                    <div className="grid gap-2">
-                      <Label htmlFor="domain_hr">
-                        HR Domain (Employee Portal)
-                      </Label>
-                      <Input
-                        id="domain_hr"
-                        value={customDomains.hr}
-                        onChange={(e) => setCustomDomains({ ...customDomains, hr: e.target.value })}
-                        placeholder="hr.company.com"
-                      />
-                      <p className="text-xs text-gray-500">
-                        {language === 'id' ? 'Contoh: hr.company.com' : 'Example: hr.company.com'}
-                      </p>
-                    </div>
-                  </div>
+              <div className="grid gap-2">
+                <Label htmlFor="domain_hr">HR Domain (Employee Portal)</Label>
+                <Input
+                  id="domain_hr"
+                  value={customDomains.hr}
+                  onChange={(e) => setCustomDomains({ ...customDomains, hr: e.target.value })}
+                  placeholder="hr.company.com"
+                />
+              </div>
+            </div>
 
-                  <Button 
-                    onClick={handleSaveDomains}
-                    disabled={saving}
-                    className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
-                  >
-                    {saving ? (language === 'id' ? 'Menyimpan...' : 'Saving...') : (language === 'id' ? 'Simpan Domain' : 'Save Domains')}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            <Button 
+              onClick={handleSaveDomains}
+              disabled={saving}
+              className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+            >
+              {saving ? (language === 'id' ? 'Menyimpan...' : 'Saving...') : (language === 'id' ? 'Simpan Domain' : 'Save Domains')}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
-          <Toaster position="top-right" richColors />
-        </div>
-      );
-    };
+      <Toaster position="top-right" richColors />
+    </div>
+  );
+};
