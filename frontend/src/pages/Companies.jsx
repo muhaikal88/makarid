@@ -73,8 +73,10 @@ export const Companies = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDomainsOpen, setIsDomainsOpen] = useState(false);
   const [isLicenseOpen, setIsLicenseOpen] = useState(false);
+  const [isSMTPOpen, setIsSMTPOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Domain form state
   const [domainData, setDomainData] = useState({
@@ -88,6 +90,17 @@ export const Companies = () => {
     license_type: 'trial',
     license_end: '',
     is_active: true
+  });
+
+  // SMTP form state
+  const [smtpData, setSmtpData] = useState({
+    host: '',
+    port: 587,
+    username: '',
+    password: '',
+    from_email: '',
+    from_name: '',
+    use_tls: true
   });
   
   // Form state
