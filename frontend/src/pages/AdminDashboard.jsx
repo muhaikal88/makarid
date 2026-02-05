@@ -151,7 +151,7 @@ export const AdminDashboard = () => {
               </div>
               <div>
                 <h1 className="font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-xs text-gray-500">{user?.name}</p>
+                <p className="text-xs text-gray-500">{session?.name}</p>
               </div>
             </div>
 
