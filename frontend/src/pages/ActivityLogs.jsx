@@ -63,6 +63,8 @@ export const ActivityLogs = () => {
   const [filterAction, setFilterAction] = useState('all');
   const [filterResource, setFilterResource] = useState('all');
   const [filterUser, setFilterUser] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
