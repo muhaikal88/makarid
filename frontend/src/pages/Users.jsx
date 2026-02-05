@@ -204,7 +204,7 @@ export const Users = () => {
     
     // Company filter
     const matchesCompany = filterCompany === 'all' || 
-                          (user.companies && user.companies.includes(filterCompany));
+                          (user.companies && Array.isArray(user.companies) && user.companies.includes(filterCompany));
     
     // Role filter
     const matchesRole = filterRole === 'all' || user.role === filterRole;
