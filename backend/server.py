@@ -1215,9 +1215,10 @@ async def get_company(company_id: str, current_user: dict = Depends(require_supe
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    emp_count = await db.users.count_documents({"company_id": company_id})
+    admin_count = await db.company_admins.count_documents({"companies": company_id})
+    emp_count = await db.employees.count_documents({"companies": company_id})
     
-    return build_company_response(company, emp_count)
+    return build_company_response(company, admin_count, emp_count)
 
 @api_router.put("/companies/{company_id}", response_model=CompanyResponse)
 async def update_company(company_id: str, data: CompanyUpdate, current_user: dict = Depends(require_super_admin)):
