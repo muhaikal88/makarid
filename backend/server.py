@@ -907,7 +907,14 @@ async def activate_company(
 
 @api_router.get("/public/company/{domain}", response_model=CompanyProfileResponse)
 async def get_public_company_profile(domain: str):
-    company = await db.companies.find_one({"domain": domain}, {"_id": 0})
+    # Try to find by slug first, then domain
+    company = await db.companies.find_one({
+        "$or": [
+            {"slug": domain},
+            {"domain": domain}
+        ]
+    }, {"_id": 0})
+    
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
