@@ -81,6 +81,10 @@ class SuperAdminResponse(BaseModel):
     created_at: str
     updated_at: str
 
+class LoginResponseSuperAdmin(BaseModel):
+    token: str
+    user: dict  # Flexible dict to handle both SuperAdmin and User
+
 # ===== COMPANY USER MODELS (Separate Table) =====
 
 class UserBase(BaseModel):
