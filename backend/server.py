@@ -627,7 +627,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 async def get_dashboard_stats(current_user: dict = Depends(require_super_admin)):
     total_companies = await db.companies.count_documents({})
     active_companies = await db.companies.count_documents({"is_active": True})
-    total_users = await db.users.count_documents({"role": {"$ne": UserRole.SUPER_ADMIN}})
+    total_users = await db.users.count_documents({})  # All company users
     total_employees = await db.users.count_documents({"role": UserRole.EMPLOYEE})
     
     recent_companies_cursor = db.companies.find({}, {"_id": 0}).sort("created_at", -1).limit(5)
