@@ -52,10 +52,18 @@ export const Login = () => {
         email, 
         password,
         totp_code: totpCode || null
-      }); 
       });
       
-      const { token: newToken, user: userData } = response.data;
+      const data = response.data;
+      
+      // Check if requires 2FA
+      if (data.requires_2fa) {
+        setRequires2FA(true);
+        setLoading(false);
+        return;
+      }
+      
+      const { token: newToken, user: userData } = data;
       
       localStorage.setItem('token', newToken);
       setToken(newToken);
@@ -64,7 +72,7 @@ export const Login = () => {
       navigate('/superadmin/dashboard');
     } catch (err) {
       console.error('Login error:', err);
-      setError(t('loginError'));
+      setError(err.response?.data?.detail || t('loginError'));
     } finally {
       setLoading(false);
     }
