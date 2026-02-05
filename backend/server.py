@@ -1107,7 +1107,14 @@ async def delete_job(job_id: str, current_user: dict = Depends(require_admin_or_
 
 @api_router.get("/public/careers/{domain}/jobs")
 async def get_public_jobs(domain: str):
-    company = await db.companies.find_one({"domain": domain}, {"_id": 0})
+    # Try to find by slug first, then domain
+    company = await db.companies.find_one({
+        "$or": [
+            {"slug": domain},
+            {"domain": domain}
+        ]
+    }, {"_id": 0})
+    
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
