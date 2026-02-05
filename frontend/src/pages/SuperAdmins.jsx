@@ -162,6 +162,34 @@ export const SuperAdmins = () => {
     }
   };
 
+
+  const handleToggle2FA = async (admin, enable) => {
+    try {
+      await axios.post(`${API}/superadmins/${admin.id}/toggle-2fa?enable=${enable}`, {}, {
+        headers: getAuthHeaders()
+      });
+      toast.success(`2FA ${enable ? 'diaktifkan' : 'dinonaktifkan'}`);
+      fetchAdmins();
+    } catch (error) {
+      console.error('Failed to toggle 2FA:', error);
+      toast.error(error.response?.data?.detail || 'Gagal mengubah 2FA');
+    }
+  };
+
+  const handleToggleActive = async (admin, active) => {
+    try {
+      await axios.post(`${API}/superadmins/${admin.id}/toggle-active?active=${active}`, {}, {
+        headers: getAuthHeaders()
+      });
+      toast.success(`Akun ${active ? 'diaktifkan' : 'dinonaktifkan'}`);
+      fetchAdmins();
+    } catch (error) {
+      console.error('Failed to toggle active:', error);
+      toast.error(error.response?.data?.detail || 'Gagal mengubah status');
+    }
+  };
+
+
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'SA';
   };
