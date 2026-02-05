@@ -173,8 +173,6 @@ export const SuperAdminProfile = () => {
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Password salah');
     }
-
-    }
   };
 
   const getInitials = (name) => {
