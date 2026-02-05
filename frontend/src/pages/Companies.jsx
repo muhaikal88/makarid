@@ -299,6 +299,43 @@ export const Companies = () => {
     }
   };
 
+
+  // SMTP Management
+  const handleOpenSMTP = (company) => {
+    setSelectedCompany(company);
+    const smtp = company.smtp_settings || {};
+    setSmtpData({
+      host: smtp.host || '',
+      port: smtp.port || 587,
+      username: smtp.username || '',
+      password: smtp.password || '',
+      from_email: smtp.from_email || '',
+      from_name: smtp.from_name || company.name,
+      use_tls: smtp.use_tls !== false
+    });
+    setIsSMTPOpen(true);
+  };
+
+  const handleSaveSMTP = async () => {
+    setFormLoading(true);
+    try {
+      await axios.put(`${API}/companies/${selectedCompany.id}`, {
+        smtp_settings: smtpData
+      }, {
+        headers: getAuthHeaders()
+      });
+      toast.success('Pengaturan SMTP berhasil disimpan');
+      setIsSMTPOpen(false);
+      fetchCompanies();
+    } catch (error) {
+      console.error('Failed to update SMTP:', error);
+      toast.error(error.response?.data?.detail || 'Gagal menyimpan SMTP');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+
   const handleToggleActive = async (company) => {
     try {
       const endpoint = company.is_active 
