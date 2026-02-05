@@ -2117,25 +2117,73 @@ async def get_uploaded_file(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path)
 
-# ============ USER ROUTES ============
+# ============ USER ROUTES (Updated for new structure) ============
 
-@api_router.get("/users", response_model=List[UserResponse])
+class AllUsersResponse(BaseModel):
+    """Combined response for company admins and employees"""
+    id: str
+    email: str
+    name: str
+    role: str  # "admin" or "employee"
+    companies: List[str]  # List of company IDs
+    company_names: List[str]  # List of company names (for display)
+    is_active: bool
+    auth_provider: str
+    created_at: str
+    updated_at: str
+
+@api_router.get("/users")
 async def get_users(current_user: dict = Depends(require_super_admin)):
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    """Get all company admins and employees"""
+    result = []
     
-    return [
-        UserResponse(
-            id=user["id"],
-            email=user["email"],
-            name=user["name"],
-            role=user["role"],
-            company_id=user["company_id"],
-            is_active=user["is_active"],
-            created_at=user["created_at"] if isinstance(user["created_at"], str) else user["created_at"].isoformat(),
-            updated_at=user["updated_at"] if isinstance(user["updated_at"], str) else user["updated_at"].isoformat()
-        )
-        for user in users
-    ]
+    # Get all company admins
+    admins = await db.company_admins.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    for admin in admins:
+        # Get company names
+        company_names = []
+        for comp_id in admin.get("companies", []):
+            comp = await db.companies.find_one({"id": comp_id}, {"_id": 0, "name": 1})
+            if comp:
+                company_names.append(comp["name"])
+        
+        result.append({
+            "id": admin["id"],
+            "email": admin["email"],
+            "name": admin["name"],
+            "role": "admin",
+            "companies": admin.get("companies", []),
+            "company_names": company_names,
+            "is_active": admin.get("is_active", True),
+            "auth_provider": admin.get("auth_provider", "email"),
+            "created_at": admin["created_at"] if isinstance(admin["created_at"], str) else admin["created_at"].isoformat(),
+            "updated_at": admin["updated_at"] if isinstance(admin["updated_at"], str) else admin["updated_at"].isoformat()
+        })
+    
+    # Get all employees
+    employees = await db.employees.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    for emp in employees:
+        # Get company names
+        company_names = []
+        for comp_id in emp.get("companies", []):
+            comp = await db.companies.find_one({"id": comp_id}, {"_id": 0, "name": 1})
+            if comp:
+                company_names.append(comp["name"])
+        
+        result.append({
+            "id": emp["id"],
+            "email": emp["email"],
+            "name": emp["name"],
+            "role": "employee",
+            "companies": emp.get("companies", []),
+            "company_names": company_names,
+            "is_active": emp.get("is_active", True),
+            "auth_provider": emp.get("auth_provider", "email"),
+            "created_at": emp["created_at"] if isinstance(emp["created_at"], str) else emp["created_at"].isoformat(),
+            "updated_at": emp["updated_at"] if isinstance(emp["updated_at"], str) else emp["updated_at"].isoformat()
+        })
+    
+    return result
 
 @api_router.post("/users", response_model=UserResponse)
 async def create_user(data: UserCreate, current_user: dict = Depends(require_super_admin)):
