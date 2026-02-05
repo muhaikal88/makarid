@@ -316,7 +316,7 @@ export const CompanyProfile = () => {
             © {new Date().getFullYear()} {company.name}. All rights reserved.
           </p>
           <p className="text-xs text-gray-500 mt-2">
-            Powered by Lucky Cell HR System
+            Powered by Makar.id
           </p>
         </div>
       </footer>
