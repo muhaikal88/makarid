@@ -43,17 +43,17 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      const userData = await login(email, password);
+      // Use superadmin login endpoint
+      const response = await axios.post(`${API}/auth/superadmin/login`, { 
+        email, 
+        password 
+      });
       
-      // Only Super Admin can login here
-      if (userData.role !== 'super_admin') {
-        logout(); // Clear the session
-        setError(language === 'id' 
-          ? 'Halaman ini khusus Super Admin. Silakan login di halaman perusahaan Anda.' 
-          : 'This page is for Super Admin only. Please login at your company page.');
-        setLoading(false);
-        return;
-      }
+      const { token: newToken, user: userData } = response.data;
+      
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      setUser(userData);
       
       navigate('/superadmin/dashboard');
     } catch (err) {
