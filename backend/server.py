@@ -672,20 +672,26 @@ async def require_admin_or_super(current_user: dict = Depends(get_current_user))
 
 @app.on_event("startup")
 async def startup_event():
-    # Create default super admin if not exists (in superadmins table)
-    existing_admin = await db.superadmins.find_one({"email": "superadmin@makar.id"})
-    if not existing_admin:
+    # Create default super admin ONLY if no super admins exist at all
+    total_admins = await db.superadmins.count_documents({})
+    if total_admins == 0:
         super_admin = {
             "id": str(uuid.uuid4()),
             "email": "superadmin@makar.id",
             "name": "Super Admin",
             "password": hash_password("admin123"),
+            "picture": None,
+            "totp_secret": None,
+            "totp_enabled": False,
             "is_active": True,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
         await db.superadmins.insert_one(super_admin)
         logging.info("Default Super Admin created: superadmin@makar.id / admin123")
+    else:
+        logging.info(f"Super admins already exist: {total_admins} admin(s)")
+
 
 # ============ AUTH ROUTES ============
 
