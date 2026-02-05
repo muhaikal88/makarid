@@ -2465,6 +2465,82 @@ async def get_jobs_session(request: Request):
 
     return result
 
+
+@api_router.post("/jobs-session", response_model=JobResponse)
+async def create_job_session(data: JobCreate, request: Request):
+    """Create job using session auth"""
+    session = await require_session_admin(request)
+    
+    job_doc = {
+        "id": str(uuid.uuid4()),
+        "company_id": session["company_id"],
+        **data.model_dump(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.jobs.insert_one(job_doc)
+    
+    return JobResponse(
+        id=job_doc["id"],
+        company_id=job_doc["company_id"],
+        title=job_doc["title"],
+        department=job_doc.get("department"),
+        location=job_doc.get("location"),
+        job_type=job_doc["job_type"],
+        description=job_doc["description"],
+        requirements=job_doc.get("requirements"),
+        responsibilities=job_doc.get("responsibilities"),
+        salary_min=job_doc.get("salary_min"),
+        salary_max=job_doc.get("salary_max"),
+        show_salary=job_doc.get("show_salary", False),
+        status=job_doc["status"],
+        application_count=0,
+        created_at=job_doc["created_at"],
+        updated_at=job_doc["updated_at"]
+    )
+
+@api_router.put("/jobs-session/{job_id}", response_model=JobResponse)
+async def update_job_session(job_id: str, data: JobUpdate, request: Request):
+    """Update job using session auth"""
+    session = await require_session_admin(request)
+    
+    job = await db.jobs.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job["company_id"] != session["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.jobs.update_one({"id": job_id}, {"$set": update_data})
+    
+    updated = await db.jobs.find_one({"id": job_id}, {"_id": 0})
+    app_count = await db.applications.count_documents({"job_id": job_id})
+    
+    return JobResponse(
+        id=updated["id"],
+        company_id=updated["company_id"],
+        title=updated["title"],
+        department=updated.get("department"),
+        location=updated.get("location"),
+        job_type=updated["job_type"],
+        description=updated["description"],
+        requirements=updated.get("requirements"),
+        responsibilities=updated.get("responsibilities"),
+        salary_min=updated.get("salary_min"),
+        salary_max=updated.get("salary_max"),
+        show_salary=updated.get("show_salary", False),
+        status=updated["status"],
+        application_count=app_count,
+        created_at=updated["created_at"],
+        updated_at=updated["updated_at"]
+    )
+
+
+
 @api_router.post("/jobs", response_model=JobResponse)
 async def create_job(data: JobCreate, current_user: dict = Depends(require_admin_or_super)):
     company_id = current_user.get("company_id")
