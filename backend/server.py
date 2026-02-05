@@ -783,6 +783,17 @@ async def superadmin_login(data: LoginWith2FA):
     
     token = create_token(admin["id"], "super_admin", None)
     
+    # Log activity
+    await create_activity_log(
+        user_id=admin["id"],
+        user_name=admin["name"],
+        user_email=admin["email"],
+        user_role="super_admin",
+        action="login",
+        resource_type="auth",
+        description=f"Super Admin {admin['name']} logged in"
+    )
+    
     return {
         "token": token,
         "requires_2fa": False,
