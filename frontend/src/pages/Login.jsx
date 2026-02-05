@@ -140,7 +140,7 @@ export const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="superadmin@makar.id"
+                  placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -189,18 +189,6 @@ export const Login = () => {
                 )}
               </Button>
             </form>
-
-            {/* Info Box */}
-            <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-              <p className="text-xs text-gray-500 text-center">
-                {language === 'id' 
-                  ? 'Admin perusahaan silakan login di halaman perusahaan masing-masing:'
-                  : 'Company admins please login at your company page:'}
-              </p>
-              <p className="text-xs text-[#2E4DA7] text-center mt-1 font-mono">
-                /login/[domain-perusahaan]
-              </p>
-            </div>
           </CardContent>
         </Card>
 
