@@ -36,6 +36,7 @@ import {
 } from '../components/ui/table';
 import { Shield, Plus, Pencil, Trash2, Mail, User, RefreshCw, Eye, EyeOff, ShieldCheck, ShieldOff } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Switch } from '../components/ui/switch';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
