@@ -156,13 +156,19 @@ export const CompanySettings = () => {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="domains" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="domains" className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              Custom Domain
-            </TabsTrigger>
-            <TabsTrigger value="smtp" className="flex items-center gap-2">
+        {/* Only Custom Domain - SMTP removed (Super Admin only) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5" />
+              {language === 'id' ? 'Custom Domain (Opsional)' : 'Custom Domain (Optional)'}
+            </CardTitle>
+            <CardDescription>
+              {language === 'id'
+                ? 'Gunakan domain sendiri untuk branding yang lebih kuat. Pengaturan SMTP email dikelola oleh Super Admin.'
+                : 'Use your own domain for stronger branding. SMTP email settings are managed by Super Admin.'}
+            </CardDescription>
+          </CardHeader>
               <Mail className="w-4 h-4" />
               SMTP Email
             </TabsTrigger>
