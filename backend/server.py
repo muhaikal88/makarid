@@ -770,6 +770,18 @@ async def delete_company(company_id: str, current_user: dict = Depends(require_s
     
     return {"message": "Company deleted successfully"}
 
+# ============ PUBLIC COMPANY LIST ============
+
+@api_router.get("/public/companies")
+async def get_public_companies():
+    """Get list of active companies for login portal"""
+    companies = await db.companies.find(
+        {"is_active": True}, 
+        {"_id": 0, "id": 1, "name": 1, "slug": 1, "domain": 1, "logo_url": 1}
+    ).sort("name", 1).to_list(1000)
+    
+    return companies
+
 # ============ DOMAIN LOOKUP ROUTES (For White-Label) ============
 
 class DomainLookupResponse(BaseModel):
