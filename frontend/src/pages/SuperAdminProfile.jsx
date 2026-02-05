@@ -376,6 +376,87 @@ export const SuperAdminProfile = () => {
           </CardContent>
         </Card>
       </div>
+
+
+      {/* 2FA Setup Dialog */}
+      <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-emerald-600" />
+              Setup Google Authenticator
+            </DialogTitle>
+            <DialogDescription>
+              Scan QR code dengan aplikasi Google Authenticator
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Step 1: Download App */}
+            <div>
+              <p className="font-medium text-sm mb-2">1. Download Google Authenticator</p>
+              <p className="text-sm text-gray-600">
+                Install dari Play Store (Android) atau App Store (iOS)
+              </p>
+            </div>
+
+            {/* Step 2: Scan QR */}
+            <div>
+              <p className="font-medium text-sm mb-2">2. Scan QR Code</p>
+              {qrCodeUrl && (
+                <div className="flex justify-center p-4 bg-slate-50 rounded-lg">
+                  <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+                </div>
+              )}
+            </div>
+
+            {/* Manual Entry */}
+            <div>
+              <p className="font-medium text-sm mb-2">Atau masukkan kode manual:</p>
+              <div className="flex gap-2">
+                <Input value={totpSecret} readOnly className="font-mono text-sm" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    navigator.clipboard.writeText(totpSecret);
+                    toast.success('Secret disalin!');
+                  }}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Step 3: Verify */}
+            <div>
+              <p className="font-medium text-sm mb-2">3. Masukkan Kode Verifikasi</p>
+              <Input
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                placeholder="000000"
+                maxLength={6}
+                className="text-center text-lg font-mono tracking-widest"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShow2FASetup(false)}>
+              Batal
+            </Button>
+            <Button 
+              onClick={handleVerify2FA}
+              disabled={verifying || verificationCode.length !== 6}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {verifying ? 'Memverifikasi...' : 'Verifikasi & Aktifkan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </DashboardLayout>
   );
 };
