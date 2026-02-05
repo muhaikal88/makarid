@@ -161,10 +161,10 @@ export const AdminDashboard = () => {
     e.preventDefault();
     try {
       if (selectedJob) {
-        await axios.put(`${API}/jobs/${selectedJob.id}`, jobFormData, { withCredentials: true });
+        await axios.put(`${API}/jobs-session/${selectedJob.id}`, jobFormData, { withCredentials: true });
         toast.success('Lowongan berhasil diupdate');
       } else {
-        await axios.post(`${API}/jobs`, jobFormData, { withCredentials: true });
+        await axios.post(`${API}/jobs-session`, jobFormData, { withCredentials: true });
         toast.success('Lowongan berhasil ditambahkan');
       }
       setIsJobFormOpen(false);
