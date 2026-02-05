@@ -14,6 +14,7 @@ import { Careers } from "./pages/Careers";
 import { ApplyJob } from "./pages/ApplyJob";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { LandingPage } from "./pages/LandingPage";
+import { CompanySettings } from "./pages/CompanySettings";
 
 function App() {
   return (
