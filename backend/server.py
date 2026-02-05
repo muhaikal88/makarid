@@ -550,6 +550,17 @@ def get_license_status(company: dict) -> tuple:
             return ("active", None)
         return ("active", None)  # Trial without end date
     
+    try:
+        end_date = datetime.fromisoformat(license_end.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        delta = end_date - now
+        days_remaining = delta.days
+        
+        if days_remaining < 0:
+            return ("expired", days_remaining)
+        return ("active", days_remaining)
+    except:
+        return ("active", None)
 
 
 async def create_activity_log(
