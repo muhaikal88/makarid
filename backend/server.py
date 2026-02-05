@@ -515,12 +515,12 @@ async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(
         return None
 
 async def require_super_admin(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != UserRole.SUPER_ADMIN:
+    if current_user.get("role") != "super_admin":
         raise HTTPException(status_code=403, detail="Super Admin access required")
     return current_user
 
 async def require_admin_or_super(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+    if current_user.get("role") not in ["super_admin", UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
