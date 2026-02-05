@@ -24,10 +24,10 @@ export const Sidebar = () => {
   };
 
   const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
-    { to: '/companies', icon: Building2, label: t('companies') },
-    { to: '/users', icon: Users, label: t('users') },
-    { to: '/settings', icon: Settings, label: t('settings') },
+    { to: '/superadmin/dashboard', icon: LayoutDashboard, label: t('dashboard') },
+    { to: '/superadmin/companies', icon: Building2, label: t('companies') },
+    { to: '/superadmin/users', icon: Users, label: t('users') },
+    { to: '/superadmin/settings', icon: Settings, label: t('settings') },
   ];
 
   return (
