@@ -422,8 +422,14 @@ export const Companies = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-gray-600">
-                          <Users className="w-4 h-4" />
-                          {company.employee_count}
+                          <Users className="w-4 h-4 text-blue-600" />
+                          <span className="font-medium">{company.admin_count || 0}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Users className="w-4 h-4 text-emerald-600" />
+                          <span className="font-medium">{company.employee_count || 0}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
