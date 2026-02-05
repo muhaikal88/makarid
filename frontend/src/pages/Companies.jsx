@@ -496,6 +496,15 @@ export const Companies = () => {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => handleOpenSMTP(company)}
+                            title="Manage Email (SMTP)"
+                            data-testid={`smtp-company-${company.id}`}
+                          >
+                            <Mail className="w-4 h-4 text-emerald-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleOpenDomains(company)}
                             title="Manage Domains"
                             data-testid={`domains-company-${company.id}`}
