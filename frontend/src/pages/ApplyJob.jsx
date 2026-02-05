@@ -45,6 +45,114 @@ export const ApplyJob = () => {
   
   const [formData, setFormData] = useState({});
   const [resume, setResume] = useState(null);
+  
+  // Wilayah API states
+  const [provinces, setProvinces] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [villages, setVillages] = useState([]);
+  const [loadingWilayah, setLoadingWilayah] = useState(false);
+
+  useEffect(() => {
+    fetchJobDetail();
+    fetchProvinces();
+  }, [domain, jobId]);
+
+  const fetchProvinces = async () => {
+    try {
+      const response = await axios.get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json');
+      setProvinces(response.data);
+    } catch (error) {
+      console.error('Failed to fetch provinces:', error);
+    }
+  };
+
+  const fetchCities = async (provinceId) => {
+    setLoadingWilayah(true);
+    try {
+      const response = await axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provinceId}.json`);
+      setCities(response.data);
+      setDistricts([]);
+      setVillages([]);
+    } catch (error) {
+      console.error('Failed to fetch cities:', error);
+    } finally {
+      setLoadingWilayah(false);
+    }
+  };
+
+  const fetchDistricts = async (cityId) => {
+    setLoadingWilayah(true);
+    try {
+      const response = await axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${cityId}.json`);
+      setDistricts(response.data);
+      setVillages([]);
+    } catch (error) {
+      console.error('Failed to fetch districts:', error);
+    } finally {
+      setLoadingWilayah(false);
+    }
+  };
+
+  const fetchVillages = async (districtId) => {
+    setLoadingWilayah(true);
+    try {
+      const response = await axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`);
+      setVillages(response.data);
+    } catch (error) {
+      console.error('Failed to fetch villages:', error);
+    } finally {
+      setLoadingWilayah(false);
+    }
+  };
+
+  const formatSalary = (value) => {
+    // Remove non-numeric
+    const numeric = value.replace(/\D/g, '');
+    // Add thousand separator
+    return numeric.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const handleFormChange = (fieldName, value) => {
+    setFormData({ ...formData, [fieldName]: value });
+    
+    // Handle cascading dropdowns
+    if (fieldName === 'province') {
+      const province = provinces.find(p => p.name === value);
+      if (province) {
+        fetchCities(province.id);
+        // Reset dependent fields
+        setFormData({
+          ...formData,
+          province: value,
+          city: '',
+          district: '',
+          village: ''
+        });
+      }
+    } else if (fieldName === 'city') {
+      const city = cities.find(c => c.name === value);
+      if (city) {
+        fetchDistricts(city.id);
+        setFormData({
+          ...formData,
+          city: value,
+          district: '',
+          village: ''
+        });
+      }
+    } else if (fieldName === 'district') {
+      const district = districts.find(d => d.name === value);
+      if (district) {
+        fetchVillages(district.id);
+        setFormData({
+          ...formData,
+          district: value,
+          village: ''
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     fetchJobDetail();
