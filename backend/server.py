@@ -690,9 +690,14 @@ async def startup_event():
 # ============ AUTH ROUTES ============
 
 # Super Admin Login (Separate endpoint)
+class LoginWith2FA(BaseModel):
+    email: EmailStr
+    password: str
+    totp_code: Optional[str] = None  # 6-digit code from Google Authenticator
+
 @api_router.post("/auth/superadmin/login")
-async def superadmin_login(data: LoginRequest):
-    """Login for Super Admin only"""
+async def superadmin_login(data: LoginWith2FA):
+    """Login for Super Admin with optional 2FA"""
     admin = await db.superadmins.find_one({"email": data.email}, {"_id": 0})
     if not admin:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -703,14 +708,30 @@ async def superadmin_login(data: LoginRequest):
     if not admin.get("is_active", True):
         raise HTTPException(status_code=401, detail="Account is deactivated")
     
+    # Check if 2FA is enabled
+    if admin.get("totp_enabled") and admin.get("totp_secret"):
+        if not data.totp_code:
+            # Need 2FA code
+            return {
+                "requires_2fa": True,
+                "message": "Please enter your 2FA code"
+            }
+        
+        # Verify 2FA code
+        totp = pyotp.TOTP(admin["totp_secret"])
+        if not totp.verify(data.totp_code, valid_window=1):
+            raise HTTPException(status_code=401, detail="Invalid 2FA code")
+    
     token = create_token(admin["id"], "super_admin", None)
     
     return {
         "token": token,
+        "requires_2fa": False,
         "user": {
             "id": admin["id"],
             "email": admin["email"],
             "name": admin["name"],
+            "picture": admin.get("picture"),
             "role": "super_admin",
             "company_id": None,
             "is_active": admin["is_active"],
