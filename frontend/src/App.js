@@ -51,6 +51,7 @@ function AppRouter() {
       
       {/* Super Admin Dashboard */}
       <Route path="/superadmin/dashboard" element={<Dashboard />} />
+      <Route path="/superadmin/admins" element={<SuperAdmins />} />
       <Route path="/superadmin/companies" element={<Companies />} />
       <Route path="/superadmin/users" element={<Users />} />
       <Route path="/superadmin/settings" element={<Settings />} />
