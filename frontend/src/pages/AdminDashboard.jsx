@@ -363,6 +363,13 @@ export const AdminDashboard = () => {
               <FileText className="w-4 h-4" />
               {language === 'id' ? 'Lamaran' : 'Applications'}
             </TabsTrigger>
+            <TabsTrigger value="trash" className="flex items-center gap-2 relative" data-testid="tab-trash">
+              <Trash2 className="w-4 h-4" />
+              {language === 'id' ? 'Tempat Sampah' : 'Trash'}
+              {trashApps.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded-full">{trashApps.length}</span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
