@@ -199,6 +199,39 @@ export const AdminDashboard = () => {
       if (selectedJob) {
         await axios.put(`${API}/jobs-session/${selectedJob.id}`, jobFormData, { withCredentials: true });
         toast.success('Lowongan berhasil diupdate');
+
+
+  const handleOpenAppDetail = async (app) => {
+    try {
+      const response = await axios.get(`${API}/applications-session/${app.id}`, { withCredentials: true });
+      setSelectedApp(response.data);
+      setIsAppDetailOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch application detail:', error);
+      toast.error('Gagal memuat detail lamaran');
+    }
+  };
+
+  const handleUpdateStatus = async (appId, newStatus) => {
+    try {
+      await axios.put(`${API}/applications-session/${appId}/status?status=${newStatus}`, {}, { withCredentials: true });
+      toast.success('Status berhasil diupdate');
+      setIsAppDetailOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast.error('Gagal update status');
+    }
+  };
+
+  const filteredApplications = applications.filter(app => {
+    const matchesStatus = filterStatus === 'all' || app.status === filterStatus;
+    const matchesSearch = !searchApp || 
+      app.applicant_name.toLowerCase().includes(searchApp.toLowerCase()) ||
+      app.applicant_email.toLowerCase().includes(searchApp.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
       } else {
         await axios.post(`${API}/jobs-session`, jobFormData, { withCredentials: true });
         toast.success('Lowongan berhasil ditambahkan');
