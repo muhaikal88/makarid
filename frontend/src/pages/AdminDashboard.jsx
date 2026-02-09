@@ -91,12 +91,14 @@ export const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [jobsRes, appsRes] = await Promise.all([
+      const [jobsRes, appsRes, trashRes] = await Promise.all([
         axios.get(`${API}/jobs-session`, { withCredentials: true }),
-        axios.get(`${API}/applications-session`, { withCredentials: true })
+        axios.get(`${API}/applications-session`, { withCredentials: true }),
+        axios.get(`${API}/applications-session-trash`, { withCredentials: true })
       ]);
       setJobs(jobsRes.data);
       setApplications(appsRes.data);
+      setTrashApps(trashRes.data);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
