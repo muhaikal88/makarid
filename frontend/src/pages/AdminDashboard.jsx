@@ -382,6 +382,7 @@ export const AdminDashboard = () => {
         isOpen={isCompareOpen}
         onClose={setIsCompareOpen}
         compareApps={compareApps}
+        handleUpdateStatus={handleCompareUpdateStatus}
       />
 
       <Toaster position="top-right" richColors />
