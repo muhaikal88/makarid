@@ -153,32 +153,6 @@ export const ApplyJob = () => {
     }
   };
 
-  useEffect(() => {
-    fetchJobDetail();
-  }, [domain, jobId]);
-
-  const fetchJobDetail = async () => {
-    try {
-      const response = await axios.get(`${API}/public/careers/${domain}/jobs/${jobId}`);
-      setData(response.data);
-      
-      // Initialize form data with empty values
-      const initialData = {};
-      response.data.form_fields.forEach(field => {
-        if (field.field_type === 'checkbox') {
-          initialData[field.field_name] = false;
-        } else {
-          initialData[field.field_name] = '';
-        }
-      });
-      setFormData(initialData);
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Job not found');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleInputChange = (fieldName, value) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   };
