@@ -157,6 +157,27 @@ export const ApplyJob = () => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
+  const fetchJobDetail = async () => {
+    try {
+      const response = await axios.get(`${API}/public/careers/${domain}/jobs/${jobId}`);
+      setData(response.data);
+      
+      const initialData = {};
+      response.data.form_fields.forEach(field => {
+        if (field.field_type === 'checkbox') {
+          initialData[field.field_name] = false;
+        } else {
+          initialData[field.field_name] = '';
+        }
+      });
+      setFormData(initialData);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Job not found');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
