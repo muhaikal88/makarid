@@ -63,6 +63,10 @@ export const AdminDashboard = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobFormData, setJobFormData] = useState({ ...defaultJobForm });
 
+  // Compare
+  const [compareApps, setCompareApps] = useState([]);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+
   useEffect(() => {
     checkSession();
   }, []);
