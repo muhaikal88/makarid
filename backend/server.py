@@ -2734,7 +2734,7 @@ async def get_public_jobs(domain: str):
     await check_company_license(company_id=company["id"])
     
     jobs = await db.jobs.find(
-        {"company_id": company["id"], "status": JobStatus.PUBLISHED}, 
+        {"company_id": company["id"], "status": {"$in": ["published", "closed"]}}, 
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
     
@@ -2749,6 +2749,7 @@ async def get_public_jobs(domain: str):
             "description": job["description"],
             "requirements": job.get("requirements"),
             "responsibilities": job.get("responsibilities"),
+            "status": job["status"],
             "created_at": job["created_at"]
         }
         if job.get("show_salary"):
