@@ -257,12 +257,12 @@ export const ApplyJob = () => {
           value={formData.province || ''}
           onValueChange={(value) => handleFormChange('province', value)}
         >
-          <SelectTrigger>
+          <SelectTrigger data-testid="field-province">
             <SelectValue placeholder="Pilih Provinsi" />
           </SelectTrigger>
           <SelectContent>
             {provinces.map(prov => (
-              <SelectItem key={prov.id} value={prov.name}>{prov.name}</SelectItem>
+              <SelectItem key={prov.code} value={prov.name}>{prov.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -276,12 +276,12 @@ export const ApplyJob = () => {
           onValueChange={(value) => handleFormChange('city', value)}
           disabled={!formData.province || cities.length === 0}
         >
-          <SelectTrigger>
+          <SelectTrigger data-testid="field-city">
             <SelectValue placeholder={cities.length === 0 ? 'Pilih provinsi dulu' : 'Pilih Kota/Kabupaten'} />
           </SelectTrigger>
           <SelectContent>
             {cities.map(city => (
-              <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
+              <SelectItem key={city.code} value={city.name}>{city.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -295,12 +295,12 @@ export const ApplyJob = () => {
           onValueChange={(value) => handleFormChange('district', value)}
           disabled={!formData.city || districts.length === 0}
         >
-          <SelectTrigger>
+          <SelectTrigger data-testid="field-district">
             <SelectValue placeholder={districts.length === 0 ? 'Pilih kota dulu' : 'Pilih Kecamatan'} />
           </SelectTrigger>
           <SelectContent>
             {districts.map(dist => (
-              <SelectItem key={dist.id} value={dist.name}>{dist.name}</SelectItem>
+              <SelectItem key={dist.code} value={dist.name}>{dist.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -314,12 +314,12 @@ export const ApplyJob = () => {
           onValueChange={(value) => handleFormChange('village', value)}
           disabled={!formData.district || villages.length === 0}
         >
-          <SelectTrigger>
+          <SelectTrigger data-testid="field-village">
             <SelectValue placeholder={villages.length === 0 ? 'Pilih kecamatan dulu' : 'Pilih Kelurahan/Desa'} />
           </SelectTrigger>
           <SelectContent>
             {villages.map(vil => (
-              <SelectItem key={vil.id} value={vil.name}>{vil.name}</SelectItem>
+              <SelectItem key={vil.code} value={vil.name}>{vil.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
