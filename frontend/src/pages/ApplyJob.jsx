@@ -60,7 +60,8 @@ export const ApplyJob = () => {
 
   const fetchProvinces = async () => {
     try {
-      const response = await axios.get('https://wilayah.id/api/provinces.json');
+      // Use backend proxy to bypass CORS
+      const response = await axios.get(`${API}/wilayah/provinces`);
       setProvinces(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch provinces:', error);
@@ -70,7 +71,8 @@ export const ApplyJob = () => {
   const fetchCities = async (provinceCode) => {
     setLoadingWilayah(true);
     try {
-      const response = await axios.get(`https://wilayah.id/api/regencies/${provinceCode}.json`);
+      // Use backend proxy to bypass CORS
+      const response = await axios.get(`${API}/wilayah/regencies/${provinceCode}`);
       setCities(response.data.data || []);
       setDistricts([]);
       setVillages([]);
@@ -84,7 +86,8 @@ export const ApplyJob = () => {
   const fetchDistricts = async (cityCode) => {
     setLoadingWilayah(true);
     try {
-      const response = await axios.get(`https://wilayah.id/api/districts/${cityCode}.json`);
+      // Use backend proxy to bypass CORS
+      const response = await axios.get(`${API}/wilayah/districts/${cityCode}`);
       setDistricts(response.data.data || []);
       setVillages([]);
     } catch (error) {
@@ -97,7 +100,8 @@ export const ApplyJob = () => {
   const fetchVillages = async (districtCode) => {
     setLoadingWilayah(true);
     try {
-      const response = await axios.get(`https://wilayah.id/api/villages/${districtCode}.json`);
+      // Use backend proxy to bypass CORS
+      const response = await axios.get(`${API}/wilayah/villages/${districtCode}`);
       setVillages(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch villages:', error);
