@@ -24,15 +24,23 @@ export const Dashboard = () => {
   }, []);
 
   const fetchStats = async () => {
-    try {
-      const response = await axios.get(`${API}/dashboard/stats`, {
-        headers: getAuthHeaders()
-      });
-      setStats(response.data);
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    } finally {
-      setLoading(false);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await axios.get(`${API}/dashboard/stats`, {
+          headers: getAuthHeaders(),
+          timeout: 15000
+        });
+        setStats(response.data);
+        return;
+      } catch (error) {
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        console.error('Failed to fetch stats:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
