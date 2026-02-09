@@ -86,16 +86,25 @@ export const Users = () => {
   }, []);
 
   const fetchUsers = async () => {
-    try {
-      const response = await axios.get(`${API}/users`, {
-        headers: getAuthHeaders()
-      });
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-      toast.error(t('error'));
-    } finally {
-      setLoading(false);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await axios.get(`${API}/users`, {
+          headers: getAuthHeaders(),
+          timeout: 15000
+        });
+        setUsers(response.data);
+        return;
+      } catch (error) {
+        if (error.response?.status === 401) break;
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        console.error('Failed to fetch users:', error);
+        toast.error(t('error'));
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
