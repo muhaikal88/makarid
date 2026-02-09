@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { FileText, ChevronRight, GitCompareArrows, X } from 'lucide-react';
+import { FileText, ChevronRight, GitCompareArrows, X, Trash2 } from 'lucide-react';
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',
