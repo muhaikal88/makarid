@@ -202,7 +202,8 @@ export const Users = () => {
   const handleDelete = async () => {
     try {
       await axios.delete(`${API}/users/${selectedUser.id}`, {
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        timeout: 15000
       });
       toast.success(t('userDeleted'));
       setIsDeleteOpen(false);
@@ -210,7 +211,7 @@ export const Users = () => {
       fetchUsers();
     } catch (error) {
       console.error('Failed to delete user:', error);
-      toast.error(t('error'));
+      toast.error(error.response?.data?.detail || t('error'));
     }
   };
 
