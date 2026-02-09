@@ -214,7 +214,7 @@ export const ApplicationsTab = ({
                       <button
                         className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
                         data-testid={`delete-app-${app.id}`}
-                        onClick={(e) => { e.stopPropagation(); handleDeleteApp(app.id); }}
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(app); setDeleteConfirmText(''); }}
                         title="Hapus lamaran"
                       >
                         <Trash2 className="w-4 h-4" />
