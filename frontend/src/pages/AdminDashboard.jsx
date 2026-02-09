@@ -67,6 +67,9 @@ export const AdminDashboard = () => {
   const [compareApps, setCompareApps] = useState([]);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
 
+  // Trash
+  const [trashApps, setTrashApps] = useState([]);
+
   useEffect(() => {
     checkSession();
   }, []);
