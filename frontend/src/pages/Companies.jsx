@@ -211,7 +211,8 @@ export const Companies = () => {
   const handleDelete = async () => {
     try {
       await axios.delete(`${API}/companies/${selectedCompany.id}`, {
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        timeout: 15000
       });
       toast.success(t('companyDeleted'));
       setIsDeleteOpen(false);
@@ -219,7 +220,7 @@ export const Companies = () => {
       fetchCompanies();
     } catch (error) {
       console.error('Failed to delete company:', error);
-      toast.error(t('error'));
+      toast.error(error.response?.data?.detail || t('error'));
     }
   };
 
