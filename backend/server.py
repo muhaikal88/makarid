@@ -3065,6 +3065,62 @@ async def get_application_detail_session(app_id: str, request: Request):
     }
 
 
+@api_router.delete("/applications-session/{app_id}")
+async def soft_delete_application(app_id: str, request: Request):
+    """Soft delete - move to trash"""
+    session = await require_session_admin(request)
+    application = await db.applications.find_one({"id": app_id, "company_id": session["company_id"]}, {"_id": 0})
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    await db.applications.update_one({"id": app_id}, {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}})
+    return {"message": "Application moved to trash"}
+
+@api_router.get("/applications-session-trash", response_model=List[ApplicationResponse])
+async def get_trash_applications(request: Request):
+    """Get trashed applications"""
+    session = await require_session_admin(request)
+    applications = await db.applications.find(
+        {"company_id": session["company_id"], "deleted_at": {"$exists": True}},
+        {"_id": 0}
+    ).sort("deleted_at", -1).to_list(1000)
+    result = []
+    for app in applications:
+        job = await db.jobs.find_one({"id": app["job_id"]}, {"_id": 0})
+        job_title = job["title"] if job else "Unknown"
+        job_department = job.get("department") if job else None
+        form_data = app.get("form_data", {})
+        result.append(ApplicationResponse(
+            id=app["id"], job_id=app["job_id"], company_id=app["company_id"],
+            job_title=job_title, job_department=job_department,
+            applicant_name=form_data.get("full_name", form_data.get("name", "Unknown")),
+            applicant_email=form_data.get("email", "Unknown"),
+            form_data=form_data, resume_url=app.get("resume_url"),
+            status=app["status"], notes=app.get("notes"),
+            created_at=app["created_at"], updated_at=app["updated_at"]
+        ))
+    return result
+
+@api_router.post("/applications-session/{app_id}/restore")
+async def restore_application(app_id: str, request: Request):
+    """Restore from trash"""
+    session = await require_session_admin(request)
+    application = await db.applications.find_one({"id": app_id, "company_id": session["company_id"], "deleted_at": {"$exists": True}}, {"_id": 0})
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found in trash")
+    await db.applications.update_one({"id": app_id}, {"$unset": {"deleted_at": ""}})
+    return {"message": "Application restored"}
+
+@api_router.delete("/applications-session/{app_id}/permanent")
+async def permanent_delete_application(app_id: str, request: Request):
+    """Permanent delete from trash"""
+    session = await require_session_admin(request)
+    application = await db.applications.find_one({"id": app_id, "company_id": session["company_id"], "deleted_at": {"$exists": True}}, {"_id": 0})
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found in trash")
+    await db.applications.delete_one({"id": app_id})
+    return {"message": "Application permanently deleted"}
+
+
 @api_router.put("/applications/{app_id}/status")
 async def update_application_status(app_id: str, data: ApplicationUpdateStatus, current_user: dict = Depends(require_admin_or_super)):
     application = await db.applications.find_one({"id": app_id}, {"_id": 0})
