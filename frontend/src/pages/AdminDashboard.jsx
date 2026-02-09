@@ -28,7 +28,7 @@ import {
 import { 
   Building2, Briefcase, Users, FileText, Settings, LogOut,
   Plus, Eye, Clock, MapPin, DollarSign, ChevronRight,
-  Globe, Bell, User, LayoutDashboard, Pencil, Trash2
+  Globe, Bell, User, LayoutDashboard, Pencil, Trash2, Copy, ExternalLink
 } from 'lucide-react';
 import {
   DropdownMenu,
