@@ -25,6 +25,7 @@ import { SuperAdminProfile } from "./pages/SuperAdminProfile";
 import { UserProfile } from "./pages/UserProfile";
 import { SuperAdmins } from "./pages/SuperAdmins";
 import { ActivityLogs } from "./pages/ActivityLogs";
+import { DomainRouter } from "./components/DomainRouter";
 
 // Global axios retry for transient errors (502, 503, network)
 axios.interceptors.response.use(null, async (error) => {
