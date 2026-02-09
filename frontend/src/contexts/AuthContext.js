@@ -13,16 +13,34 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       if (token) {
-        try {
-          const response = await axios.get(`${API}/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          setUser(response.data);
-        } catch (error) {
-          console.error('Auth init error:', error);
-          localStorage.removeItem('token');
-          setToken(null);
-          setUser(null);
+        // Try up to 2 times for network issues
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const response = await axios.get(`${API}/auth/me`, {
+              headers: { Authorization: `Bearer ${token}` },
+              timeout: 10000
+            });
+            setUser(response.data);
+            setLoading(false);
+            return;
+          } catch (error) {
+            const status = error.response?.status;
+            // Only clear token on auth errors (401/403)
+            if (status === 401 || status === 403) {
+              localStorage.removeItem('token');
+              setToken(null);
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+            // Network/server error - retry once
+            if (attempt === 0) {
+              await new Promise(r => setTimeout(r, 1000));
+              continue;
+            }
+            // After retries, keep token but no user (will retry on navigation)
+            console.error('Auth init failed after retries:', error);
+          }
         }
       }
       setLoading(false);
