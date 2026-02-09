@@ -116,12 +116,11 @@ export const ApplyJob = () => {
   const handleFormChange = (fieldName, value) => {
     setFormData({ ...formData, [fieldName]: value });
     
-    // Handle cascading dropdowns
+    // Handle cascading dropdowns for wilayah.id API
     if (fieldName === 'province') {
       const province = provinces.find(p => p.name === value);
       if (province) {
-        fetchCities(province.id);
-        // Reset dependent fields
+        fetchCities(province.code);
         setFormData({
           ...formData,
           province: value,
@@ -133,7 +132,7 @@ export const ApplyJob = () => {
     } else if (fieldName === 'city') {
       const city = cities.find(c => c.name === value);
       if (city) {
-        fetchDistricts(city.id);
+        fetchDistricts(city.code);
         setFormData({
           ...formData,
           city: value,
@@ -144,7 +143,7 @@ export const ApplyJob = () => {
     } else if (fieldName === 'district') {
       const district = districts.find(d => d.name === value);
       if (district) {
-        fetchVillages(district.id);
+        fetchVillages(district.code);
         setFormData({
           ...formData,
           district: value,
