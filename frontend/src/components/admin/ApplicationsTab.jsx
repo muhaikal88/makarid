@@ -53,6 +53,8 @@ export const ApplicationsTab = ({
   formatDate
 }) => {
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const departments = useMemo(() => {
     const depts = new Set();
