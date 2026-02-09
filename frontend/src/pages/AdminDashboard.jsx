@@ -198,6 +198,19 @@ export const AdminDashboard = () => {
     }
   };
 
+  const handleCompareUpdateStatus = async (appId, newStatus) => {
+    try {
+      await axios.put(`${API}/applications-session/${appId}/status?status=${newStatus}`, {}, { withCredentials: true });
+      toast.success('Status berhasil diupdate');
+      // Refresh compare data in-place
+      setCompareApps(prev => prev.map(a => a.id === appId ? { ...a, status: newStatus } : a));
+      fetchData();
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast.error('Gagal update status');
+    }
+  };
+
   const filteredApplications = applications.filter(app => {
     const matchesStatus = filterStatus === 'all' || app.status === filterStatus;
     const matchesJob = filterJob === 'all' || app.job_id === filterJob;
