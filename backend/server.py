@@ -3236,39 +3236,64 @@ async def get_users(current_user: dict = Depends(require_super_admin)):
 
 @api_router.post("/users", response_model=UserResponse)
 async def create_user(data: UserCreate, current_user: dict = Depends(require_super_admin)):
-    # Check if email already exists
-    existing = await db.users.find_one({"email": data.email})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already exists")
+    # Check if email already exists in both tables
+    existing_admin = await db.company_admins.find_one({"email": data.email})
+    existing_emp = await db.employees.find_one({"email": data.email})
+    if existing_admin or existing_emp:
+        raise HTTPException(status_code=400, detail="Email sudah terdaftar")
     
-    user_doc = {
-        "id": str(uuid.uuid4()),
-        "email": data.email,
-        "name": data.name,
-        "password": hash_password(data.password),
-        "role": data.role,
-        "company_id": data.company_id,
-        "is_active": True,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat()
-    }
+    now = datetime.now(timezone.utc).isoformat()
     
-    await db.users.insert_one(user_doc)
+    if data.role == "admin":
+        user_id = f"admin_{uuid.uuid4().hex[:12]}"
+        user_doc = {
+            "id": user_id,
+            "email": data.email,
+            "name": data.name,
+            "password": hash_password(data.password),
+            "companies": [data.company_id],
+            "is_active": True,
+            "auth_provider": "email",
+            "created_at": now,
+            "updated_at": now
+        }
+        await db.company_admins.insert_one(user_doc)
+    else:
+        user_id = f"emp_{uuid.uuid4().hex[:12]}"
+        user_doc = {
+            "id": user_id,
+            "email": data.email,
+            "name": data.name,
+            "password": hash_password(data.password),
+            "companies": [data.company_id],
+            "is_active": True,
+            "auth_provider": "email",
+            "created_at": now,
+            "updated_at": now
+        }
+        await db.employees.insert_one(user_doc)
     
     return UserResponse(
-        id=user_doc["id"],
-        email=user_doc["email"],
-        name=user_doc["name"],
-        role=user_doc["role"],
-        company_id=user_doc.get("company_id"),
-        is_active=user_doc["is_active"],
-        created_at=user_doc["created_at"],
-        updated_at=user_doc["updated_at"]
+        id=user_id,
+        email=data.email,
+        name=data.name,
+        role=data.role,
+        company_id=data.company_id,
+        is_active=True,
+        created_at=now,
+        updated_at=now
     )
 
 @api_router.put("/users/{user_id}", response_model=UserResponse)
 async def update_user(user_id: str, data: UserUpdate, current_user: dict = Depends(require_super_admin)):
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    # Find in company_admins or employees
+    user = await db.company_admins.find_one({"id": user_id}, {"_id": 0})
+    table = db.company_admins
+    role = "admin"
+    if not user:
+        user = await db.employees.find_one({"id": user_id}, {"_id": 0})
+        table = db.employees
+        role = "employee"
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -3277,17 +3302,18 @@ async def update_user(user_id: str, data: UserUpdate, current_user: dict = Depen
         update_data["password"] = hash_password(update_data["password"])
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
-    await db.users.update_one({"id": user_id}, {"$set": update_data})
+    await table.update_one({"id": user_id}, {"$set": update_data})
+    updated = await table.find_one({"id": user_id}, {"_id": 0})
     
-    updated = await db.users.find_one({"id": user_id}, {"_id": 0})
+    company_id = updated.get("companies", [None])[0] if updated.get("companies") else updated.get("company_id", "")
     
     return UserResponse(
         id=updated["id"],
         email=updated["email"],
         name=updated["name"],
-        role=updated["role"],
-        company_id=updated.get("company_id"),
-        is_active=updated["is_active"],
+        role=data.role or role,
+        company_id=company_id,
+        is_active=updated.get("is_active", True),
         created_at=updated["created_at"] if isinstance(updated["created_at"], str) else updated["created_at"].isoformat(),
         updated_at=updated["updated_at"] if isinstance(updated["updated_at"], str) else updated["updated_at"].isoformat()
     )
