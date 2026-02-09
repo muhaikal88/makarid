@@ -109,13 +109,21 @@ export const Users = () => {
   };
 
   const fetchCompanies = async () => {
-    try {
-      const response = await axios.get(`${API}/companies`, {
-        headers: getAuthHeaders()
-      });
-      setCompanies(response.data);
-    } catch (error) {
-      console.error('Failed to fetch companies:', error);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await axios.get(`${API}/companies`, {
+          headers: getAuthHeaders(),
+          timeout: 15000
+        });
+        setCompanies(response.data);
+        return;
+      } catch (error) {
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        console.error('Failed to fetch companies:', error);
+      }
     }
   };
 
