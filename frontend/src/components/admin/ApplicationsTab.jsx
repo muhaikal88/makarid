@@ -3,8 +3,17 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Checkbox } from '../ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import {
   Select,
   SelectContent,
@@ -12,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { FileText, ChevronRight, GitCompareArrows, X, Trash2 } from 'lucide-react';
+import { FileText, ChevronRight, GitCompareArrows, X, Trash2, AlertTriangle } from 'lucide-react';
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',
