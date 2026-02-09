@@ -182,10 +182,12 @@ export const AdminDashboard = () => {
 
   const filteredApplications = applications.filter(app => {
     const matchesStatus = filterStatus === 'all' || app.status === filterStatus;
+    const matchesJob = filterJob === 'all' || app.job_id === filterJob;
+    const matchesDept = filterDepartment === 'all' || app.job_department === filterDepartment;
     const matchesSearch = !searchApp ||
       app.applicant_name?.toLowerCase().includes(searchApp.toLowerCase()) ||
       app.applicant_email?.toLowerCase().includes(searchApp.toLowerCase());
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesJob && matchesDept && matchesSearch;
   });
 
   const getInitials = (name) => {
