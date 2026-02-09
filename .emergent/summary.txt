@@ -1,0 +1,221 @@
+<analysis>**original_problem_statement:**
+The user initially requested to create a landing page for  and move the dashboard functionality to a subdomain. This evolved into a series of major feature requests, including:
+- A complete auth system overhaul to separate Super Admins from Company Users (Admins/Employees) into distinct database tables (, , ).
+- A unified login portal for all company users with Google OAuth, supporting users who belong to multiple companies or have multiple roles.
+- A default subdomain structure for companies (e.g., ) with an option for clients to use their own custom domains.
+- Full-featured user profile management for all roles, allowing updates to name, email, password, and profile picture.
+- Advanced security features: strong password validation, a password generator, and two-factor authentication (2FA) using Google Authenticator for all admin roles.
+- A comprehensive Super Admin dashboard to manage other super admins, all companies, all users (company admins and employees), licenses, and global SMTP settings.
+- The ability for Super Admins to enable/disable 2FA and activate/deactivate any user account.
+- An activity logging system to track all major actions within the platform, complete with filters and search.
+- A full-featured job management module for company admins, including creating, editing, and deleting job postings with a detailed form.
+- A public-facing careers page for each company that automatically displays published jobs.
+- An extensive job application form with numerous fields, including cascading dropdowns for Indonesian addresses using the  API.
+- A system for company admins to view and manage incoming job applications, including updating their status.
+
+**User's preferred language**: Bahasa Indonesia
+
+**what currently exists?**
+The project is a multi-tenant HR SaaS platform. It features a marketing landing page, a separate Super Admin dashboard, and a unified dashboard for Company Admins and Employees. The authentication system is robust, with separate database tables and login flows for super admins and company users, including support for Google OAuth and a multi-company/role selection process.
+
+Key implemented features include:
+- User profile editing (name, email, password, picture).
+- Advanced security: 2FA, strong password validation, and a password generator.
+- Comprehensive Super Admin management pages for users, companies, other super admins, and system settings (like global SMTP).
+- Full CRUD (Create, Read, Update, Delete) functionality for job postings by company admins.
+- Public career pages for each company, with support for default subdomains and custom domains.
+- A detailed job application form with address lookup via an external API.
+
+However, the Company Admin dashboard is currently non-functional due to a critical file corruption.
+
+**Last working item**:
+- **Last item agent was working**: Implementing the application management feature in the Company Admin dashboard. This involved making the list of applicants clickable to open a detail dialog, allowing status updates (e.g., Interview, Hired), and adding filters to the list.
+- **Status**: **BLOCKED**
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: Frontend testing agent. The immediate priority is to repair the corrupted file. A full refactor of the file into smaller components is recommended before testing the application management features.
+- **User Testing Done**: N
+
+**All Pending/In progress Issue list**:
+- **Issue 1 (P0 - BLOCKER):** Frontend build is failing due to syntax errors in .
+- **Issue 2 (P1):** User is experiencing DNS/infrastructure errors (Cloudflare Error 1034, NXDOMAIN) when setting up custom domains.
+- **Issue 3 (P2):** The user reported that the production environment () is not showing the same data as the preview environment.
+
+**Issues Detail:**
+- **Issue 1:  is corrupted and breaking the build.**
+    - **Attempted fixes:** The agent made multiple unsuccessful attempts to patch JSX syntax errors (unclosed tags, adjacent elements). These partial edits corrupted the file further, making it unmaintainable.
+    - **Next debug checklist:**
+        1.  **Do not patch the file further.** The file  is critically broken.
+        2.  **Best approach:** Revert the file to a version before the Application Management feature work began.
+        3.  **Alternative:** If reverting isn't an option, the file must be completely rewritten or carefully restructured, fixing all JSX tag nesting issues.
+        4.  **Recommendation:** As a permanent solution, refactor the massive  by extracting the logic for each tab (Overview, Lowongan, Lamaran) into its own separate, manageable component.
+    - **Why fix this issue?**: This is a build-breaking error that renders the entire Company Admin dashboard inaccessible.
+    - **Status**: **BLOCKED**
+    - **Is recurring issue?**: Y
+    - **Should Test frontend/backend/both after fix?**: frontend
+    - **Blocked on other issue**: No, this is the primary blocker.
+
+- **Issue 2: Custom domain setup is failing.**
+    - **Attempted fixes:** The agent correctly diagnosed Cloudflare Error 1034 as an issue of pointing a production domain to a restricted preview URL. For the  error, the agent correctly identified that the necessary CNAME records for subdomains were missing from the user's DNS configuration for .
+    - **Next debug checklist:**
+        1.  Reiterate to the user that preview URLs () cannot be used for production custom domains. A production deployment is required.
+        2.  Guide the user to add a wildcard CNAME record () to their  DNS settings, pointing to the preview URL (), to make default subdomains (e.g., ) functional for testing.
+    - **Why fix this issue?**: It's a key requirement for client branding and professional appearance.
+    - **Status**: **BLOCKED** (on user's infrastructure and need for a production deployment)
+    - **Is recurring issue?**: Y
+    - **Should Test frontend/backend/both after fix?**: N/A (Infrastructure issue)
+
+- **Issue 3: Data discrepancy between production and preview environments.**
+    - **Attempted fixes:** This issue was reported by the user but was not investigated by the agent.
+    - **Next debug checklist:**
+        1.  Investigate if the production deployment () and the preview environment are using different databases.
+        2.  Verify the DNS records for  to ensure they point to the correct server where the latest application code and database are hosted.
+        3.  Check for any aggressive server-side caching on the production environment that might be serving stale data.
+    - **Why fix this issue?**: An unreliable production environment is a critical failure point for the application.
+    - **Status**: **NOT STARTED**
+    - **Is recurring issue?**: N
+    - **Should Test frontend/backend/both after fix?**: both
+
+**In progress Task List**:
+- **Task 1: Implement Application Management in Company Admin Dashboard**
+    - **Where to resume:** The first step is to resolve **Issue 1** by fixing or refactoring . Once the build is stable, proceed with the implementation:
+        1.  Make application list rows clickable.
+        2.  On click, open a dialog showing full applicant data.
+        3.  Add a dropdown in the dialog to update the application status, calling the  endpoint.
+        4.  Implement filters for the application list (e.g., by job, status).
+    - **What will be achieved with this?**: Company admins will have a functional system to manage their recruitment pipeline.
+    - **Status**: **IN PROGRESS**
+    - **Should Test frontend/backend/both after fix?**: both
+    - **Blocked on something**: **Issue 1: Frontend build is failing due to syntax errors in **.
+
+**Upcoming and Future Tasks**
+- **Upcoming Tasks:**
+  - **P1: Full Activity Log Integration:** Implement the  helper across all critical backend endpoints (CRUD operations for companies, users, jobs, settings) to provide a complete audit trail.
+  - **P2: Build Employee Dashboard:** Develop the features for the employee dashboard, which is currently just a placeholder. This could include viewing personal profiles, requesting time off, and accessing company documents.
+- **Future Tasks:**
+  - **Email Notification System:** Integrate the configured SMTP settings to send email notifications for key events (e.g., new job application, password reset).
+  - **Public Company Profile:** Build out the public-facing company profile page.
+
+**Completed work in this session**
+- **Auth & DB Refactor:** Separated logins and database tables for Super Admins and Company Users; implemented unified login with Google OAuth and a multi-company/role selector.
+- **Advanced Security:** Implemented 2FA, strong password validation, and a password generator.
+- **Super Admin Features:** Created management pages for Super Admins, Companies, and all Users; added toggles for user status/2FA; implemented global/company SMTP settings; created an Activity Log page; and fixed dashboard stat counts.
+- **Company Admin Features:** Implemented full CRUD for Job Postings with a detailed form.
+- **Recruitment Flow:** Created public career pages and a detailed job application form with address API integration.
+- **UI/UX & Branding:** Rebranded the app to Makar.id, updated logos for clarity, and added UI helpers for sharing career page links.
+
+**Earlier issues found/mentioned but not fixed**
+- **Issue 1: Production Data Discrepancy**
+    - **Debug checklist:**
+        1.  Confirm if production and preview environments use separate, unsynchronized databases.
+        2.  Verify DNS for  points to the correct production server.
+        3.  Check for server-side caching on the production environment.
+    - **Why to solve this issue and what will be achieved with this?**: To ensure the production environment is reliable and reflects the true state of the application's data.
+    - **Should Test frontend/backend/both after fix**: both
+    - **Is recurring issue?**: N
+
+**Known issue recurrence from previous fork**
+- N/A
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Backend:** Python, FastAPI, SQLAlchemy, Pydantic, ,  (for 2FA).
+- **Frontend:** React, Vite, Tailwind CSS, shadcn/ui, Axios, React Router.
+- **Database:** SQLite.
+- **Architecture:** A monolithic FastAPI backend serves a React Single-Page Application (SPA).
+
+**key DB schema**
+- **superadmins**: 
+- **company_admins**: 
+- **employees**: 
+- **companies**: 
+- **jobs**: 
+- **applications**: 
+- **activity_logs**: 
+- **system_settings**: 
+
+**changes in tech stack**
+- No changes, but a significant database schema refactor was performed, moving from a single  table to , , and .
+- Authentication for company users was updated to a session-based flow to handle post-login selections.
+
+**All files of reference**
+- : The single source of truth for all backend logic.
+- ****: The primary file for the Company Admin dashboard. **This file is critically corrupted.**
+- : Page to manage super admins.
+- : Page to manage company users.
+- : Page to manage companies.
+- : The public job application form.
+- : Page for viewing activity logs.
+
+**Areas that need refactoring**:
+- ** (CRITICAL):** This monolithic file is corrupted and must be broken down into smaller components for each of its tabs (Overview, Jobs, Applications) to be maintainable.
+- ** (HIGH):** This single file contains all backend logic, models, and routes. It should be organized into a standard FastAPI project structure with separate directories for routers, models, and services to improve scalability and readability.
+
+**key api endpoints**
+-  (POST): Super admin login.
+-  (POST): First step of company user login.
+-  (POST): Second step of company user login (choosing company/role).
+-  (GET, POST): Manage super admins.
+-  (GET): Get all company users.
+-  (GET): Get all companies.
+-  (POST, PUT, DELETE): CRUD for job postings using session auth.
+-  (PUT): Update an application's status.
+-  (GET): Fetch activity logs.
+-  (GET): Fetch public job listings.
+
+**Critical Info for New Agent**
+- **Your first task is to fix the  file.** It is corrupted and breaking the build. The recommended approach is to revert the file to a known good state or refactor it into smaller components. Do not attempt to apply small patches.
+- The user has ongoing DNS and infrastructure issues with custom domains. Your role is to provide clear guidance on correct DNS configuration (e.g., CNAME targets) and explain the limitations of preview deployments vs. production deployments.
+- The authentication system is a hybrid: JWT for super admins, and a session-based flow for company users. This is intentional to handle the multi-company/role selection process.
+
+**documents and test reports created in this job**
+- 
+- 
+- 
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User:**  has a build error. **Status: Unresolved.**
+2.  **User:**  is still not clickable. **Status: Unresolved.**
+3.  **User:** The file is still broken ( has another build error). **Status: Unresolved.**
+4.  **User:** Application list in the company dashboard is still not clickable. **Status: Unresolved.**
+5.  **User:** Asks for application management features (clickable list, status updates, filters). **Status: In Progress (Blocked).**
+6.  **User:** Reports production () is not showing new users, unlike the preview URL. **Status: Unresolved.**
+7.  **User:** Reports  and  are not working (DNS error). Provides DNS configs. **Status: Unresolved (Infrastructure).**
+8.  **User:** Asks for a way for admins to see and copy their career page link from the dashboard. **Status: Completed.**
+9.  **User:** Is frustrated that the custom domain isn't working even though the project is deployed. **Status: Unresolved (Infrastructure).**
+10. **User:** Wants to continue after a pause. **Status: Acknowledged.**
+
+**Project Health Check:**
+- **Broken:**
+  - : This file is syntactically corrupt, preventing the frontend from compiling and making the company admin dashboard completely unusable.
+
+**3rd Party Integrations**
+- **wilayah.id**: Public API for fetching Indonesian administrative regions. Does not require an API key.
+- **Google OAuth**: Uses Emergent-managed Google Auth.
+
+**Testing status**
+- **Testing agent used after significant changes**: NO
+- **Troubleshoot agent used after agent stuck in loop**: YES (for DNS/deployment issues, but with limited success)
+- **Test files created**: [ ]
+- **Known regressions**: The entire Company Admin Dashboard is non-functional due to the corrupted  file.
+
+**Credentials to test flow:**
+- **Super Admin:**
+  - Email: 
+  - Password: 
+  - 2FA: Enabled
+- **Super Admin (Backup):**
+  - Email: 
+  - Password: 
+  - 2FA: Enabled
+- **Company Admin:**
+  - Email: 
+  - Password: 
+- **Employee:**
+  - Email: 
+  - Password: 
+
+**What agent forgot to execute**
+- The agent failed to properly resolve the corruption of the  file, making repeated, failed patching attempts that worsened the problem instead of taking a step back to revert or refactor.
+- The agent did not investigate the user's critical report about data discrepancies between the production and preview environments.</analysis>
