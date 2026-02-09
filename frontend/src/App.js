@@ -102,7 +102,9 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <BrowserRouter>
-          <AppRouter />
+          <DomainRouter>
+            <AppRouter />
+          </DomainRouter>
         </BrowserRouter>
       </AuthProvider>
     </LanguageProvider>
