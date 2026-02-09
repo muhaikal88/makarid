@@ -118,8 +118,8 @@ export const AppDetailDialog = ({
   const formData = selectedApp.form_data || {};
   const allFormKeys = Object.keys(formData);
 
-  // Collect keys already used in header or groups
-  const usedKeys = new Set(headerFields);
+  // Collect keys already used in header, groups, or special sections
+  const usedKeys = new Set([...headerFields, 'expected_salary']);
   fieldGroups.forEach(g => g.fields.forEach(f => usedKeys.add(f)));
 
   // Remaining keys not in any group
