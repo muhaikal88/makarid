@@ -2966,8 +2966,50 @@ async def get_applications_session(
     
     return result
 
+@api_router.put("/applications-session/{app_id}/status")
+async def update_application_status_session(app_id: str, status: str, notes: Optional[str] = None, request: Request = None):
+    """Update application status using session auth"""
+    session = await require_session_admin(request)
+    
+    application = await db.applications.find_one({"id": app_id}, {"_id": 0})
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    if application["company_id"] != session["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    await db.applications.update_one(
+        {"id": app_id},
+        {"$set": {
+            "status": status,
+            "notes": notes,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Status updated successfully"}
 
-    return result
+@api_router.get("/applications-session/{app_id}")
+async def get_application_detail_session(app_id: str, request: Request):
+    """Get application detail using session auth"""
+    session = await require_session_admin(request)
+    
+    application = await db.applications.find_one({"id": app_id}, {"_id": 0})
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    if application["company_id"] != session["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get job info
+    job = await db.jobs.find_one({"id": application["job_id"]}, {"_id": 0})
+    
+    return {
+        **application,
+        "job_title": job["title"] if job else "Unknown",
+        "job": job
+    }
+
 
 @api_router.put("/applications/{app_id}/status")
 async def update_application_status(app_id: str, data: ApplicationUpdateStatus, current_user: dict = Depends(require_admin_or_super)):
