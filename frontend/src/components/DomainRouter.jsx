@@ -24,7 +24,7 @@ export const DomainRouter = ({ children }) => {
 
     const lookup = async () => {
       try {
-        const response = await axios.get(`${API}/domain-lookup?hostname=${hostname}`, { timeout: 8000 });
+        const response = await axios.get(`${API}/public/domain-lookup?hostname=${hostname}`, { timeout: 8000 });
         if (response.data.found) {
           setResolved(response.data);
         }
