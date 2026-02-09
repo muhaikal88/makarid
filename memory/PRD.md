@@ -14,7 +14,7 @@ Ada 3 role: Super Admin, Admin (untuk perusahaan), dan Karyawan.
 - **Backend**: FastAPI (Python) with MongoDB
 - **Frontend**: React with Webpack, Tailwind CSS, shadcn/ui
 - **Auth**: JWT for Super Admins, Session/Cookie for Company Users (supports Google OAuth)
-- **Database**: MongoDB (collections: superadmins, company_admins, employees, companies, jobs, applications, activity_logs, system_settings)
+- **Database**: MongoDB (collections: superadmins, company_admins, employees, companies, jobs, applications, activity_logs, system_settings, form_fields)
 
 ## What's Been Implemented
 
@@ -37,12 +37,22 @@ Ada 3 role: Super Admin, Admin (untuk perusahaan), dan Karyawan.
 ### Company Admin Dashboard (Complete - Feb 9, 2026)
 - [x] Overview tab with stats, career page link, recent applications
 - [x] Jobs tab with full CRUD (create, edit, delete job postings)
-- [x] Applications tab with clickable list, detail dialog, status updates, filters & search
-- [x] **Refactored** from monolithic 1100-line file into 6 modular components
+- [x] Applications tab with clickable list, detail dialog with ALL form data, status updates, filters & search
+- [x] Refactored from monolithic 1100-line file into 6 modular components
 
-### Recruitment Flow (Complete)
+### Recruitment Flow (Complete - Feb 9, 2026)
 - [x] Public career pages per company (/careers/{slug})
-- [x] Detailed job application form with Indonesian address API (wilayah.id)
+- [x] Detailed job application form with:
+  - Nama Lengkap, Email, No. Telepon
+  - Tempat Lahir, Tanggal Lahir
+  - Pendidikan Terakhir (SMA/SMK, D3, S1, S2, S3)
+  - Jurusan
+  - Cascading address: Provinsi -> Kota/Kab -> Kecamatan -> Kelurahan (via wilayah.id API)
+  - Alamat Lengkap
+  - Gaji yang Diharapkan (numeric with Rp prefix & thousand separator)
+  - Pengalaman Kerja
+  - Upload CV (PDF)
+- [x] Backend proxy for wilayah.id API (CORS bypass)
 - [x] File upload for CV/Resume
 
 ### UI/UX & Branding (Complete)
@@ -50,7 +60,7 @@ Ada 3 role: Super Admin, Admin (untuk perusahaan), dan Karyawan.
 - [x] Bilingual support (ID/EN)
 - [x] Marketing landing page
 
-## Component Architecture (AdminDashboard)
+## Component Architecture
 ```
 AdminDashboard.jsx (orchestrator)
 ├── components/admin/OverviewTab.jsx
@@ -59,6 +69,11 @@ AdminDashboard.jsx (orchestrator)
 ├── components/admin/JobFormDialog.jsx
 └── components/admin/AppDetailDialog.jsx
 ```
+
+## Key API Endpoints
+- Wilayah proxy: /api/wilayah/provinces, /api/wilayah/regencies/{code}, /api/wilayah/districts/{code}, /api/wilayah/villages/{code}
+- Public careers: /api/public/careers/{slug}/jobs/{id}
+- Applications: /api/applications-session, /api/applications-session/{id}/status
 
 ## Credentials
 - **Super Admin**: muhaikal88@gmail.com / Admin@2026! (2FA enabled)
