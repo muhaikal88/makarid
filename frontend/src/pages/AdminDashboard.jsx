@@ -351,6 +351,7 @@ export const AdminDashboard = () => {
               setSearchApp={setSearchApp}
               language={language}
               handleOpenAppDetail={handleOpenAppDetail}
+              handleCompare={handleCompare}
               getInitials={getInitials}
               formatDate={formatDate}
             />
