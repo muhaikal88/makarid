@@ -2073,6 +2073,7 @@ async def lookup_domain(hostname: str):
                 found=True,
                 company_id=company["id"],
                 company_name=company["name"],
+                slug=company["slug"],
                 domain=company["domain"],
                 page_type="main",
                 logo_url=company.get("logo_url")
@@ -2108,6 +2109,7 @@ async def lookup_domain(hostname: str):
         found=True,
         company_id=company["id"],
         company_name=company["name"],
+        slug=company["slug"],
         domain=company["domain"],
         page_type=page_type,
         logo_url=company.get("logo_url")
