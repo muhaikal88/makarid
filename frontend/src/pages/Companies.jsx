@@ -440,9 +440,30 @@ export const Companies = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Globe className="w-4 h-4" />
-                          {company.domain}
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-1">
+                            <code className="text-xs font-mono text-gray-600">
+                              {company.slug}.makar.id
+                            </code>
+                            {company.custom_domains?.careers && (
+                              <code className="text-xs font-mono text-emerald-600">
+                                {company.custom_domains.careers}
+                              </code>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => {
+                              const link = company.custom_domains?.careers || `${company.slug}.makar.id`;
+                              navigator.clipboard.writeText(`https://${link}`);
+                              toast.success('Link disalin!');
+                            }}
+                            title="Copy link"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
                         </div>
                       </TableCell>
                       <TableCell>
