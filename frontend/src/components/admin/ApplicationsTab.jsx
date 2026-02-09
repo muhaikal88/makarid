@@ -39,6 +39,7 @@ export const ApplicationsTab = ({
   language,
   handleOpenAppDetail,
   handleCompare,
+  handleDeleteApp,
   getInitials,
   formatDate
 }) => {
