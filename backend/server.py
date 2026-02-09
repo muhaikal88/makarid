@@ -2021,7 +2021,8 @@ async def delete_company(company_id: str, current_user: dict = Depends(require_s
         raise HTTPException(status_code=404, detail="Company not found")
     
     # Delete all related data
-    await db.users.delete_many({"company_id": company_id})
+    await db.company_admins.delete_many({"companies": company_id})
+    await db.employees.delete_many({"companies": company_id})
     await db.jobs.delete_many({"company_id": company_id})
     await db.applications.delete_many({"company_id": company_id})
     await db.form_fields.delete_many({"company_id": company_id})
