@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { FileText, Briefcase, MapPin, Clock, Calendar, User, Mail, Phone } from 'lucide-react';
+import { FileText, Briefcase, MapPin, Clock, Calendar, User, Mail, Phone, ExternalLink } from 'lucide-react';
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',
