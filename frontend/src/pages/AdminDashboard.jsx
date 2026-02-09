@@ -1,34 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
-import { 
-  Building2, Briefcase, Users, FileText, Settings, LogOut,
-  Plus, Eye, Clock, MapPin, DollarSign, ChevronRight,
-  Globe, Bell, User, LayoutDashboard, Pencil, Trash2, Copy, ExternalLink
+  Building2, Briefcase, FileText, Globe, Bell, User, Settings, LogOut, LayoutDashboard
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,59 +16,49 @@ import {
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Toaster, toast } from 'sonner';
 
+import { OverviewTab } from '../components/admin/OverviewTab';
+import { JobsTab } from '../components/admin/JobsTab';
+import { ApplicationsTab } from '../components/admin/ApplicationsTab';
+import { JobFormDialog } from '../components/admin/JobFormDialog';
+import { AppDetailDialog } from '../components/admin/AppDetailDialog';
+
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const statusColors = {
-  pending: 'bg-amber-100 text-amber-700',
-  reviewing: 'bg-blue-100 text-blue-700',
-  shortlisted: 'bg-purple-100 text-purple-700',
-  interviewed: 'bg-indigo-100 text-indigo-700',
-  offered: 'bg-emerald-100 text-emerald-700',
-  hired: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700'
-};
-
-const jobTypeLabels = {
-  full_time: 'Full Time',
-  part_time: 'Part Time',
-  contract: 'Contract',
-  internship: 'Internship'
+const defaultJobForm = {
+  title: '',
+  department: '',
+  location: '',
+  job_type: 'full_time',
+  description: '',
+  requirements: [],
+  responsibilities: [],
+  salary_min: '',
+  salary_max: '',
+  show_salary: false,
+  status: 'draft'
 };
 
 export const AdminDashboard = () => {
-  const { t, language, setLanguage } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
-  
+
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [company, setCompany] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  
-  // Application management states
+
+  // Application management
   const [selectedApp, setSelectedApp] = useState(null);
   const [isAppDetailOpen, setIsAppDetailOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchApp, setSearchApp] = useState('');
-  
-  // Job form states
+
+  // Job form
   const [isJobFormOpen, setIsJobFormOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
-  const [jobFormData, setJobFormData] = useState({
-    title: '',
-    department: '',
-    location: '',
-    job_type: 'full_time',
-    description: '',
-    requirements: [],
-    responsibilities: [],
-    salary_min: '',
-    salary_max: '',
-    show_salary: false,
-    status: 'draft'
-  });
+  const [jobFormData, setJobFormData] = useState({ ...defaultJobForm });
 
   useEffect(() => {
     checkSession();
@@ -99,21 +66,15 @@ export const AdminDashboard = () => {
 
   const checkSession = async () => {
     try {
-      const response = await axios.get(`${API}/auth/me-session`, {
-        withCredentials: true
-      });
-      
-      // Verify role is admin
+      const response = await axios.get(`${API}/auth/me-session`, { withCredentials: true });
       if (response.data.role !== 'admin') {
         navigate('/company-login');
         return;
       }
-      
       setSession(response.data);
       setAuthLoading(false);
       fetchData();
     } catch (error) {
-      console.error('Session error:', error);
       navigate('/company-login');
     }
   };
@@ -136,12 +97,10 @@ export const AdminDashboard = () => {
   const handleLogout = async () => {
     try {
       await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
-      navigate('/company-login');
-    } catch (error) {
+    } finally {
       navigate('/company-login');
     }
   };
-
 
   const handleOpenJobForm = (job = null) => {
     if (job) {
@@ -161,29 +120,31 @@ export const AdminDashboard = () => {
       });
     } else {
       setSelectedJob(null);
-      setJobFormData({
-        title: '',
-        department: '',
-        location: '',
-        job_type: 'full_time',
-        description: '',
-        requirements: [],
-        responsibilities: [],
-        salary_min: '',
-        salary_max: '',
-        show_salary: false,
-        status: 'draft'
-      });
+      setJobFormData({ ...defaultJobForm });
     }
     setIsJobFormOpen(true);
   };
 
   const handleSubmitJob = async (e) => {
-
+    e.preventDefault();
+    try {
+      if (selectedJob) {
+        await axios.put(`${API}/jobs-session/${selectedJob.id}`, jobFormData, { withCredentials: true });
+        toast.success('Lowongan berhasil diupdate');
+      } else {
+        await axios.post(`${API}/jobs-session`, jobFormData, { withCredentials: true });
+        toast.success('Lowongan berhasil ditambahkan');
+      }
+      setIsJobFormOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Failed to save job:', error);
+      toast.error(error.response?.data?.detail || 'Gagal menyimpan lowongan');
+    }
+  };
 
   const handleDeleteJob = async (job) => {
     if (!window.confirm(`Hapus lowongan "${job.title}"?`)) return;
-    
     try {
       await axios.delete(`${API}/jobs-session/${job.id}`, { withCredentials: true });
       toast.success('Lowongan berhasil dihapus');
@@ -193,13 +154,6 @@ export const AdminDashboard = () => {
       toast.error(error.response?.data?.detail || 'Gagal menghapus lowongan');
     }
   };
-
-    e.preventDefault();
-    try {
-      if (selectedJob) {
-        await axios.put(`${API}/jobs-session/${selectedJob.id}`, jobFormData, { withCredentials: true });
-        toast.success('Lowongan berhasil diupdate');
-
 
   const handleOpenAppDetail = async (app) => {
     try {
@@ -226,33 +180,11 @@ export const AdminDashboard = () => {
 
   const filteredApplications = applications.filter(app => {
     const matchesStatus = filterStatus === 'all' || app.status === filterStatus;
-    const matchesSearch = !searchApp || 
-      app.applicant_name.toLowerCase().includes(searchApp.toLowerCase()) ||
-      app.applicant_email.toLowerCase().includes(searchApp.toLowerCase());
+    const matchesSearch = !searchApp ||
+      app.applicant_name?.toLowerCase().includes(searchApp.toLowerCase()) ||
+      app.applicant_email?.toLowerCase().includes(searchApp.toLowerCase());
     return matchesStatus && matchesSearch;
   });
-
-      } else {
-        await axios.post(`${API}/jobs-session`, jobFormData, { withCredentials: true });
-        toast.success('Lowongan berhasil ditambahkan');
-      }
-      setIsJobFormOpen(false);
-      fetchData();
-    } catch (error) {
-      console.error('Failed to save job:', error);
-      toast.error(error.response?.data?.detail || 'Gagal menyimpan lowongan');
-    }
-  };
-
-
-  // Show loading while checking auth
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E4DA7]"></div>
-      </div>
-    );
-  }
 
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'AD';
@@ -260,11 +192,7 @@ export const AdminDashboard = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const stats = {
@@ -274,7 +202,7 @@ export const AdminDashboard = () => {
     pendingApplications: applications.filter(a => a.status === 'pending').length
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2E4DA7]"></div>
@@ -283,12 +211,11 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50" data-testid="admin-dashboard">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
-            {/* Logo & Title */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-[#2E4DA7] rounded-lg flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-white" />
@@ -299,28 +226,21 @@ export const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Right Side */}
             <div className="flex items-center gap-4">
-              {/* Language */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2" data-testid="language-toggle">
                     <Globe className="w-4 h-4" />
                     <span>{language.toUpperCase()}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setLanguage('id')}>
-                    🇮🇩 Bahasa Indonesia
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLanguage('en')}>
-                    🇬🇧 English
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage('id')}>Bahasa Indonesia</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative" data-testid="notifications-btn">
                 <Bell className="w-5 h-5" />
                 {stats.pendingApplications > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#E31E24] text-white text-xs rounded-full flex items-center justify-center">
@@ -329,10 +249,9 @@ export const AdminDashboard = () => {
                 )}
               </Button>
 
-              {/* Profile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
+                  <Button variant="ghost" className="flex items-center gap-2" data-testid="profile-menu-btn">
                     <Avatar className="w-8 h-8 bg-[#2E4DA7]">
                       <AvatarFallback className="bg-[#2E4DA7] text-white text-sm">
                         {getInitials(session?.name)}
@@ -347,7 +266,7 @@ export const AdminDashboard = () => {
                   <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
                     <Settings className="w-4 h-4 mr-2" /> Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600" data-testid="logout-btn">
                     <LogOut className="w-4 h-4 mr-2" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -361,743 +280,74 @@ export const AdminDashboard = () => {
       <main className="max-w-7xl mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white border">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
+            <TabsTrigger value="overview" className="flex items-center gap-2" data-testid="tab-overview">
               <LayoutDashboard className="w-4 h-4" />
               {language === 'id' ? 'Ringkasan' : 'Overview'}
             </TabsTrigger>
-            <TabsTrigger value="jobs" className="flex items-center gap-2">
+            <TabsTrigger value="jobs" className="flex items-center gap-2" data-testid="tab-jobs">
               <Briefcase className="w-4 h-4" />
               {language === 'id' ? 'Lowongan' : 'Jobs'}
             </TabsTrigger>
-            <TabsTrigger value="applications" className="flex items-center gap-2">
+            <TabsTrigger value="applications" className="flex items-center gap-2" data-testid="tab-applications">
               <FileText className="w-4 h-4" />
               {language === 'id' ? 'Lamaran' : 'Applications'}
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">
-                        {language === 'id' ? 'Total Lowongan' : 'Total Jobs'}
-                      </p>
-                      <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalJobs}</p>
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded-xl">
-                      <Briefcase className="w-6 h-6 text-[#2E4DA7]" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">
-                        {language === 'id' ? 'Lowongan Aktif' : 'Active Jobs'}
-                      </p>
-                      <p className="text-3xl font-bold text-gray-900 mt-1">{stats.publishedJobs}</p>
-                    </div>
-                    <div className="p-3 bg-emerald-50 rounded-xl">
-                      <Eye className="w-6 h-6 text-emerald-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">
-                        {language === 'id' ? 'Total Lamaran' : 'Total Applications'}
-                      </p>
-                      <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalApplications}</p>
-                    </div>
-                    <div className="p-3 bg-purple-50 rounded-xl">
-                      <FileText className="w-6 h-6 text-purple-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">
-                        {language === 'id' ? 'Menunggu Review' : 'Pending Review'}
-                      </p>
-                      <p className="text-3xl font-bold text-gray-900 mt-1">{stats.pendingApplications}</p>
-                    </div>
-                    <div className="p-3 bg-amber-50 rounded-xl">
-                      <Clock className="w-6 h-6 text-amber-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-
-
-            {/* Careers Page Link Info */}
-            <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-emerald-50">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="p-3 bg-white rounded-xl shadow-sm">
-                      <Globe className="w-6 h-6 text-[#2E4DA7]" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">
-                        {language === 'id' ? 'Link Halaman Karir Anda' : 'Your Careers Page Link'}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-3">
-                        {language === 'id' 
-                          ? 'Bagikan link ini ke kandidat untuk melihat lowongan Anda'
-                          : 'Share this link with candidates to view your job openings'}
-                      </p>
-                      
-                      {/* Default Link */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-gray-500">Default URL:</span>
-                          <code className="flex-1 px-3 py-2 bg-white rounded-lg text-sm font-mono text-[#2E4DA7] border">
-                            {session?.company_slug}.makar.id
-                          </code>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              navigator.clipboard.writeText(`https://${session?.company_slug}.makar.id`);
-                              toast.success('Link disalin!');
-                            }}
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        
-                        {/* Custom Domain if set */}
-                        {session?.custom_domain && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-emerald-600">Custom Domain:</span>
-                            <code className="flex-1 px-3 py-2 bg-white rounded-lg text-sm font-mono text-emerald-600 border border-emerald-200">
-                              {session?.custom_domain}
-                            </code>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                navigator.clipboard.writeText(`https://${session?.custom_domain}`);
-                                toast.success('Link disalin!');
-                              }}
-                            >
-                              <Copy className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(`/careers/${session?.company_slug}`, '_blank')}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    {language === 'id' ? 'Buka' : 'Open'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Applications */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle>
-                  {language === 'id' ? 'Lamaran Terbaru' : 'Recent Applications'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {applications.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">
-                    {language === 'id' ? 'Belum ada lamaran' : 'No applications yet'}
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {applications.slice(0, 5).map(app => (
-                      <div key={app.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="bg-[#2E4DA7]">
-                            <AvatarFallback className="bg-[#2E4DA7] text-white">
-                              {getInitials(app.applicant_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-gray-900">{app.applicant_name}</p>
-                            <p className="text-sm text-gray-500">{app.job_title}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Badge className={statusColors[app.status] || 'bg-gray-100'}>
-                            {app.status}
-                          </Badge>
-                          <span className="text-sm text-gray-400">{formatDate(app.created_at)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          <TabsContent value="overview">
+            <OverviewTab
+              stats={stats}
+              applications={applications}
+              session={session}
+              language={language}
+              formatDate={formatDate}
+              getInitials={getInitials}
+            />
           </TabsContent>
 
-          {/* Jobs Tab */}
-          <TabsContent value="jobs" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">
-                {language === 'id' ? 'Daftar Lowongan' : 'Job Listings'}
-              </h2>
-              <Button 
-                className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
-                onClick={() => handleOpenJobForm()}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {language === 'id' ? 'Tambah Lowongan' : 'Add Job'}
-              </Button>
-            </div>
-
-            {jobs.length === 0 ? (
-              <Card className="border-0 shadow-sm">
-                <CardContent className="py-16 text-center">
-                  <Briefcase className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-gray-500">
-                    {language === 'id' ? 'Belum ada lowongan' : 'No jobs yet'}
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {jobs.map(job => (
-                  <Card key={job.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-bold text-gray-900">{job.title}</h3>
-                            <Badge variant={job.status === 'published' ? 'default' : 'secondary'}
-                              className={job.status === 'published' ? 'bg-emerald-100 text-emerald-700' : ''}>
-                              {job.status}
-                            </Badge>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                            {job.department && (
-                              <span className="flex items-center gap-1">
-                                <Users className="w-4 h-4" />
-                                {job.department}
-                              </span>
-                            )}
-                            {job.location && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="w-4 h-4" />
-                                {job.location}
-                              </span>
-                            )}
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {jobTypeLabels[job.job_type] || job.job_type}
-                            </span>
-                            {job.show_salary && job.salary_min && (
-                              <span className="flex items-center gap-1">
-                                <DollarSign className="w-4 h-4" />
-                                Rp {job.salary_min.toLocaleString()}
-                                {job.salary_max && ` - ${job.salary_max.toLocaleString()}`}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-4">
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-[#2E4DA7]">{job.application_count}</p>
-                            <p className="text-sm text-gray-500">
-                              {language === 'id' ? 'Lamaran' : 'Applications'}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenJobForm(job)}
-                            >
-                              <Pencil className="w-4 h-4 mr-2" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteJob(job)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Hapus
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+          <TabsContent value="jobs">
+            <JobsTab
+              jobs={jobs}
+              language={language}
+              handleOpenJobForm={handleOpenJobForm}
+              handleDeleteJob={handleDeleteJob}
+            />
           </TabsContent>
 
-          {/* Applications Tab */}
-          <TabsContent value="applications" className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                {language === 'id' ? 'Daftar Lamaran' : 'Applications'}
-              </h2>
-              <div className="flex gap-3">
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Filter Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="reviewed">Reviewed</SelectItem>
-                    <SelectItem value="interview">Interview</SelectItem>
-                    <SelectItem value="hired">Hired</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="Cari nama atau email..."
-                  value={searchApp}
-                  onChange={(e) => setSearchApp(e.target.value)}
-                  className="w-64"
-                />
-              </div>
-            </div>
-
-            {filteredApplications.length === 0 ? (
-              <Card className="border-0 shadow-sm">
-                <CardContent className="py-16 text-center">
-                  <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-gray-500">
-                    {language === 'id' ? 'Belum ada lamaran' : 'No applications yet'}
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {filteredApplications.map(app => (
-                  <Card 
-                    key={app.id} 
-                    className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => handleOpenAppDetail(app)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="w-12 h-12 bg-[#2E4DA7]">
-                            <AvatarFallback className="bg-[#2E4DA7] text-white">
-                              {getInitials(app.applicant_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="font-bold text-gray-900">{app.applicant_name}</h3>
-                            <p className="text-sm text-gray-500">{app.applicant_email}</p>
-                            <p className="text-sm text-[#2E4DA7] mt-1">{app.job_title}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <Badge className={statusColors[app.status] || 'bg-gray-100'}>
-                              {app.status}
-                            </Badge>
-                            <p className="text-xs text-gray-400 mt-2">{formatDate(app.created_at)}</p>
-                          </div>
-                          {app.resume_url && (
-                            <a 
-                              href={`${process.env.REACT_APP_BACKEND_URL}${app.resume_url}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <FileText className="w-5 h-5 text-gray-600" />
-                            </a>
-                          )}
-                          <ChevronRight className="w-5 h-5 text-gray-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+          <TabsContent value="applications">
+            <ApplicationsTab
+              filteredApplications={filteredApplications}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              searchApp={searchApp}
+              setSearchApp={setSearchApp}
+              language={language}
+              handleOpenAppDetail={handleOpenAppDetail}
+              getInitials={getInitials}
+              formatDate={formatDate}
+            />
           </TabsContent>
         </Tabs>
       </main>
 
+      {/* Dialogs */}
+      <JobFormDialog
+        isOpen={isJobFormOpen}
+        onClose={setIsJobFormOpen}
+        selectedJob={selectedJob}
+        jobFormData={jobFormData}
+        setJobFormData={setJobFormData}
+        handleSubmit={handleSubmitJob}
+        language={language}
+      />
 
-
-      {/* Job Form Dialog */}
-      <Dialog open={isJobFormOpen} onOpenChange={setIsJobFormOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedJob 
-                ? (language === 'id' ? 'Edit Lowongan' : 'Edit Job')
-                : (language === 'id' ? 'Tambah Lowongan Baru' : 'Add New Job')}
-            </DialogTitle>
-            <DialogDescription>
-              {language === 'id' 
-                ? 'Isi informasi lowongan pekerjaan'
-                : 'Fill in the job posting information'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmitJob}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Judul Lowongan *</Label>
-                <Input
-                  id="title"
-                  value={jobFormData.title}
-                  onChange={(e) => setJobFormData({ ...jobFormData, title: e.target.value })}
-                  placeholder="e.g. Software Engineer"
-                  required
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="department">Departemen</Label>
-                  <Input
-                    id="department"
-                    value={jobFormData.department}
-                    onChange={(e) => setJobFormData({ ...jobFormData, department: e.target.value })}
-                    placeholder="e.g. Engineering"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="location">Lokasi</Label>
-                  <Input
-                    id="location"
-                    value={jobFormData.location}
-                    onChange={(e) => setJobFormData({ ...jobFormData, location: e.target.value })}
-                    placeholder="e.g. Jakarta"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="job_type">Tipe Pekerjaan</Label>
-                <Select
-                  value={jobFormData.job_type}
-                  onValueChange={(value) => setJobFormData({ ...jobFormData, job_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="full_time">Full Time</SelectItem>
-                    <SelectItem value="part_time">Part Time</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="internship">Internship</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="description">Deskripsi Pekerjaan *</Label>
-                <Textarea
-                  id="description"
-                  value={jobFormData.description}
-                  onChange={(e) => setJobFormData({ ...jobFormData, description: e.target.value })}
-                  placeholder="Jelaskan tanggung jawab dan kualifikasi..."
-                  rows={6}
-                  required
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={jobFormData.status}
-                  onValueChange={(value) => setJobFormData({ ...jobFormData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsJobFormOpen(false)}>
-                Batal
-              </Button>
-              <Button type="submit" className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90">
-                {selectedJob ? 'Update' : 'Simpan'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Application Detail Dialog */}
-      <Dialog open={isAppDetailOpen} onOpenChange={setIsAppDetailOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-[#2E4DA7]" />
-              Detail Lamaran
-            </DialogTitle>
-            <DialogDescription>
-              {selectedApp?.job_title}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedApp && (
-            <div className="space-y-6 py-4">
-              {/* Applicant Info */}
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
-                <Avatar className="w-16 h-16 bg-[#2E4DA7]">
-                  <AvatarFallback className="bg-[#2E4DA7] text-white text-xl">
-                    {getInitials(selectedApp.form_data?.full_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-bold text-lg">{selectedApp.form_data?.full_name}</h3>
-                  <p className="text-sm text-gray-600">{selectedApp.form_data?.email}</p>
-                  <p className="text-sm text-gray-600">{selectedApp.form_data?.phone}</p>
-                </div>
-              </div>
-
-              {/* Status Update */}
-              <div className="space-y-2">
-                <Label>Status Lamaran</Label>
-                <Select
-                  value={selectedApp.status}
-                  onValueChange={(value) => handleUpdateStatus(selectedApp.id, value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">📋 Pending (Baru Masuk)</SelectItem>
-                    <SelectItem value="reviewed">👀 Reviewed (Sudah Dilihat)</SelectItem>
-                    <SelectItem value="interview">💼 Interview (Panggilan Interview)</SelectItem>
-                    <SelectItem value="hired">✅ Hired (Diterima)</SelectItem>
-                    <SelectItem value="rejected">❌ Rejected (Ditolak)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Personal Info */}
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Informasi Pribadi</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  {selectedApp.form_data?.birth_place && (
-                    <div>
-                      <span className="text-gray-500">Tempat Lahir:</span>
-                      <p className="font-medium">{selectedApp.form_data.birth_place}</p>
-                    </div>
-                  )}
-                  {selectedApp.form_data?.birth_date && (
-                    <div>
-                      <span className="text-gray-500">Tanggal Lahir:</span>
-                      <p className="font-medium">{selectedApp.form_data.birth_date}</p>
-                    </div>
-                  )}
-                  {selectedApp.form_data?.education && (
-                    <div>
-                      <span className="text-gray-500">Pendidikan:</span>
-                      <p className="font-medium">{selectedApp.form_data.education}</p>
-                    </div>
-                  )}
-                  {selectedApp.form_data?.major && (
-                    <div>
-                      <span className="text-gray-500">Jurusan:</span>
-                      <p className="font-medium">{selectedApp.form_data.major}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Address */}
-              {(selectedApp.form_data?.province || selectedApp.form_data?.full_address) && (
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Domisili</h4>
-                  <div className="space-y-2 text-sm">
-                    {selectedApp.form_data.province && (
-                      <p><span className="text-gray-500">Provinsi:</span> <span className="font-medium">{selectedApp.form_data.province}</span></p>
-                    )}
-                    {selectedApp.form_data.city && (
-                      <p><span className="text-gray-500">Kota/Kab:</span> <span className="font-medium">{selectedApp.form_data.city}</span></p>
-                    )}
-                    {selectedApp.form_data.district && (
-                      <p><span className="text-gray-500">Kecamatan:</span> <span className="font-medium">{selectedApp.form_data.district}</span></p>
-                    )}
-                    {selectedApp.form_data.village && (
-                      <p><span className="text-gray-500">Kelurahan:</span> <span className="font-medium">{selectedApp.form_data.village}</span></p>
-                    )}
-                    {selectedApp.form_data.full_address && (
-                      <div className="p-3 bg-slate-50 rounded">
-                        <p className="text-gray-700">{selectedApp.form_data.full_address}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Salary */}
-              {selectedApp.form_data?.expected_salary && (
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Ekspektasi Gaji</h4>
-                  <div className="p-4 bg-emerald-50 rounded-lg">
-                    <p className="text-2xl font-bold text-emerald-700">
-                      Rp {selectedApp.form_data.expected_salary}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* CV */}
-              {selectedApp.resume_url && (
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Curriculum Vitae</h4>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(selectedApp.resume_url, '_blank')}
-                    className="w-full"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Download CV
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAppDetailOpen(false)}>
-              Tutup
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-                    value={jobFormData.location}
-                    onChange={(e) => setJobFormData({ ...jobFormData, location: e.target.value })}
-                    placeholder="e.g. Jakarta"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="job_type">Tipe Pekerjaan</Label>
-                <Select
-                  value={jobFormData.job_type}
-                  onValueChange={(value) => setJobFormData({ ...jobFormData, job_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="full_time">Full Time</SelectItem>
-                    <SelectItem value="part_time">Part Time</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="internship">Internship</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="description">Deskripsi Pekerjaan *</Label>
-                <Textarea
-                  id="description"
-                  value={jobFormData.description}
-                  onChange={(e) => setJobFormData({ ...jobFormData, description: e.target.value })}
-                  placeholder="Jelaskan tanggung jawab dan kualifikasi..."
-                  rows={6}
-                  required
-                />
-              </div>
-
-              {/* Salary Range */}
-              <div className="grid gap-2">
-                <Label>Range Gaji (Opsional)</Label>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Input
-                    type="number"
-                    value={jobFormData.salary_min}
-                    onChange={(e) => setJobFormData({ ...jobFormData, salary_min: e.target.value })}
-                    placeholder="Min (e.g. 3000000)"
-                  />
-                  <Input
-                    type="number"
-                    value={jobFormData.salary_max}
-                    onChange={(e) => setJobFormData({ ...jobFormData, salary_max: e.target.value })}
-                    placeholder="Max (e.g. 4500000)"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="show_salary"
-                    checked={jobFormData.show_salary}
-                    onChange={(e) => setJobFormData({ ...jobFormData, show_salary: e.target.checked })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="show_salary" className="text-sm cursor-pointer">
-                    Tampilkan gaji di halaman publik
-                  </Label>
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={jobFormData.status}
-                  onValueChange={(value) => setJobFormData({ ...jobFormData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft (Belum Dipublikasi)</SelectItem>
-                    <SelectItem value="published">Published (Aktif)</SelectItem>
-                    <SelectItem value="closed">Closed (Ditutup)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsJobFormOpen(false)}>
-                Batal
-              </Button>
-              <Button type="submit" className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90">
-                {selectedJob ? 'Update' : 'Simpan'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <AppDetailDialog
+        isOpen={isAppDetailOpen}
+        onClose={setIsAppDetailOpen}
+        selectedApp={selectedApp}
+        handleUpdateStatus={handleUpdateStatus}
+        getInitials={getInitials}
+      />
 
       <Toaster position="top-right" richColors />
     </div>
