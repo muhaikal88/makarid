@@ -22,6 +22,7 @@ import { ApplicationsTab } from '../components/admin/ApplicationsTab';
 import { JobFormDialog } from '../components/admin/JobFormDialog';
 import { AppDetailDialog } from '../components/admin/AppDetailDialog';
 import { CompareDialog } from '../components/admin/CompareDialog';
+import { TrashTab } from '../components/admin/TrashTab';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
