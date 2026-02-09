@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Checkbox } from '../ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -10,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { FileText, ChevronRight } from 'lucide-react';
+import { FileText, ChevronRight, GitCompareArrows, X } from 'lucide-react';
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',
@@ -36,14 +38,31 @@ export const ApplicationsTab = ({
   setSearchApp,
   language,
   handleOpenAppDetail,
+  handleCompare,
   getInitials,
   formatDate
 }) => {
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
   const departments = useMemo(() => {
     const depts = new Set();
     jobs.forEach(j => { if (j.department) depts.add(j.department); });
     return [...depts].sort();
   }, [jobs]);
+
+  const toggleSelect = (id, e) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const selectedApps = filteredApplications.filter(a => selectedIds.has(a.id));
 
   return (
     <div className="space-y-6">
@@ -107,6 +126,13 @@ export const ApplicationsTab = ({
         />
       </div>
 
+      {/* Hint */}
+      {filteredApplications.length > 1 && selectedIds.size === 0 && (
+        <p className="text-xs text-gray-400">
+          {language === 'id' ? 'Centang lamaran untuk membandingkan' : 'Check applications to compare'}
+        </p>
+      )}
+
       {filteredApplications.length === 0 ? (
         <Card className="border-0 shadow-sm">
           <CardContent className="py-16 text-center">
@@ -118,57 +144,108 @@ export const ApplicationsTab = ({
         </Card>
       ) : (
         <div className="space-y-4" data-testid="applications-list">
-          {filteredApplications.map(app => (
-            <Card
-              key={app.id}
-              className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              data-testid={`application-card-${app.id}`}
-              onClick={() => handleOpenAppDetail(app)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-12 h-12 bg-[#2E4DA7]">
-                      <AvatarFallback className="bg-[#2E4DA7] text-white">
-                        {getInitials(app.applicant_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{app.applicant_name}</h3>
-                      <p className="text-sm text-gray-500">{app.applicant_email}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-sm text-[#2E4DA7]">{app.job_title}</p>
-                        {app.job_department && (
-                          <span className="text-xs text-gray-400">/ {app.job_department}</span>
-                        )}
+          {filteredApplications.map(app => {
+            const isChecked = selectedIds.has(app.id);
+            return (
+              <Card
+                key={app.id}
+                className={`border-0 shadow-sm hover:shadow-md transition-all cursor-pointer ${isChecked ? 'ring-2 ring-[#2E4DA7] bg-blue-50/30' : ''}`}
+                data-testid={`application-card-${app.id}`}
+                onClick={() => handleOpenAppDetail(app)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* Checkbox */}
+                      <div onClick={(e) => toggleSelect(app.id, e)} className="shrink-0">
+                        <Checkbox
+                          checked={isChecked}
+                          data-testid={`compare-check-${app.id}`}
+                          className="border-gray-300"
+                        />
+                      </div>
+                      <Avatar className="w-12 h-12 bg-[#2E4DA7]">
+                        <AvatarFallback className="bg-[#2E4DA7] text-white">
+                          {getInitials(app.applicant_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-bold text-gray-900">{app.applicant_name}</h3>
+                        <p className="text-sm text-gray-500">{app.applicant_email}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-sm text-[#2E4DA7]">{app.job_title}</p>
+                          {app.job_department && (
+                            <span className="text-xs text-gray-400">/ {app.job_department}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <Badge className={statusColors[app.status] || 'bg-gray-100'}>
-                        {app.status}
-                      </Badge>
-                      <p className="text-xs text-gray-400 mt-2">{formatDate(app.created_at)}</p>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <Badge className={statusColors[app.status] || 'bg-gray-100'}>
+                          {app.status}
+                        </Badge>
+                        <p className="text-xs text-gray-400 mt-2">{formatDate(app.created_at)}</p>
+                      </div>
+                      {app.resume_url && (
+                        <a
+                          href={`${process.env.REACT_APP_BACKEND_URL}${app.resume_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200"
+                          onClick={(e) => e.stopPropagation()}
+                          data-testid={`download-resume-${app.id}`}
+                        >
+                          <FileText className="w-5 h-5 text-gray-600" />
+                        </a>
+                      )}
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
                     </div>
-                    {app.resume_url && (
-                      <a
-                        href={`${process.env.REACT_APP_BACKEND_URL}${app.resume_url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200"
-                        onClick={(e) => e.stopPropagation()}
-                        data-testid={`download-resume-${app.id}`}
-                      >
-                        <FileText className="w-5 h-5 text-gray-600" />
-                      </a>
-                    )}
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Floating Compare Bar */}
+      {selectedIds.size >= 2 && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2E4DA7] text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-4"
+          data-testid="compare-bar"
+        >
+          <div className="flex items-center gap-3">
+            {selectedApps.slice(0, 4).map(app => (
+              <Avatar key={app.id} className="w-8 h-8 border-2 border-white -ml-2 first:ml-0">
+                <AvatarFallback className="bg-white text-[#2E4DA7] text-xs font-bold">
+                  {getInitials(app.applicant_name)}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+            <span className="text-sm font-medium ml-1">
+              {selectedIds.size} dipilih
+            </span>
+          </div>
+
+          <Button
+            size="sm"
+            variant="secondary"
+            className="bg-white text-[#2E4DA7] hover:bg-white/90 font-semibold"
+            data-testid="compare-btn"
+            onClick={() => handleCompare([...selectedIds])}
+          >
+            <GitCompareArrows className="w-4 h-4 mr-1.5" />
+            Bandingkan
+          </Button>
+
+          <button
+            onClick={clearSelection}
+            className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+            data-testid="clear-selection-btn"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
     </div>
