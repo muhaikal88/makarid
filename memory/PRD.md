@@ -1,4 +1,4 @@
-# Lucky Cell HR Management System - PRD
+# Makar.id - HR SaaS Platform PRD
 
 ## Original Problem Statement
 Software HR/Employee Management System untuk mengelola karyawan, dari mulai rekrutmen untuk HRD, database karyawan, kehadiran, aktivitas yang dilakukan karyawan, pengajuan cuti, izin sakit, serta penggajian. Pelanggan pertama adalah Lucky Cell (luckycell.co.id).
@@ -10,130 +10,81 @@ Setiap perusahaan yang terdaftar akan memiliki:
 
 Ada 3 role: Super Admin, Admin (untuk perusahaan), dan Karyawan.
 
-## User Personas
-1. **Super Admin**: Mengelola semua perusahaan klien dan admin perusahaan
-2. **Admin (Company)**: Mengelola job posting, lamaran, company profile, dan custom form fields
-3. **Karyawan**: Mengakses data kehadiran, cuti, dan penggajian mereka
-4. **Pelamar (Public)**: Melihat company profile, lowongan kerja, dan submit lamaran
-
-## Core Requirements (MVP)
-- [x] Login system dengan multi-role (Super Admin, Admin, Employee)
-- [x] Dashboard Super Admin dengan statistik
-- [x] Company Management (CRUD)
-- [x] User Management (CRUD) 
-- [x] Bilingual Support (Indonesia/English)
-- [x] Public Company Profile page
-- [x] Public Careers/Recruitment page
-- [x] Job Posting Management (Admin)
-- [x] Custom Application Form Fields
-- [x] Job Application Submission
-- [x] Application Management (Admin)
-- [ ] Database Karyawan
-- [ ] Sistem Kehadiran (Attendance)
-- [ ] Pengajuan Cuti/Izin Sakit
-- [ ] Modul Penggajian (Payroll)
+## Architecture
+- **Backend**: FastAPI (Python) with MongoDB
+- **Frontend**: React with Webpack, Tailwind CSS, shadcn/ui
+- **Auth**: JWT for Super Admins, Session/Cookie for Company Users (supports Google OAuth)
+- **Database**: MongoDB (collections: superadmins, company_admins, employees, companies, jobs, applications, activity_logs, system_settings)
 
 ## What's Been Implemented
 
-### Phase 1: Super Admin Dashboard ✅ (Feb 4, 2026)
-- Login page khusus Super Admin dengan dark theme
-- Dashboard dengan statistik cards
-- Companies management (CRUD)
-- Users management (CRUD)
-- Settings page
-- Bilingual support (ID/EN)
+### Auth & User Management (Complete)
+- [x] Separate login flows: Super Admin (/login) and Company Users (/company-login)
+- [x] Unified login with Google OAuth for company users
+- [x] Multi-company/role selection process
+- [x] 2FA with Google Authenticator
+- [x] Strong password validation & generator
+- [x] User profile management (name, email, password, picture)
 
-### Phase 2: Recruitment Module ✅ (Feb 4, 2026)
-**Public Pages:**
-- `/company/{domain}` - Company Profile dengan visi/misi, culture, benefits
-- `/careers/{domain}` - Job listing dengan search & filter
-- `/careers/{domain}/apply/{jobId}` - Application form dengan custom fields
+### Super Admin Dashboard (Complete)
+- [x] Dashboard with statistics
+- [x] Company management (CRUD)
+- [x] User management (CRUD) with status/2FA toggles
+- [x] Super Admin management
+- [x] Global SMTP settings
+- [x] Activity Log page
 
-**Admin Features:**
-- Job Posting CRUD (title, department, location, salary, requirements)
-- Custom Form Fields configuration per company
-- Application management dengan status tracking
+### Company Admin Dashboard (Complete - Feb 9, 2026)
+- [x] Overview tab with stats, career page link, recent applications
+- [x] Jobs tab with full CRUD (create, edit, delete job postings)
+- [x] Applications tab with clickable list, detail dialog, status updates, filters & search
+- [x] **Refactored** from monolithic 1100-line file into 6 modular components
 
-### Phase 3: Login Separation & White-Label Domain ✅ (Feb 4, 2026)
-**Login Separation:**
-- `/login` - Super Admin only (dengan security check)
-- `/login/{domain}` - Company Admin/Employee dengan branding perusahaan
-- `/admin/dashboard` - Admin Dashboard untuk company
+### Recruitment Flow (Complete)
+- [x] Public career pages per company (/careers/{slug})
+- [x] Detailed job application form with Indonesian address API (wilayah.id)
+- [x] File upload for CV/Resume
 
-**White-Label Custom Domain:**
-- Support custom domain per company untuk white-label
-- Main domain → Company Profile
-- Careers subdomain → Recruitment page
-- HR subdomain → Employee portal/login
-- Domain lookup API untuk routing
-- Super Admin UI untuk manage custom domains
-- Dokumentasi setup DNS untuk client
+### UI/UX & Branding (Complete)
+- [x] Rebranded to Makar.id
+- [x] Bilingual support (ID/EN)
+- [x] Marketing landing page
 
-**Backend APIs:**
-- Public: `/api/public/company/{domain}`, `/api/public/careers/{domain}/jobs`
-- Admin: `/api/jobs`, `/api/form-fields`, `/api/applications`
-- File upload untuk CV/Resume
-
-## URL Pattern
-- **Super Admin Login**: `/login` - Khusus untuk Super Admin
-- **Company Login**: `/login/{domain}` (e.g., `/login/luckycell.co.id`) - Untuk Admin & Employee perusahaan
-- **Company Admin Dashboard**: `/admin/dashboard`
-- **Super Admin Dashboard**: `/dashboard`, `/companies`, `/users`, `/settings`
-- **Public Company Profile**: `/company/{domain}`
-- **Public Careers Page**: `/careers/{domain}`
-- **Apply Job**: `/careers/{domain}/apply/{jobId}`
+## Component Architecture (AdminDashboard)
+```
+AdminDashboard.jsx (orchestrator)
+├── components/admin/OverviewTab.jsx
+├── components/admin/JobsTab.jsx
+├── components/admin/ApplicationsTab.jsx
+├── components/admin/JobFormDialog.jsx
+└── components/admin/AppDetailDialog.jsx
+```
 
 ## Credentials
-- Super Admin: superadmin@luckycell.co.id / admin123
-- Lucky Cell Admin: admin@luckycell.co.id / admin123
+- **Super Admin**: muhaikal88@gmail.com / Admin@2026! (2FA enabled)
+- **Super Admin Backup**: superadmin@makar.id / admin123 (2FA enabled)
+- **Company Admin**: admin@demo.co.id / admin123
+- **Employee**: employee@demo.co.id / emp123
 
 ## Prioritized Backlog
 
-### P0 - Critical (Next Sprint)
-1. Admin Dashboard untuk company (manage jobs, applications, profile)
-2. Database Karyawan (Employee records)
-3. Sistem Kehadiran (Clock-in/Clock-out)
-
 ### P1 - High Priority
-4. Pengajuan Cuti dan Izin Sakit
-5. Modul Penggajian (Payroll)
-6. Employee self-service portal
-7. Email notifications untuk applications
+1. Full Activity Log integration across all backend endpoints
+2. Employee Dashboard (currently placeholder)
 
 ### P2 - Medium Priority
-8. Laporan dan Analytics
-9. Interview scheduling
-10. Mobile responsive improvements
+3. Email notification system (SMTP integration)
+4. Public company profile page
+5. DNS/Custom domain guidance documentation
 
-## Technical Architecture
+### P3 - Future
+6. Database Karyawan (Employee records)
+7. Sistem Kehadiran (Attendance/Clock-in/out)
+8. Pengajuan Cuti dan Izin Sakit
+9. Modul Penggajian (Payroll)
+10. Employee self-service portal
 
-```
-Frontend (React 19)
-├── Public Pages (Company Profile, Careers, Apply)
-├── Admin Dashboard (Super Admin, Company Admin)
-├── Shadcn UI Components
-├── Tailwind CSS
-└── Bilingual Context (ID/EN)
-
-Backend (FastAPI)
-├── Auth (JWT)
-├── Companies CRUD
-├── Users CRUD
-├── Jobs CRUD
-├── Applications
-├── Form Fields
-└── File Upload
-
-Database (MongoDB)
-├── users
-├── companies (with profile)
-├── jobs
-├── applications
-└── form_fields
-```
-
-## Next Tasks
-1. Build Admin Dashboard untuk company dengan tabs (Jobs, Applications, Profile, Form Fields)
-2. Add email notification saat ada lamaran baru
-3. Implement employee database schema
-4. Build attendance/clock-in system
+## Known Infrastructure Issues
+- Custom domains require production deployment (preview URLs cannot be used as CNAME targets)
+- User needs wildcard CNAME record for *.makar.id
+- Data discrepancy between production and preview (separate databases)
