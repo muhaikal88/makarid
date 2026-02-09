@@ -227,26 +227,6 @@ export const AppDetailDialog = ({
             </div>
           </div>
 
-          {/* Status Update */}
-          <div className="space-y-2 p-4 bg-white border rounded-xl">
-            <Label className="text-sm font-semibold">Update Status Lamaran</Label>
-            <Select
-              value={selectedApp.status}
-              onValueChange={(value) => handleUpdateStatus(selectedApp.id, value)}
-            >
-              <SelectTrigger data-testid="app-status-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending (Baru Masuk)</SelectItem>
-                <SelectItem value="reviewed">Reviewed (Sudah Dilihat)</SelectItem>
-                <SelectItem value="interview">Interview (Panggilan Interview)</SelectItem>
-                <SelectItem value="hired">Hired (Diterima)</SelectItem>
-                <SelectItem value="rejected">Rejected (Ditolak)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Dynamic Field Groups */}
           {fieldGroups.map(group => renderGroup(group.title, group.icon, group.fields))}
 
@@ -268,24 +248,89 @@ export const AppDetailDialog = ({
           {/* Remaining Fields (catch-all for custom/unknown fields) */}
           {remainingKeys.length > 0 && renderGroup('Informasi Lainnya', FileText, remainingKeys)}
 
-          {/* CV */}
+          {/* CV - inline preview */}
           {selectedApp.resume_url && (
             <div className="space-y-2">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                <FileText className="w-4 h-4 text-[#2E4DA7]" />
-                <h4 className="font-semibold text-gray-900 text-sm">Curriculum Vitae</h4>
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#2E4DA7]" />
+                  <h4 className="font-semibold text-gray-900 text-sm">Curriculum Vitae</h4>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid="download-cv-btn"
+                  onClick={() => window.open(`${process.env.REACT_APP_BACKEND_URL}${selectedApp.resume_url}`, '_blank')}
+                  className="text-xs text-[#2E4DA7]"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                  Buka di tab baru
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                data-testid="download-cv-btn"
-                onClick={() => window.open(`${process.env.REACT_APP_BACKEND_URL}${selectedApp.resume_url}`, '_blank')}
-                className="w-full"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Download CV
-              </Button>
+              {(() => {
+                const url = `${process.env.REACT_APP_BACKEND_URL}${selectedApp.resume_url}`;
+                const ext = selectedApp.resume_url.split('.').pop()?.toLowerCase();
+                const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
+                const isPdf = ext === 'pdf';
+
+                if (isImage) {
+                  return (
+                    <div className="rounded-lg overflow-hidden border bg-slate-50">
+                      <img
+                        src={url}
+                        alt="CV"
+                        className="w-full h-auto max-h-[500px] object-contain"
+                        data-testid="cv-preview-image"
+                      />
+                    </div>
+                  );
+                }
+                if (isPdf) {
+                  return (
+                    <div className="rounded-lg overflow-hidden border bg-slate-50">
+                      <iframe
+                        src={url}
+                        title="CV Preview"
+                        className="w-full h-[500px]"
+                        data-testid="cv-preview-pdf"
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <Button
+                    variant="outline"
+                    data-testid="download-cv-fallback"
+                    onClick={() => window.open(url, '_blank')}
+                    className="w-full"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Download CV ({ext?.toUpperCase()})
+                  </Button>
+                );
+              })()}
             </div>
           )}
+
+          {/* Status Update - at the bottom */}
+          <div className="space-y-2 p-4 bg-white border rounded-xl">
+            <Label className="text-sm font-semibold">Update Status Lamaran</Label>
+            <Select
+              value={selectedApp.status}
+              onValueChange={(value) => handleUpdateStatus(selectedApp.id, value)}
+            >
+              <SelectTrigger data-testid="app-status-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending (Baru Masuk)</SelectItem>
+                <SelectItem value="reviewed">Reviewed (Sudah Dilihat)</SelectItem>
+                <SelectItem value="interview">Interview (Panggilan Interview)</SelectItem>
+                <SelectItem value="hired">Hired (Diterima)</SelectItem>
+                <SelectItem value="rejected">Rejected (Ditolak)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <DialogFooter>
