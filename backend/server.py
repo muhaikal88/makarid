@@ -2047,6 +2047,7 @@ class DomainLookupResponse(BaseModel):
     found: bool
     company_id: Optional[str] = None
     company_name: Optional[str] = None
+    slug: Optional[str] = None
     domain: Optional[str] = None
     page_type: Optional[str] = None  # "main", "careers", "hr"
     logo_url: Optional[str] = None
