@@ -185,12 +185,8 @@ export const ApplyJob = () => {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== 'application/pdf') {
-        toast.error(language === 'id' ? 'Hanya file PDF yang diizinkan' : 'Only PDF files are allowed');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(language === 'id' ? 'Ukuran file maksimal 5MB' : 'Maximum file size is 5MB');
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(language === 'id' ? 'Ukuran file maksimal 10MB' : 'Maximum file size is 10MB');
         return;
       }
       setResume(file);
