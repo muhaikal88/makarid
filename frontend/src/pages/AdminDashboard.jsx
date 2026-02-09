@@ -405,6 +405,78 @@ export const AdminDashboard = () => {
               </Card>
             </div>
 
+
+
+            {/* Careers Page Link Info */}
+            <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-emerald-50">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="p-3 bg-white rounded-xl shadow-sm">
+                      <Globe className="w-6 h-6 text-[#2E4DA7]" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">
+                        {language === 'id' ? 'Link Halaman Karir Anda' : 'Your Careers Page Link'}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-3">
+                        {language === 'id' 
+                          ? 'Bagikan link ini ke kandidat untuk melihat lowongan Anda'
+                          : 'Share this link with candidates to view your job openings'}
+                      </p>
+                      
+                      {/* Default Link */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-gray-500">Default URL:</span>
+                          <code className="flex-1 px-3 py-2 bg-white rounded-lg text-sm font-mono text-[#2E4DA7] border">
+                            {session?.company_slug}.makar.id
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`https://${session?.company_slug}.makar.id`);
+                              toast.success('Link disalin!');
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        
+                        {/* Custom Domain if set */}
+                        {session?.custom_domain && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-emerald-600">Custom Domain:</span>
+                            <code className="flex-1 px-3 py-2 bg-white rounded-lg text-sm font-mono text-emerald-600 border border-emerald-200">
+                              {session?.custom_domain}
+                            </code>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`https://${session?.custom_domain}`);
+                                toast.success('Link disalin!');
+                              }}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(`/careers/${session?.company_slug}`, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    {language === 'id' ? 'Buka' : 'Open'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Recent Applications */}
             <Card className="border-0 shadow-sm">
               <CardHeader>
