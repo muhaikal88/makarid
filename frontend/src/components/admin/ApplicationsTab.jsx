@@ -200,6 +200,14 @@ export const ApplicationsTab = ({
                           <FileText className="w-5 h-5 text-gray-600" />
                         </a>
                       )}
+                      <button
+                        className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                        data-testid={`delete-app-${app.id}`}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteApp(app.id); }}
+                        title="Hapus lamaran"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                       <ChevronRight className="w-5 h-5 text-gray-400" />
                     </div>
                   </div>
