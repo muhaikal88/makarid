@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import {
-  Building2, Briefcase, FileText, Globe, Bell, User, Settings, LogOut, LayoutDashboard
+  Building2, Briefcase, FileText, Globe, Bell, User, Settings, LogOut, LayoutDashboard, Trash2
 } from 'lucide-react';
 import {
   DropdownMenu,
