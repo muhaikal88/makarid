@@ -408,6 +408,18 @@ export const AdminDashboard = () => {
               language={language}
               handleOpenAppDetail={handleOpenAppDetail}
               handleCompare={handleCompare}
+              handleDeleteApp={handleDeleteApp}
+              getInitials={getInitials}
+              formatDate={formatDate}
+            />
+          </TabsContent>
+
+          <TabsContent value="trash">
+            <TrashTab
+              trashApps={trashApps}
+              language={language}
+              handleRestoreApp={handleRestoreApp}
+              handlePermanentDeleteApp={handlePermanentDeleteApp}
               getInitials={getInitials}
               formatDate={formatDate}
             />
