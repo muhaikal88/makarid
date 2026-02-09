@@ -70,6 +70,12 @@ export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
+  // Application management states
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [isAppDetailOpen, setIsAppDetailOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchApp, setSearchApp] = useState('');
+  
   // Job form states
   const [isJobFormOpen, setIsJobFormOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
