@@ -321,8 +321,14 @@ export const AdminDashboard = () => {
           <TabsContent value="applications">
             <ApplicationsTab
               filteredApplications={filteredApplications}
+              applications={applications}
+              jobs={jobs}
               filterStatus={filterStatus}
               setFilterStatus={setFilterStatus}
+              filterJob={filterJob}
+              setFilterJob={setFilterJob}
+              filterDepartment={filterDepartment}
+              setFilterDepartment={setFilterDepartment}
               searchApp={searchApp}
               setSearchApp={setSearchApp}
               language={language}
