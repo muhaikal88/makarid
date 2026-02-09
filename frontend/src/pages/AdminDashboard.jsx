@@ -185,6 +185,19 @@ export const AdminDashboard = () => {
     }
   };
 
+  const handleCompare = async (ids) => {
+    try {
+      const details = await Promise.all(
+        ids.map(id => axios.get(`${API}/applications-session/${id}`, { withCredentials: true }).then(r => r.data))
+      );
+      setCompareApps(details);
+      setIsCompareOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch for compare:', error);
+      toast.error('Gagal memuat data perbandingan');
+    }
+  };
+
   const filteredApplications = applications.filter(app => {
     const matchesStatus = filterStatus === 'all' || app.status === filterStatus;
     const matchesJob = filterJob === 'all' || app.job_id === filterJob;
