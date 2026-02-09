@@ -26,6 +26,19 @@ import { UserProfile } from "./pages/UserProfile";
 import { SuperAdmins } from "./pages/SuperAdmins";
 import { ActivityLogs } from "./pages/ActivityLogs";
 
+// Global axios retry for transient errors (502, 503, network)
+axios.interceptors.response.use(null, async (error) => {
+  const config = error.config;
+  const status = error.response?.status;
+  if (!config || config._retryCount >= 2) return Promise.reject(error);
+  if (status === 502 || status === 503 || status === 504 || !error.response) {
+    config._retryCount = (config._retryCount || 0) + 1;
+    await new Promise(r => setTimeout(r, 1000 * config._retryCount));
+    return axios(config);
+  }
+  return Promise.reject(error);
+});
+
 function AppRouter() {
   const location = window.location;
   
