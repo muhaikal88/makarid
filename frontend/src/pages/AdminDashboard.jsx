@@ -658,11 +658,34 @@ export const AdminDashboard = () => {
 
           {/* Applications Tab */}
           <TabsContent value="applications" className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-900">
-              {language === 'id' ? 'Daftar Lamaran' : 'Applications'}
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                {language === 'id' ? 'Daftar Lamaran' : 'Applications'}
+              </h2>
+              <div className="flex gap-3">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Filter Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="reviewed">Reviewed</SelectItem>
+                    <SelectItem value="interview">Interview</SelectItem>
+                    <SelectItem value="hired">Hired</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Cari nama atau email..."
+                  value={searchApp}
+                  onChange={(e) => setSearchApp(e.target.value)}
+                  className="w-64"
+                />
+              </div>
+            </div>
 
-            {applications.length === 0 ? (
+            {filteredApplications.length === 0 ? (
               <Card className="border-0 shadow-sm">
                 <CardContent className="py-16 text-center">
                   <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
