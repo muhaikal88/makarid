@@ -2984,7 +2984,7 @@ async def get_applications_session(
     """Get applications using session auth"""
     session = await require_session_admin(request)
     
-    query = {"company_id": session["company_id"]}
+    query = {"company_id": session["company_id"], "deleted_at": {"$exists": False}}
     if job_id:
         query["job_id"] = job_id
     if status:
