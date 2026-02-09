@@ -454,29 +454,6 @@ export const ApplyJob = () => {
           </div>
         );
       
-      case 'date':
-        return (
-          <Input
-            type="date"
-            id={field.field_name}
-            value={formData[field.field_name] || ''}
-            onChange={(e) => handleInputChange(field.field_name, e.target.value)}
-            data-testid={`field-${field.field_name}`}
-          />
-        );
-      
-      case 'number':
-        return (
-          <Input
-            type="number"
-            id={field.field_name}
-            value={formData[field.field_name] || ''}
-            onChange={(e) => handleInputChange(field.field_name, e.target.value)}
-            placeholder={field.placeholder}
-            data-testid={`field-${field.field_name}`}
-          />
-        );
-      
       default:
         return (
           <Input
