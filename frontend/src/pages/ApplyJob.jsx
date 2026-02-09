@@ -329,18 +329,23 @@ export const ApplyJob = () => {
     // Special handling for salary (with thousand separator)
     if (field.field_name === 'expected_salary') {
       return (
-        <Input
-          type="tel"
-          inputMode="numeric"
-          id={field.field_name}
-          value={formData[field.field_name] || ''}
-          onChange={(e) => {
-            const formatted = formatSalary(e.target.value);
-            handleInputChange(field.field_name, formatted);
-          }}
-          placeholder="3.000.000"
-          data-testid={`field-${field.field_name}`}
-        />
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">Rp</span>
+          <Input
+            type="tel"
+            inputMode="numeric"
+            pattern="[0-9.]*"
+            id={field.field_name}
+            value={formData[field.field_name] || ''}
+            onChange={(e) => {
+              const formatted = formatSalary(e.target.value);
+              handleInputChange(field.field_name, formatted);
+            }}
+            placeholder="5.000.000"
+            className="pl-10"
+            data-testid={`field-${field.field_name}`}
+          />
+        </div>
       );
     }
     
