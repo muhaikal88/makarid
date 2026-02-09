@@ -701,110 +701,154 @@ export const Companies = () => {
 
       {/* Domain Management Dialog */}
       <Dialog open={isDomainsOpen} onOpenChange={setIsDomainsOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Link2 className="w-5 h-5 text-[#2E4DA7]" />
-              Custom Domains - {selectedCompany?.name}
+              Custom Domain - {selectedCompany?.name}
             </DialogTitle>
             <DialogDescription>
-              Setup custom domain untuk white-label. Client perlu mengarahkan DNS ke server Anda.
+              Atur domain kustom agar client bisa akses dengan domain mereka sendiri tanpa embel-embel makar.id
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
-              <p className="font-medium mb-2">Instruksi DNS untuk Client:</p>
-              <p>Client perlu menambahkan CNAME record yang mengarah ke server Anda.</p>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="domain_main">
-                Main Domain (Company Profile)
-              </Label>
-              <div className="flex gap-2">
+          <div className="grid gap-5 py-4">
+            {/* Domain Mapping Table */}
+            <div className="rounded-lg border overflow-hidden">
+              {/* Main Domain */}
+              <div className="p-4 border-b">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-[#2E4DA7]" />
+                    <Label className="font-semibold text-sm">Main Domain (Company Profile)</Label>
+                  </div>
+                  {domainData.main && (
+                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      → /company/{selectedCompany?.slug}
+                    </Badge>
+                  )}
+                </div>
                 <Input
-                  id="domain_main"
                   value={domainData.main}
                   onChange={(e) => setDomainData({ ...domainData, main: e.target.value })}
-                  placeholder="company.co.id"
+                  placeholder="luckycell.co.id"
+                  data-testid="domain-main-input"
                 />
                 {domainData.main && (
-                  <a 
-                    href={`/company/${selectedCompany?.domain}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 hover:bg-gray-100 rounded"
-                  >
-                    <ExternalLink className="w-5 h-5 text-gray-500" />
-                  </a>
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    <span className="font-medium">{domainData.main}</span> → akan menampilkan halaman Company Profile
+                  </p>
                 )}
               </div>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="domain_careers">
-                Careers Domain (Recruitment Page)
-              </Label>
-              <div className="flex gap-2">
+
+              {/* Careers Domain */}
+              <div className="p-4 border-b bg-slate-50/50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-emerald-600" />
+                    <Label className="font-semibold text-sm">Careers Domain (Halaman Karir)</Label>
+                  </div>
+                  {domainData.careers && (
+                    <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
+                      → /careers/{selectedCompany?.slug}
+                    </Badge>
+                  )}
+                </div>
                 <Input
-                  id="domain_careers"
                   value={domainData.careers}
                   onChange={(e) => setDomainData({ ...domainData, careers: e.target.value })}
-                  placeholder="careers.company.co.id"
+                  placeholder="career.luckycell.co.id"
+                  data-testid="domain-careers-input"
                 />
                 {domainData.careers && (
-                  <a 
-                    href={`/careers/${selectedCompany?.domain}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 hover:bg-gray-100 rounded"
-                  >
-                    <ExternalLink className="w-5 h-5 text-gray-500" />
-                  </a>
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    <span className="font-medium">{domainData.careers}</span> → akan menampilkan daftar lowongan kerja & form lamaran
+                  </p>
                 )}
               </div>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="domain_hr">
-                HR Domain (Employee Login)
-              </Label>
-              <div className="flex gap-2">
+
+              {/* HR Domain */}
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-amber-600" />
+                    <Label className="font-semibold text-sm">HR Domain (Login Karyawan)</Label>
+                  </div>
+                  {domainData.hr && (
+                    <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                      → /company-login
+                    </Badge>
+                  )}
+                </div>
                 <Input
-                  id="domain_hr"
                   value={domainData.hr}
                   onChange={(e) => setDomainData({ ...domainData, hr: e.target.value })}
-                  placeholder="hr.company.co.id"
+                  placeholder="hr.luckycell.co.id"
+                  data-testid="domain-hr-input"
                 />
                 {domainData.hr && (
-                  <a 
-                    href={`/login/${selectedCompany?.domain}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 hover:bg-gray-100 rounded"
-                  >
-                    <ExternalLink className="w-5 h-5 text-gray-500" />
-                  </a>
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    <span className="font-medium">{domainData.hr}</span> → akan menampilkan halaman login Admin & Karyawan
+                  </p>
                 )}
               </div>
             </div>
 
-            {selectedCompany?.custom_domains && (
-              <div className="p-4 bg-emerald-50 rounded-lg">
-                <p className="text-sm font-medium text-emerald-800 mb-2">Current Active Domains:</p>
-                <ul className="text-sm text-emerald-700 space-y-1">
-                  {selectedCompany.custom_domains.main && (
-                    <li>• Main: {selectedCompany.custom_domains.main}</li>
-                  )}
-                  {selectedCompany.custom_domains.careers && (
-                    <li>• Careers: {selectedCompany.custom_domains.careers}</li>
-                  )}
-                  {selectedCompany.custom_domains.hr && (
-                    <li>• HR: {selectedCompany.custom_domains.hr}</li>
-                  )}
-                </ul>
+            {/* Default URLs */}
+            <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Default URL (tanpa custom domain):</p>
+              <div className="grid gap-1.5 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 w-16">Profile</span>
+                  <code className="text-xs bg-white px-2 py-1 rounded border font-mono text-[#2E4DA7]">makar.id/company/{selectedCompany?.slug}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 w-16">Karir</span>
+                  <code className="text-xs bg-white px-2 py-1 rounded border font-mono text-emerald-600">makar.id/careers/{selectedCompany?.slug}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 w-16">Login</span>
+                  <code className="text-xs bg-white px-2 py-1 rounded border font-mono text-amber-600">makar.id/company-login</code>
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* DNS Instructions */}
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="space-y-2 text-sm text-amber-800">
+                  <p className="font-semibold">Instruksi DNS untuk Client:</p>
+                  <p>Client perlu menambahkan <strong>CNAME record</strong> di DNS mereka:</p>
+                  <div className="bg-white/60 rounded p-3 font-mono text-xs space-y-1">
+                    {domainData.main && (
+                      <div className="flex gap-2">
+                        <span className="text-gray-500 w-36 shrink-0">{domainData.main}</span>
+                        <span className="text-gray-400">CNAME →</span>
+                        <span className="font-semibold">makar.id</span>
+                      </div>
+                    )}
+                    {domainData.careers && (
+                      <div className="flex gap-2">
+                        <span className="text-gray-500 w-36 shrink-0">{domainData.careers}</span>
+                        <span className="text-gray-400">CNAME →</span>
+                        <span className="font-semibold">makar.id</span>
+                      </div>
+                    )}
+                    {domainData.hr && (
+                      <div className="flex gap-2">
+                        <span className="text-gray-500 w-36 shrink-0">{domainData.hr}</span>
+                        <span className="text-gray-400">CNAME →</span>
+                        <span className="font-semibold">makar.id</span>
+                      </div>
+                    )}
+                    {!domainData.main && !domainData.careers && !domainData.hr && (
+                      <span className="text-gray-400">Isi domain di atas untuk melihat instruksi DNS</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-amber-600">Pastikan SSL/Proxy diaktifkan jika menggunakan Cloudflare.</p>
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsDomainsOpen(false)}>
@@ -814,6 +858,7 @@ export const Companies = () => {
               onClick={handleSaveDomains}
               className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
               disabled={formLoading}
+              data-testid="save-domains-btn"
             >
               {formLoading ? t('loading') : t('save')}
             </Button>
