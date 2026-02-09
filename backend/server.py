@@ -448,6 +448,7 @@ class ApplicationResponse(BaseModel):
     job_id: str
     company_id: str
     job_title: str
+    job_department: Optional[str] = None
     applicant_name: str
     applicant_email: str
     form_data: Dict[str, Any]
