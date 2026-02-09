@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { Label } from '../ui/label';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import {
@@ -9,7 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
-import { X, FileText, ExternalLink } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import { FileText, ExternalLink } from 'lucide-react';
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',
@@ -58,10 +66,44 @@ const getInitials = (name) => {
   return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
 };
 
-export const CompareDialog = ({ isOpen, onClose, compareApps }) => {
+const CvPreview = ({ resumeUrl }) => {
+  if (!resumeUrl) return <span className="text-sm text-gray-400">Tidak ada CV</span>;
+
+  const url = `${process.env.REACT_APP_BACKEND_URL}${resumeUrl}`;
+  const ext = resumeUrl.split('.').pop()?.toLowerCase();
+  const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
+  const isPdf = ext === 'pdf';
+
+  return (
+    <div className="space-y-2">
+      {isImage && (
+        <img src={url} alt="CV" className="w-full h-48 object-contain rounded border bg-slate-50" />
+      )}
+      {isPdf && (
+        <iframe src={url} title="CV" className="w-full h-48 rounded border" />
+      )}
+      {!isImage && !isPdf && (
+        <div className="h-20 flex items-center justify-center bg-slate-50 rounded border">
+          <FileText className="w-6 h-6 text-gray-400" />
+          <span className="ml-2 text-sm text-gray-500">.{ext?.toUpperCase()}</span>
+        </div>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full text-xs text-[#2E4DA7]"
+        onClick={() => window.open(url, '_blank')}
+      >
+        <ExternalLink className="w-3 h-3 mr-1" />
+        Buka di tab baru
+      </Button>
+    </div>
+  );
+};
+
+export const CompareDialog = ({ isOpen, onClose, compareApps, handleUpdateStatus }) => {
   if (!compareApps || compareApps.length === 0) return null;
 
-  // Collect all unique form_data keys across all apps
   const allKeys = new Set();
   compareApps.forEach(app => {
     Object.keys(app.form_data || {}).forEach(k => allKeys.add(k));
@@ -81,14 +123,13 @@ export const CompareDialog = ({ isOpen, onClose, compareApps }) => {
         <ScrollArea className="max-h-[calc(90vh-80px)]">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse" data-testid="compare-table">
-              {/* Header row - applicant info */}
               <thead className="sticky top-0 z-10">
                 <tr className="bg-slate-50">
                   <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide p-4 border-b border-r min-w-[160px] bg-slate-50 sticky left-0 z-20">
                     Field
                   </th>
                   {compareApps.map(app => (
-                    <th key={app.id} className="p-4 border-b min-w-[220px] max-w-[280px] bg-slate-50">
+                    <th key={app.id} className="p-4 border-b min-w-[240px] max-w-[300px] bg-slate-50">
                       <div className="flex flex-col items-center gap-2">
                         <Avatar className="w-12 h-12 bg-[#2E4DA7]">
                           <AvatarFallback className="bg-[#2E4DA7] text-white">
@@ -157,23 +198,38 @@ export const CompareDialog = ({ isOpen, onClose, compareApps }) => {
                   </tr>
                 ))}
 
-                {/* CV row */}
-                <tr className="border-b hover:bg-blue-50/30">
-                  <td className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-r bg-white sticky left-0">CV/Resume</td>
+                {/* CV Preview row */}
+                <tr className="border-b">
+                  <td className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-r bg-white sticky left-0 align-top">CV / Resume</td>
                   {compareApps.map(app => (
-                    <td key={app.id} className="p-3">
-                      {app.resume_url ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(`${process.env.REACT_APP_BACKEND_URL}${app.resume_url}`, '_blank')}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                          Lihat CV
-                        </Button>
-                      ) : (
-                        <span className="text-sm text-gray-400">Tidak ada</span>
-                      )}
+                    <td key={app.id} className="p-3 align-top">
+                      <CvPreview resumeUrl={app.resume_url} />
+                    </td>
+                  ))}
+                </tr>
+
+                {/* Status Update row */}
+                <tr className="bg-slate-50">
+                  <td className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wide border-r bg-white sticky left-0 align-top">
+                    Update Status
+                  </td>
+                  {compareApps.map(app => (
+                    <td key={app.id} className="p-4 align-top">
+                      <Select
+                        value={app.status}
+                        onValueChange={(value) => handleUpdateStatus(app.id, value)}
+                      >
+                        <SelectTrigger className="w-full" data-testid={`compare-status-${app.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="reviewed">Reviewed</SelectItem>
+                          <SelectItem value="interview">Interview</SelectItem>
+                          <SelectItem value="hired">Hired</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </td>
                   ))}
                 </tr>
