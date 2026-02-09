@@ -3293,13 +3293,18 @@ async def update_user(user_id: str, data: UserUpdate, current_user: dict = Depen
 
 @api_router.delete("/users/{user_id}")
 async def delete_user(user_id: str, current_user: dict = Depends(require_super_admin)):
-    user = await db.users.find_one({"id": user_id})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    # Check company_admins first, then employees
+    user = await db.company_admins.find_one({"id": user_id})
+    if user:
+        await db.company_admins.delete_one({"id": user_id})
+        return {"message": "User deleted successfully"}
     
-    await db.users.delete_one({"id": user_id})
+    user = await db.employees.find_one({"id": user_id})
+    if user:
+        await db.employees.delete_one({"id": user_id})
+        return {"message": "User deleted successfully"}
     
-    return {"message": "User deleted successfully"}
+    raise HTTPException(status_code=404, detail="User not found")
 
 # ============ HEALTH CHECK ============
 
