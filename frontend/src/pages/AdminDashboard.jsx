@@ -378,6 +378,12 @@ export const AdminDashboard = () => {
         getInitials={getInitials}
       />
 
+      <CompareDialog
+        isOpen={isCompareOpen}
+        onClose={setIsCompareOpen}
+        compareApps={compareApps}
+      />
+
       <Toaster position="top-right" richColors />
     </div>
   );
