@@ -2667,6 +2667,54 @@ async def delete_job(job_id: str, current_user: dict = Depends(require_admin_or_
     
     return {"message": "Job deleted successfully"}
 
+
+# ============ WILAYAH.ID PROXY ROUTES (CORS workaround) ============
+
+@api_router.get("/wilayah/provinces")
+async def get_provinces():
+    """Proxy for wilayah.id provinces API to bypass CORS"""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get("https://wilayah.id/api/provinces.json", timeout=10.0)
+            return response.json()
+        except Exception as e:
+            logging.error(f"Failed to fetch provinces: {e}")
+            raise HTTPException(status_code=502, detail="Failed to fetch provinces from wilayah.id")
+
+@api_router.get("/wilayah/regencies/{province_code}")
+async def get_regencies(province_code: str):
+    """Proxy for wilayah.id regencies/cities API to bypass CORS"""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"https://wilayah.id/api/regencies/{province_code}.json", timeout=10.0)
+            return response.json()
+        except Exception as e:
+            logging.error(f"Failed to fetch regencies: {e}")
+            raise HTTPException(status_code=502, detail="Failed to fetch cities from wilayah.id")
+
+@api_router.get("/wilayah/districts/{regency_code}")
+async def get_districts(regency_code: str):
+    """Proxy for wilayah.id districts API to bypass CORS"""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"https://wilayah.id/api/districts/{regency_code}.json", timeout=10.0)
+            return response.json()
+        except Exception as e:
+            logging.error(f"Failed to fetch districts: {e}")
+            raise HTTPException(status_code=502, detail="Failed to fetch districts from wilayah.id")
+
+@api_router.get("/wilayah/villages/{district_code}")
+async def get_villages(district_code: str):
+    """Proxy for wilayah.id villages API to bypass CORS"""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"https://wilayah.id/api/villages/{district_code}.json", timeout=10.0)
+            return response.json()
+        except Exception as e:
+            logging.error(f"Failed to fetch villages: {e}")
+            raise HTTPException(status_code=502, detail="Failed to fetch villages from wilayah.id")
+
+
 # ============ PUBLIC JOB ROUTES ============
 
 @api_router.get("/public/careers/{domain}/jobs")
