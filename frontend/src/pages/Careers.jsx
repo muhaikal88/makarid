@@ -221,23 +221,35 @@ export const Careers = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredJobs.map(job => (
+            {filteredJobs.map(job => {
+              const isClosed = job.status === 'closed';
+              return (
               <div 
                 key={job.id} 
-                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
-                onClick={() => navigate(`/careers/${domain}/apply/${job.id}`)}
+                className={`bg-white rounded-xl p-6 shadow-sm transition-shadow ${isClosed ? 'opacity-70' : 'hover:shadow-md cursor-pointer group'}`}
+                onClick={() => !isClosed && navigate(`/careers/${domain}/apply/${job.id}`)}
                 data-testid={`job-card-${job.id}`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-[#2E4DA7]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Briefcase className="w-6 h-6 text-[#2E4DA7]" />
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${isClosed ? 'bg-gray-100' : 'bg-[#2E4DA7]/10'}`}>
+                        <Briefcase className={`w-6 h-6 ${isClosed ? 'text-gray-400' : 'text-[#2E4DA7]'}`} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-800 group-hover:text-[#2E4DA7] transition-colors">
-                          {job.title}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className={`text-lg font-bold transition-colors ${isClosed ? 'text-gray-500' : 'text-gray-800 group-hover:text-[#2E4DA7]'}`}>
+                            {job.title}
+                          </h3>
+                          <Badge className={isClosed 
+                            ? 'bg-red-100 text-red-700 hover:bg-red-100' 
+                            : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
+                          }>
+                            {isClosed 
+                              ? (language === 'id' ? 'Ditutup' : 'Closed') 
+                              : (language === 'id' ? 'Dibuka' : 'Open')}
+                          </Badge>
+                        </div>
                         <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500">
                           {job.department && (
                             <span className="flex items-center gap-1">
@@ -271,11 +283,12 @@ export const Careers = () => {
                         </p>
                       )}
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#2E4DA7] transition-colors" />
+                    {!isClosed && <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#2E4DA7] transition-colors" />}
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
