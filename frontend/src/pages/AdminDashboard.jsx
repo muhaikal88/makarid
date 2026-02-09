@@ -53,6 +53,8 @@ export const AdminDashboard = () => {
   const [selectedApp, setSelectedApp] = useState(null);
   const [isAppDetailOpen, setIsAppDetailOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterJob, setFilterJob] = useState('all');
+  const [filterDepartment, setFilterDepartment] = useState('all');
   const [searchApp, setSearchApp] = useState('');
 
   // Job form
