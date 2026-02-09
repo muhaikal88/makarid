@@ -216,6 +216,37 @@ export const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteApp = async (appId) => {
+    try {
+      await axios.delete(`${API}/applications-session/${appId}`, { withCredentials: true });
+      toast.success('Lamaran dipindahkan ke tempat sampah');
+      fetchData();
+    } catch (error) {
+      toast.error('Gagal menghapus lamaran');
+    }
+  };
+
+  const handleRestoreApp = async (appId) => {
+    try {
+      await axios.post(`${API}/applications-session/${appId}/restore`, {}, { withCredentials: true });
+      toast.success('Lamaran berhasil dipulihkan');
+      fetchData();
+    } catch (error) {
+      toast.error('Gagal memulihkan lamaran');
+    }
+  };
+
+  const handlePermanentDeleteApp = async (appId) => {
+    if (!window.confirm('Hapus permanen? Data tidak bisa dikembalikan.')) return;
+    try {
+      await axios.delete(`${API}/applications-session/${appId}/permanent`, { withCredentials: true });
+      toast.success('Lamaran dihapus permanen');
+      fetchData();
+    } catch (error) {
+      toast.error('Gagal menghapus permanen');
+    }
+  };
+
   const filteredApplications = applications.filter(app => {
     const matchesStatus = filterStatus === 'all' || app.status === filterStatus;
     const matchesJob = filterJob === 'all' || app.job_id === filterJob;
