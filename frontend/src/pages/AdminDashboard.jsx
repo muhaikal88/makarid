@@ -673,8 +673,12 @@ export const AdminDashboard = () => {
               </Card>
             ) : (
               <div className="space-y-4">
-                {applications.map(app => (
-                  <Card key={app.id} className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                {filteredApplications.map(app => (
+                  <Card 
+                    key={app.id} 
+                    className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => handleOpenAppDetail(app)}
+                  >
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
