@@ -2994,6 +2994,7 @@ async def get_applications_session(
     for app in applications:
         job = await db.jobs.find_one({"id": app["job_id"]}, {"_id": 0})
         job_title = job["title"] if job else "Unknown"
+        job_department = job.get("department") if job else None
         
         form_data = app.get("form_data", {})
         applicant_name = form_data.get("full_name", form_data.get("name", "Unknown"))
@@ -3004,6 +3005,7 @@ async def get_applications_session(
             job_id=app["job_id"],
             company_id=app["company_id"],
             job_title=job_title,
+            job_department=job_department,
             applicant_name=applicant_name,
             applicant_email=applicant_email,
             form_data=form_data,
