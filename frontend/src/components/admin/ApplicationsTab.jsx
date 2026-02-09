@@ -268,6 +268,53 @@ export const ApplicationsTab = ({
           </button>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteConfirmText(''); } }}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600" data-testid="delete-confirm-title">
+              <AlertTriangle className="w-5 h-5" />
+              Hapus Lamaran
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Lamaran dari <strong>{deleteTarget?.applicant_name}</strong> untuk posisi <strong>{deleteTarget?.job_title}</strong> akan dipindahkan ke tempat sampah.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <Label className="text-sm text-gray-600">
+              Ketik <strong className="text-red-600 font-mono">HAPUS</strong> untuk konfirmasi:
+            </Label>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Ketik HAPUS"
+              data-testid="delete-confirm-input"
+              autoFocus
+            />
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteConfirmText(''); }} data-testid="delete-cancel-btn">
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirmText !== 'HAPUS'}
+              data-testid="delete-confirm-btn"
+              onClick={() => {
+                handleDeleteApp(deleteTarget.id);
+                setDeleteTarget(null);
+                setDeleteConfirmText('');
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-1.5" />
+              Hapus Lamaran
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
