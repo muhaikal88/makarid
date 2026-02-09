@@ -421,7 +421,7 @@ export const ApplyJob = () => {
               <input
                 type="file"
                 id={field.field_name}
-                accept=".pdf"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                 onChange={handleFileChange}
                 className="hidden"
                 data-testid={`field-${field.field_name}`}
@@ -440,8 +440,8 @@ export const ApplyJob = () => {
                 ) : (
                   <div className="text-gray-500">
                     <Upload className="w-8 h-8 mx-auto mb-2" />
-                    <p>{language === 'id' ? 'Klik untuk upload CV (PDF)' : 'Click to upload resume (PDF)'}</p>
-                    <p className="text-xs mt-1">Max 5MB</p>
+                    <p>{language === 'id' ? 'Klik untuk upload CV/Resume' : 'Click to upload CV/Resume'}</p>
+                    <p className="text-xs mt-1">PDF, DOC, DOCX, JPG, PNG - Max 10MB</p>
                   </div>
                 )}
               </label>
