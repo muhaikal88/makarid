@@ -1191,6 +1191,11 @@ async def get_me_session(request: Request):
     
     company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0})
     
+    # Get custom domain for careers if set
+    custom_careers_domain = None
+    if company and company.get("custom_domains"):
+        custom_careers_domain = company["custom_domains"].get("careers")
+    
     return {
         "user_id": session["user_id"],
         "email": session["email"],
@@ -1199,6 +1204,7 @@ async def get_me_session(request: Request):
         "company_id": session["company_id"],
         "company_name": company["name"] if company else None,
         "company_slug": company.get("slug") if company else None,
+        "custom_domain": custom_careers_domain,
         "role": session["role"]
     }
 
