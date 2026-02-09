@@ -60,18 +60,18 @@ export const ApplyJob = () => {
 
   const fetchProvinces = async () => {
     try {
-      const response = await axios.get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json');
-      setProvinces(response.data);
+      const response = await axios.get('https://wilayah.id/api/provinces.json');
+      setProvinces(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch provinces:', error);
     }
   };
 
-  const fetchCities = async (provinceId) => {
+  const fetchCities = async (provinceCode) => {
     setLoadingWilayah(true);
     try {
-      const response = await axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provinceId}.json`);
-      setCities(response.data);
+      const response = await axios.get(`https://wilayah.id/api/regencies/${provinceCode}.json`);
+      setCities(response.data.data || []);
       setDistricts([]);
       setVillages([]);
     } catch (error) {
@@ -81,11 +81,11 @@ export const ApplyJob = () => {
     }
   };
 
-  const fetchDistricts = async (cityId) => {
+  const fetchDistricts = async (cityCode) => {
     setLoadingWilayah(true);
     try {
-      const response = await axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${cityId}.json`);
-      setDistricts(response.data);
+      const response = await axios.get(`https://wilayah.id/api/districts/${cityCode}.json`);
+      setDistricts(response.data.data || []);
       setVillages([]);
     } catch (error) {
       console.error('Failed to fetch districts:', error);
@@ -94,11 +94,11 @@ export const ApplyJob = () => {
     }
   };
 
-  const fetchVillages = async (districtId) => {
+  const fetchVillages = async (districtCode) => {
     setLoadingWilayah(true);
     try {
-      const response = await axios.get(`https://www.emsifa.com/api-wilayah-indonesia/api/villages/${districtId}.json`);
-      setVillages(response.data);
+      const response = await axios.get(`https://wilayah.id/api/villages/${districtCode}.json`);
+      setVillages(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch villages:', error);
     } finally {
