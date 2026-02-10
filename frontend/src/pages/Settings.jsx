@@ -80,6 +80,20 @@ export const Settings = () => {
     }
   };
 
+  const fetchEmailLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const response = await axios.get(`${API}/system/email-logs?limit=20`, {
+        headers: getAuthHeaders()
+      });
+      setEmailLogs(response.data);
+    } catch (error) {
+      console.error('Failed to fetch email logs:', error);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
   return (
     <DashboardLayout title={t('settings')}>
       <div className="space-y-6 max-w-3xl" data-testid="settings-page">
