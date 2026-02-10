@@ -975,6 +975,7 @@ async def select_company(data: CompanyRoleSelection, response: Response):
         "name": user["name"],
         "picture": user.get("picture"),
         "company_id": data.company_id,
+        "company_name": company["name"],
         "role": data.role,
         "expires_at": expires_at.isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
