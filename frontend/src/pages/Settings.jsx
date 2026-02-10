@@ -232,9 +232,63 @@ export const Settings = () => {
               onClick={handleSaveSMTP}
               disabled={saving}
               className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+              data-testid="save-smtp-btn"
             >
               {saving ? 'Menyimpan...' : 'Simpan Pengaturan SMTP'}
             </Button>
+
+            {/* Test Email Section */}
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Send className="w-4 h-4 text-[#2E4DA7]" />
+                <Label className="font-semibold">Tes Kirim Email</Label>
+              </div>
+              <p className="text-sm text-gray-500 mb-3">
+                Kirim email tes untuk memastikan konfigurasi SMTP sudah benar.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder="email@contoh.com"
+                  className="flex-1"
+                  data-testid="test-email-input"
+                />
+                <Button
+                  onClick={async () => {
+                    if (!testEmail) {
+                      toast.error('Masukkan email tujuan');
+                      return;
+                    }
+                    setSendingTest(true);
+                    try {
+                      const response = await axios.post(`${API}/system/settings/test-email`, {
+                        to_email: testEmail
+                      }, {
+                        headers: getAuthHeaders()
+                      });
+                      toast.success(response.data.message);
+                    } catch (error) {
+                      const detail = error.response?.data?.detail || 'Gagal mengirim email tes';
+                      toast.error(detail);
+                    } finally {
+                      setSendingTest(false);
+                    }
+                  }}
+                  disabled={sendingTest || !testEmail}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  data-testid="send-test-email-btn"
+                >
+                  {sendingTest ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  {sendingTest ? 'Mengirim...' : 'Kirim Tes'}
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
