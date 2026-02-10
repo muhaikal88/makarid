@@ -982,6 +982,14 @@ async def select_company(data: CompanyRoleSelection, response: Response):
     
     await db.user_sessions.insert_one(session_doc)
     
+    # Log activity
+    await create_activity_log(
+        user_id=user["id"], user_name=user["name"], user_email=user["email"],
+        user_role=data.role, action="login", resource_type="auth",
+        description=f"{user['name']} login ke {company['name']} sebagai {data.role}",
+        company_id=data.company_id, company_name=company["name"]
+    )
+    
     # Set httpOnly cookie
     response.set_cookie(
         key="session_token",
