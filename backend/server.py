@@ -3246,6 +3246,12 @@ async def submit_application(
     
     await db.applications.insert_one(application_doc)
     
+    # Send confirmation email to applicant (async, don't block response)
+    try:
+        await send_application_confirmation_email(application_doc, job, company)
+    except Exception as e:
+        logging.error(f"Failed to send confirmation email: {e}")
+    
     return {"message": "Application submitted successfully", "id": application_doc["id"]}
 
 @api_router.get("/applications", response_model=List[ApplicationResponse])
