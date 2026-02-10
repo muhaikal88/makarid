@@ -3204,6 +3204,8 @@ async def permanent_delete_application(app_id: str, request: Request):
         company_id=session["company_id"], company_name=session.get("company_name"),
         resource_id=app_id
     )
+    
+    return {"message": "Application permanently deleted"}
 
 
 @api_router.put("/applications/{app_id}/status")
