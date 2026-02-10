@@ -30,6 +30,8 @@ export const Settings = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [sendingTest, setSendingTest] = useState(false);
+  const [emailLogs, setEmailLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
   
   const [smtpSettings, setSmtpSettings] = useState({
     host: '',
