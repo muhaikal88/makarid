@@ -620,6 +620,7 @@ async def send_notification_email(to_email: str, subject: str, html_body: str, t
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
+    from email.utils import formatdate, make_msgid
     import asyncio
     
     smtp = await get_smtp_settings(company_id)
@@ -631,8 +632,12 @@ async def send_notification_email(to_email: str, subject: str, html_body: str, t
     msg["From"] = f"{smtp.get('from_name', 'Makar.id')} <{smtp.get('from_email', smtp['username'])}>"
     msg["To"] = to_email
     msg["Subject"] = subject
-    msg.attach(MIMEText(text_body, "plain"))
-    msg.attach(MIMEText(html_body, "html"))
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain="makar.id")
+    msg["Reply-To"] = smtp.get("from_email", smtp["username"])
+    msg["X-Mailer"] = "Makar.id"
+    msg.attach(MIMEText(text_body, "plain", "utf-8"))
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
     
     def _send():
         port = int(smtp.get("port", 587))
