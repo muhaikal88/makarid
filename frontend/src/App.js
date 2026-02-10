@@ -27,6 +27,22 @@ import { SuperAdmins } from "./pages/SuperAdmins";
 import { ActivityLogs } from "./pages/ActivityLogs";
 import { DomainRouter } from "./components/DomainRouter";
 
+// Production domain fix: ensure API calls use same-origin when on production
+// This fixes CORS issues when REACT_APP_BACKEND_URL was baked with a different domain
+axios.interceptors.request.use((config) => {
+  const hostname = window.location.hostname;
+  // If we're on a production domain (not localhost, not preview), force same-origin API calls
+  if (hostname !== 'localhost' && !hostname.includes('preview.emergentagent.com')) {
+    const url = config.url || '';
+    // If the URL points to an external backend (different host), rewrite to relative
+    if (url.includes('emergentagent.com') || url.includes('emergent.host')) {
+      const apiPath = url.replace(/^https?:\/\/[^/]+/, '');
+      config.url = apiPath;
+    }
+  }
+  return config;
+});
+
 // Global axios retry for transient errors (502, 503, network)
 axios.interceptors.response.use(null, async (error) => {
   const config = error.config;
