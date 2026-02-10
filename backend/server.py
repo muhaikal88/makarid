@@ -3215,13 +3215,35 @@ async def submit_application(
     
     resume_url = None
     if resume:
-        # Save resume file
         file_ext = resume.filename.split(".")[-1] if "." in resume.filename else "pdf"
+        content = await resume.read()
+        
+        # Auto-compress images
+        IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "bmp", "gif"}
+        if file_ext.lower() in IMAGE_EXTS:
+            from PIL import Image as PILImage
+            img = PILImage.open(io.BytesIO(content))
+            
+            # Resize if too large (max 1920px width)
+            max_width = 1920
+            if img.width > max_width:
+                ratio = max_width / img.width
+                img = img.resize((max_width, int(img.height * ratio)), PILImage.LANCZOS)
+            
+            # Convert to JPEG
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            
+            buf = io.BytesIO()
+            img.save(buf, "JPEG", quality=75, optimize=True)
+            content = buf.getvalue()
+            file_ext = "jpg"
+            logging.info(f"Compressed image: {resume.filename} -> {len(content)} bytes")
+        
         file_name = f"{uuid.uuid4()}.{file_ext}"
         file_path = UPLOAD_DIR / file_name
         
         async with aiofiles.open(file_path, 'wb') as f:
-            content = await resume.read()
             await f.write(content)
         
         resume_url = f"/api/uploads/{file_name}"
