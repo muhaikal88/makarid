@@ -3220,6 +3220,177 @@ async def permanent_delete_application(app_id: str, request: Request):
     return {"message": "Application permanently deleted"}
 
 
+class ExportRequest(BaseModel):
+    application_ids: List[str]
+
+@api_router.post("/applications-session/export")
+async def export_applications(data: ExportRequest, request: Request):
+    """Export selected applications to Excel + CV files as ZIP"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    
+    session = await require_session_admin(request)
+    
+    if not data.application_ids:
+        raise HTTPException(status_code=400, detail="No applications selected")
+    
+    # Fetch applications
+    apps = await db.applications.find(
+        {"id": {"$in": data.application_ids}, "company_id": session["company_id"]},
+        {"_id": 0}
+    ).to_list(len(data.application_ids))
+    
+    if not apps:
+        raise HTTPException(status_code=404, detail="No applications found")
+    
+    # Collect all unique form_data keys across all applications
+    all_keys = []
+    key_set = set()
+    for app in apps:
+        for key in app.get("form_data", {}).keys():
+            if key not in key_set:
+                all_keys.append(key)
+                key_set.add(key)
+    
+    # Fetch job titles
+    job_ids = list(set(a["job_id"] for a in apps))
+    jobs_map = {}
+    for jid in job_ids:
+        job = await db.jobs.find_one({"id": jid}, {"_id": 0})
+        if job:
+            jobs_map[jid] = job
+    
+    # Create Excel workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Data Lamaran"
+    
+    # Header styling
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="2E4DA7", end_color="2E4DA7", fill_type="solid")
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    thin_border = Border(
+        left=Side(style="thin", color="D0D0D0"),
+        right=Side(style="thin", color="D0D0D0"),
+        top=Side(style="thin", color="D0D0D0"),
+        bottom=Side(style="thin", color="D0D0D0"),
+    )
+    
+    # Build headers
+    headers = ["No", "Posisi", "Departemen", "Status", "Tanggal Melamar"]
+    # Add form_data keys as headers (capitalize nicely)
+    field_labels = {
+        "full_name": "Nama Lengkap", "name": "Nama", "email": "Email",
+        "phone": "No. Telepon", "tempat_lahir": "Tempat Lahir",
+        "tanggal_lahir": "Tanggal Lahir", "gender": "Jenis Kelamin",
+        "pendidikan": "Pendidikan", "jurusan": "Jurusan",
+        "pengalaman": "Pengalaman Kerja", "alamat": "Alamat",
+        "provinsi": "Provinsi", "kota": "Kota/Kabupaten",
+        "kecamatan": "Kecamatan", "kelurahan": "Kelurahan",
+        "address": "Alamat", "experience": "Pengalaman",
+        "education": "Pendidikan", "cover_letter": "Surat Lamaran",
+    }
+    for key in all_keys:
+        headers.append(field_labels.get(key, key.replace("_", " ").title()))
+    headers.append("File CV")
+    
+    # Write headers
+    for col_idx, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_align
+        cell.border = thin_border
+    
+    # Track CV files to include in ZIP
+    cv_files = []
+    
+    # Write data rows
+    for row_idx, app in enumerate(apps, 2):
+        form_data = app.get("form_data", {})
+        job = jobs_map.get(app["job_id"], {})
+        applicant_name = form_data.get("full_name", form_data.get("name", "Unknown"))
+        
+        # Fixed columns
+        ws.cell(row=row_idx, column=1, value=row_idx - 1).border = thin_border
+        ws.cell(row=row_idx, column=2, value=job.get("title", "-")).border = thin_border
+        ws.cell(row=row_idx, column=3, value=job.get("department", "-")).border = thin_border
+        
+        status_cell = ws.cell(row=row_idx, column=4, value=app.get("status", "-"))
+        status_cell.border = thin_border
+        
+        date_str = app.get("created_at", "")
+        try:
+            dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            date_str = dt.strftime("%d %b %Y %H:%M")
+        except:
+            pass
+        ws.cell(row=row_idx, column=5, value=date_str).border = thin_border
+        
+        # Form data columns
+        for col_offset, key in enumerate(all_keys):
+            val = form_data.get(key, "")
+            if isinstance(val, (list, dict)):
+                val = json.dumps(val, ensure_ascii=False)
+            cell = ws.cell(row=row_idx, column=6 + col_offset, value=str(val) if val else "")
+            cell.border = thin_border
+            cell.alignment = Alignment(wrap_text=True)
+        
+        # CV file column
+        cv_col = 6 + len(all_keys)
+        resume_url = app.get("resume_url")
+        if resume_url:
+            filename = resume_url.split("/")[-1]
+            file_path = UPLOAD_DIR / filename
+            safe_name = f"{applicant_name.replace(' ', '_')}_{filename}"
+            if file_path.exists():
+                cv_files.append({"path": file_path, "name": f"CV/{safe_name}"})
+                ws.cell(row=row_idx, column=cv_col, value=safe_name).border = thin_border
+            else:
+                ws.cell(row=row_idx, column=cv_col, value="(file tidak ditemukan)").border = thin_border
+        else:
+            ws.cell(row=row_idx, column=cv_col, value="-").border = thin_border
+    
+    # Auto-fit column widths
+    for col_idx in range(1, len(headers) + 1):
+        max_len = 0
+        for row in ws.iter_rows(min_col=col_idx, max_col=col_idx, min_row=1, max_row=len(apps) + 1):
+            for cell in row:
+                if cell.value:
+                    max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = min(max_len + 4, 50)
+    
+    # Create ZIP in memory
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        # Add Excel file
+        excel_buffer = io.BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
+        zf.writestr("Data_Lamaran.xlsx", excel_buffer.read())
+        
+        # Add CV files
+        for cv in cv_files:
+            zf.write(cv["path"], cv["name"])
+    
+    zip_buffer.seek(0)
+    
+    # Log activity
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="create", resource_type="export",
+        description=f"Export {len(apps)} data lamaran ke Excel",
+        company_id=session["company_id"], company_name=session.get("company_name")
+    )
+    
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="Export_Lamaran_{timestamp}.zip"'}
+    )
+
+
 @api_router.put("/applications/{app_id}/status")
 async def update_application_status(app_id: str, data: ApplicationUpdateStatus, current_user: dict = Depends(require_admin_or_super)):
     application = await db.applications.find_one({"id": app_id}, {"_id": 0})
