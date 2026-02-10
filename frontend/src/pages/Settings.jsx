@@ -287,6 +287,7 @@ export const Settings = () => {
                         headers: getAuthHeaders()
                       });
                       toast.success(response.data.message);
+                      fetchEmailLogs();
                     } catch (error) {
                       const detail = error.response?.data?.detail || 'Gagal mengirim email tes';
                       toast.error(detail);
