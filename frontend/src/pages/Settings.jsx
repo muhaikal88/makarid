@@ -310,6 +310,61 @@ export const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Email Send Logs */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Mail className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Log Pengiriman Email</CardTitle>
+                  <CardDescription>Riwayat pengiriman email notifikasi</CardDescription>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={fetchEmailLogs} disabled={logsLoading} data-testid="refresh-email-logs-btn">
+                {logsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                <span className="ml-1.5">Refresh</span>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {emailLogs.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-6">Belum ada riwayat pengiriman email</p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto" data-testid="email-logs-list">
+                {emailLogs.map((log, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg text-sm">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {log.status === 'sent' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate">{log.to}</p>
+                        <p className="text-xs text-gray-500 truncate">{log.subject}</p>
+                        {log.error && (
+                          <p className="text-xs text-red-600 mt-1 break-all">{log.error}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-3">
+                      <Badge className={log.status === 'sent' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'bg-red-100 text-red-700 hover:bg-red-100'}>
+                        {log.status === 'sent' ? 'Terkirim' : 'Gagal'}
+                      </Badge>
+                      <span className="text-xs text-gray-400 whitespace-nowrap">
+                        {new Date(log.timestamp).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Notification Settings */}
         <Card className="border-0 shadow-sm">
           <CardHeader>
