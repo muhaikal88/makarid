@@ -16,7 +16,7 @@ import {
 } from '../components/ui/dropdown-menu';
 import { Toaster } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const CompanyLogin = () => {
   const { domain } = useParams();

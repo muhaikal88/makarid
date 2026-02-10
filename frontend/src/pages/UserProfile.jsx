@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { User, Mail, Lock, Eye, EyeOff, Camera, ArrowLeft, Building2 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const UserProfile = () => {
   const { language } = useLanguage();

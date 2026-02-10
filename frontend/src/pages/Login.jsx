@@ -16,7 +16,7 @@ import {
 } from '../components/ui/dropdown-menu';
 import { Toaster } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_hr-saas-mvp/artifacts/did1y7v8_ChatGPT%20Image%20Feb%205%2C%202026%2C%2001_21_17%20PM.png";
 
 export const Login = () => {

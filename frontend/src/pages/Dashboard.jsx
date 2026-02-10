@@ -9,7 +9,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Building2, Users, UserCheck, TrendingUp, ArrowRight, Clock } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const Dashboard = () => {
   const { t } = useLanguage();

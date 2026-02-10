@@ -25,7 +25,7 @@ import {
 import { FileText, ChevronRight, GitCompareArrows, X, Trash2, AlertTriangle, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',

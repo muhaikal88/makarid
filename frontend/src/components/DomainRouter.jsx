@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 // Domains that belong to us (not custom domains)
 const OWN_DOMAINS = ['makar.id', 'localhost', 'preview.emergentagent.com'];

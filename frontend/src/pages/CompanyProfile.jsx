@@ -10,7 +10,7 @@ import {
   Facebook, Instagram, Linkedin, Twitter
 } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const CompanyProfile = () => {
   const { domain } = useParams();

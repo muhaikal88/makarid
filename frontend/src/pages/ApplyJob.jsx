@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 const jobTypeLabels = {
   full_time: { en: 'Full Time', id: 'Penuh Waktu' },

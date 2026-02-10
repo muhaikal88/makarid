@@ -45,7 +45,7 @@ import {
 import { Users as UsersIcon, Plus, Pencil, Trash2, Search, Building2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const Users = () => {
   const { t } = useLanguage();

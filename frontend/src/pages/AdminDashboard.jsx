@@ -25,7 +25,7 @@ import { CompareDialog } from '../components/admin/CompareDialog';
 import { TrashTab } from '../components/admin/TrashTab';
 import { ActivityLogTab } from '../components/admin/ActivityLogTab';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 const defaultJobForm = {
   title: '',

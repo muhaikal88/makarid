@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const CompanySettings = () => {
   const { language } = useLanguage();

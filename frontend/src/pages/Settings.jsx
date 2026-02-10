@@ -19,7 +19,7 @@ import { Globe, Bell, Shield, Palette, Mail, Eye, EyeOff, Server, AlertCircle, S
 import { toast } from 'sonner';
 import { Badge } from '../components/ui/badge';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const Settings = () => {
   const { t, language, setLanguage } = useLanguage();

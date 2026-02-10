@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Building2, Eye, EyeOff, AlertCircle, Mail, Lock } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const UnifiedLogin = () => {
   const { language } = useLanguage();

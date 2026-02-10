@@ -45,7 +45,7 @@ import {
 import { Building2, Plus, Pencil, Trash2, Search, Users, Globe, Link2, ExternalLink, Key, Calendar, AlertTriangle, CheckCircle, XCircle, Clock, Mail, Eye, EyeOff, Server, Info, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 const licenseTypeLabels = {
   trial: { label: 'Trial', color: 'bg-amber-100 text-amber-700' },

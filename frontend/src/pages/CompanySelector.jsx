@@ -7,7 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Building2, UserCog, Users, ArrowRight } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const CompanySelector = () => {
   const { language } = useLanguage();

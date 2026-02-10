@@ -10,7 +10,7 @@ import {
   ArrowRight, ChevronRight, DollarSign, Users
 } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 const jobTypeLabels = {
   full_time: { en: 'Full Time', id: 'Penuh Waktu' },
