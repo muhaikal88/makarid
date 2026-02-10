@@ -27,14 +27,11 @@ Multi-tenant recruitment platform (job board + applicant tracking system) for In
 - Application comparison feature
 - Custom domain mapping UI
 
-### Feb 10, 2026 - Export to Excel Feature
-- **Backend**: `POST /api/applications-session/export` endpoint that generates ZIP (Excel + CV files)
-- **Backend**: Excel file contains all form_data columns, job info, status, date
-- **Backend**: CV files bundled in ZIP under `CV/` folder
-- **Frontend**: "Pilih semua" / "Batal pilih semua" checkbox in ApplicationsTab
-- **Frontend**: "Export Excel (N)" button appears when items selected
-- **Frontend**: Floating action bar includes Export + Bandingkan buttons
-- **Testing**: 100% pass rate (9/9 backend tests, all frontend tests passed)
+### Feb 10, 2026 - Export to Excel Feature (Enhanced)
+- **Backend**: `POST /api/applications-session/export` generates ZIP (Excel + CV files)
+- **Backend**: Excel now has 2 CV columns: "Preview CV" (embedded image thumbnail for images, type label for PDFs) + "File CV" (hyperlink to file in ZIP)
+- **Frontend**: "Pilih semua" / "Batal pilih semua" checkbox, "Export Excel (N)" button
+- **Testing**: 100% pass rate
 
 ### Feb 10, 2026 - Activity Log Feature
 - **Backend**: `GET /api/logs/me` endpoint with pagination (skip/limit), date filters, action/resource_type filters, search
