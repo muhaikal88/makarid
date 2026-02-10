@@ -599,6 +599,173 @@ async def create_activity_log(
     await db.activity_logs.insert_one(log_doc)
 
 
+async def get_smtp_settings(company_id: str = None):
+    """Get SMTP settings - company-specific first, fallback to global"""
+    if company_id:
+        company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+        if company and company.get("smtp_settings"):
+            smtp = company["smtp_settings"]
+            if smtp.get("host") and smtp.get("username") and smtp.get("password"):
+                return smtp
+    # Fallback to global
+    settings = await db.system_settings.find_one({}, {"_id": 0})
+    if settings and settings.get("smtp_settings"):
+        smtp = settings["smtp_settings"]
+        if smtp.get("host") and smtp.get("username") and smtp.get("password"):
+            return smtp
+    return None
+
+async def send_notification_email(to_email: str, subject: str, html_body: str, text_body: str, company_id: str = None):
+    """Send email notification using SMTP. Returns True on success, False on failure."""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    
+    smtp = await get_smtp_settings(company_id)
+    if not smtp:
+        logging.warning(f"SMTP not configured, skipping email to {to_email}")
+        return False
+    
+    msg = MIMEMultipart("alternative")
+    msg["From"] = f"{smtp.get('from_name', 'Makar.id')} <{smtp.get('from_email', smtp['username'])}>"
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(text_body, "plain"))
+    msg.attach(MIMEText(html_body, "html"))
+    
+    try:
+        port = int(smtp.get("port", 587))
+        if port == 465:
+            server = smtplib.SMTP_SSL(smtp["host"], port, timeout=15)
+        else:
+            server = smtplib.SMTP(smtp["host"], port, timeout=15)
+            if smtp.get("use_tls", True):
+                server.starttls()
+        server.login(smtp["username"], smtp["password"])
+        server.sendmail(smtp.get("from_email", smtp["username"]), to_email, msg.as_string())
+        server.quit()
+        logging.info(f"Email sent to {to_email}: {subject}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send email to {to_email}: {e}")
+        return False
+
+STATUS_LABELS = {
+    "pending": "Menunggu Review",
+    "reviewing": "Sedang Direview",
+    "shortlisted": "Masuk Shortlist",
+    "interviewed": "Tahap Interview",
+    "offered": "Mendapat Penawaran",
+    "hired": "Diterima",
+    "rejected": "Ditolak",
+}
+
+def build_email_header(company_name: str, company_logo: str = None):
+    return f'''<div style="background:#2E4DA7;padding:28px 24px;text-align:center;border-radius:12px 12px 0 0;">
+        <h1 style="color:#fff;margin:0;font-size:22px;">{company_name}</h1>
+    </div>'''
+
+def build_email_footer(company_name: str):
+    return f'''<div style="background:#f9fafb;padding:14px 24px;text-align:center;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+        <p style="color:#9ca3af;font-size:12px;margin:0;">&copy; 2026 {company_name} &middot; Powered by Makar.id</p>
+    </div>'''
+
+async def send_application_confirmation_email(application: dict, job: dict, company: dict):
+    """Send confirmation email when applicant submits application"""
+    form_data = application.get("form_data", {})
+    applicant_name = form_data.get("full_name", form_data.get("name", "Pelamar"))
+    applicant_email = form_data.get("email")
+    if not applicant_email:
+        return
+    
+    company_name = company.get("name", "Perusahaan")
+    job_title = job.get("title", "Posisi")
+    
+    subject = f"Lamaran Anda Diterima - {job_title} di {company_name}"
+    
+    html_body = f'''<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;">
+        {build_email_header(company_name)}
+        <div style="background:#fff;padding:28px 24px;border:1px solid #e5e7eb;border-top:none;">
+            <h2 style="color:#1f2937;margin:0 0 12px;font-size:18px;">Halo {applicant_name},</h2>
+            <p style="color:#4b5563;line-height:1.7;margin:0 0 16px;">
+                Terima kasih telah melamar posisi <strong>{job_title}</strong> di <strong>{company_name}</strong>.
+                Lamaran Anda telah kami terima dan sedang dalam proses peninjauan.
+            </p>
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin:16px 0;">
+                <p style="color:#1e40af;margin:0;font-size:14px;"><strong>Detail Lamaran:</strong></p>
+                <table style="margin:8px 0 0;font-size:13px;color:#1e40af;">
+                    <tr><td style="padding:2px 12px 2px 0;">Posisi</td><td><strong>{job_title}</strong></td></tr>
+                    <tr><td style="padding:2px 12px 2px 0;">Perusahaan</td><td>{company_name}</td></tr>
+                    <tr><td style="padding:2px 12px 2px 0;">Status</td><td>Menunggu Review</td></tr>
+                </table>
+            </div>
+            <p style="color:#6b7280;font-size:13px;line-height:1.6;">
+                Kami akan menghubungi Anda jika ada perkembangan. Harap bersabar menunggu proses seleksi.
+            </p>
+        </div>
+        {build_email_footer(company_name)}
+    </div>'''
+    
+    text_body = f"Halo {applicant_name},\n\nTerima kasih telah melamar posisi {job_title} di {company_name}.\nLamaran Anda telah kami terima dan sedang dalam proses peninjauan.\n\nStatus: Menunggu Review\n\nKami akan menghubungi Anda jika ada perkembangan."
+    
+    await send_notification_email(applicant_email, subject, html_body, text_body, company.get("id"))
+
+async def send_status_update_email(application: dict, job: dict, company: dict, old_status: str, new_status: str):
+    """Send notification email when application status is updated"""
+    form_data = application.get("form_data", {})
+    applicant_name = form_data.get("full_name", form_data.get("name", "Pelamar"))
+    applicant_email = form_data.get("email")
+    if not applicant_email:
+        return
+    
+    company_name = company.get("name", "Perusahaan")
+    job_title = job.get("title", "Posisi")
+    status_label = STATUS_LABELS.get(new_status, new_status.title())
+    
+    # Color based on status
+    if new_status == "hired":
+        status_bg, status_border, status_color = "#f0fdf4", "#bbf7d0", "#166534"
+        status_icon = "&#10004;"
+    elif new_status == "rejected":
+        status_bg, status_border, status_color = "#fef2f2", "#fecaca", "#991b1b"
+        status_icon = "&#10008;"
+    elif new_status in ("offered", "shortlisted"):
+        status_bg, status_border, status_color = "#eff6ff", "#bfdbfe", "#1e40af"
+        status_icon = "&#9733;"
+    else:
+        status_bg, status_border, status_color = "#fffbeb", "#fde68a", "#92400e"
+        status_icon = "&#9654;"
+    
+    subject = f"Update Status Lamaran - {job_title} di {company_name}"
+    
+    html_body = f'''<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;">
+        {build_email_header(company_name)}
+        <div style="background:#fff;padding:28px 24px;border:1px solid #e5e7eb;border-top:none;">
+            <h2 style="color:#1f2937;margin:0 0 12px;font-size:18px;">Halo {applicant_name},</h2>
+            <p style="color:#4b5563;line-height:1.7;margin:0 0 16px;">
+                Ada pembaruan status untuk lamaran Anda di posisi <strong>{job_title}</strong>.
+            </p>
+            <div style="background:{status_bg};border:1px solid {status_border};border-radius:8px;padding:20px;margin:16px 0;text-align:center;">
+                <p style="font-size:28px;margin:0 0 8px;">{status_icon}</p>
+                <p style="color:{status_color};margin:0;font-size:18px;font-weight:bold;">{status_label}</p>
+            </div>
+            <table style="width:100%;font-size:13px;color:#4b5563;margin:16px 0;">
+                <tr><td style="padding:4px 0;border-bottom:1px solid #f3f4f6;">Posisi</td><td style="padding:4px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:600;">{job_title}</td></tr>
+                <tr><td style="padding:4px 0;border-bottom:1px solid #f3f4f6;">Perusahaan</td><td style="padding:4px 0;border-bottom:1px solid #f3f4f6;text-align:right;">{company_name}</td></tr>
+                <tr><td style="padding:4px 0;">Status Sebelumnya</td><td style="padding:4px 0;text-align:right;">{STATUS_LABELS.get(old_status, old_status.title())}</td></tr>
+            </table>
+            <p style="color:#6b7280;font-size:13px;line-height:1.6;">
+                {'Selamat! Tim kami akan segera menghubungi Anda untuk langkah selanjutnya.' if new_status in ('hired', 'offered') else 'Terima kasih atas kesabaran Anda dalam proses seleksi ini.' if new_status != 'rejected' else 'Terima kasih telah melamar. Jangan berkecil hati, tetap semangat!'}
+            </p>
+        </div>
+        {build_email_footer(company_name)}
+    </div>'''
+    
+    text_body = f"Halo {applicant_name},\n\nAda pembaruan status lamaran Anda:\n\nPosisi: {job_title}\nPerusahaan: {company_name}\nStatus Baru: {status_label}\nStatus Sebelumnya: {STATUS_LABELS.get(old_status, old_status)}\n\nTerima kasih."
+    
+    await send_notification_email(applicant_email, subject, html_body, text_body, company.get("id"))
+
+
     try:
         end_date = datetime.fromisoformat(license_end.replace('Z', '+00:00'))
         now = datetime.now(timezone.utc)
