@@ -3963,6 +3963,67 @@ async def root():
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+# ============ DATABASE SEED ENDPOINT ============
+
+class SeedRequest(BaseModel):
+    superadmin_email: Optional[str] = "superadmin@makar.id"
+    superadmin_password: Optional[str] = "admin123"
+    superadmin_name: Optional[str] = "Super Admin"
+
+@api_router.post("/seed/init")
+async def seed_database(data: SeedRequest = SeedRequest()):
+    """Initialize database with default superadmin. Only works if superadmins collection is empty."""
+    total_admins = await db.superadmins.count_documents({})
+    if total_admins > 0:
+        return {
+            "status": "skipped",
+            "message": f"Database already has {total_admins} superadmin(s). Seed not needed.",
+            "existing_admins": total_admins
+        }
+    
+    super_admin = {
+        "id": str(uuid.uuid4()),
+        "email": data.superadmin_email,
+        "name": data.superadmin_name,
+        "password": hash_password(data.superadmin_password),
+        "picture": None,
+        "totp_secret": None,
+        "totp_enabled": False,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.superadmins.insert_one(super_admin)
+    
+    return {
+        "status": "success",
+        "message": "Database seeded successfully",
+        "superadmin_email": data.superadmin_email,
+        "superadmin_id": super_admin["id"]
+    }
+
+@api_router.get("/seed/status")
+async def seed_status():
+    """Check database status - useful for debugging deployment"""
+    superadmin_count = await db.superadmins.count_documents({})
+    company_count = await db.companies.count_documents({})
+    company_admin_count = await db.company_admins.count_documents({})
+    employee_count = await db.employees.count_documents({})
+    user_count = await db.users.count_documents({})
+    
+    return {
+        "database_name": os.environ.get('DB_NAME', 'unknown'),
+        "collections": {
+            "superadmins": superadmin_count,
+            "companies": company_count,
+            "company_admins": company_admin_count,
+            "employees": employee_count,
+            "users": user_count
+        },
+        "is_empty": superadmin_count == 0 and company_count == 0,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
