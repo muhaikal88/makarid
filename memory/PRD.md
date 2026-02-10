@@ -1,105 +1,62 @@
-# Makar.id - HR SaaS Platform PRD
+# PRD - Makar.id | Manajemen Karyawan
 
-## Original Problem Statement
-Software HR/Employee Management System untuk mengelola karyawan, dari mulai rekrutmen untuk HRD, database karyawan, kehadiran, aktivitas yang dilakukan karyawan, pengajuan cuti, izin sakit, serta penggajian. Pelanggan pertama adalah Lucky Cell (luckycell.co.id).
+## Problem Statement
+Multi-tenant recruitment platform (job board + applicant tracking system) for Indonesian market. Features company-level admin dashboards, public career pages, and super admin management.
 
-Setiap perusahaan yang terdaftar akan memiliki:
-- Domain utama untuk Company Profile
-- Subdomain untuk Recruitment landing page
-- Page untuk input lamaran dengan custom form fields
-
-Ada 3 role: Super Admin, Admin (untuk perusahaan), dan Karyawan.
+## Tech Stack
+- **Frontend**: React, Tailwind CSS, Shadcn/ui, Axios
+- **Backend**: FastAPI (Python), Motor (MongoDB async driver)
+- **Database**: MongoDB
+- **Auth**: JWT (super admin), Session cookies (company admin/employee)
 
 ## Architecture
-- **Backend**: FastAPI (Python) with MongoDB
-- **Frontend**: React with Webpack, Tailwind CSS, shadcn/ui
-- **Auth**: JWT for Super Admins, Session/Cookie for Company Users (supports Google OAuth)
-- **Database**: MongoDB (collections: superadmins, company_admins, employees, companies, jobs, applications, activity_logs, system_settings, form_fields)
+- Super Admin: JWT-based auth, manages companies + users
+- Company Admin: Session-based auth via unified login, manages jobs + applications
+- Public: Career pages, job application forms
 
 ## What's Been Implemented
 
-### Auth & User Management (Complete)
-- [x] Separate login flows: Super Admin (/login) and Company Users (/company-login)
-- [x] Unified login with Google OAuth for company users
-- [x] Multi-company/role selection process
-- [x] 2FA with Google Authenticator
-- [x] Strong password validation & generator
-- [x] User profile management (name, email, password, picture)
+### Core Features
+- Super admin dashboard (company CRUD, user management, 2FA)
+- Company admin dashboard (jobs CRUD, applications management)
+- Public career pages per company
+- Application form with wilayah.id address integration
+- Unified login for company admins/employees
+- Google OAuth integration
+- Soft delete + trash for applications
+- Application comparison feature
+- Custom domain mapping UI
 
-### Super Admin Dashboard (Complete)
-- [x] Dashboard with statistics
-- [x] Company management (CRUD)
-- [x] User management (CRUD) with status/2FA toggles
-- [x] Super Admin management
-- [x] Global SMTP settings
-- [x] Activity Log page
+### Feb 10, 2026 - Activity Log Feature
+- **Backend**: `GET /api/logs/me` endpoint with pagination (skip/limit), date filters, action/resource_type filters, search
+- **Backend**: Activity logging on: login (select-company), job CRUD, application status change, soft-delete, restore, permanent delete
+- **Frontend**: `ActivityLogTab.jsx` component in admin dashboard (5th tab "Log Aktivitas")
+- **Frontend**: Table with User, Aksi, Resource, Deskripsi, Waktu columns
+- **Frontend**: Filters: action type, resource type, date range, search, pagination (max 50/page)
+- **Testing**: 100% pass rate (14/14 backend tests, all frontend UI tests passed)
 
-### Company Admin Dashboard (Complete - Feb 9, 2026)
-- [x] Overview tab with stats, career page link, recent applications
-- [x] Jobs tab with full CRUD (create, edit, delete job postings)
-- [x] Applications tab with clickable list, detail dialog with ALL form data, status updates, filters & search
-- [x] Refactored from monolithic 1100-line file into 6 modular components
+### Stability Fixes (Previous Sessions)
+- Fixed random JWT secret causing logouts
+- Fixed backend CRUD operations (correct DB table references)
+- Improved AuthContext error handling
+- Axios interceptor for production URL fix
 
-### Recruitment Flow (Complete - Feb 9, 2026)
-- [x] Public career pages per company (/careers/{slug})
-- [x] Detailed job application form with:
-  - Nama Lengkap, Email, No. Telepon
-  - Tempat Lahir, Tanggal Lahir
-  - Pendidikan Terakhir (SMA/SMK, D3, S1, S2, S3)
-  - Jurusan
-  - Cascading address: Provinsi -> Kota/Kab -> Kecamatan -> Kelurahan (via wilayah.id API)
-  - Alamat Lengkap
-  - Gaji yang Diharapkan (numeric with Rp prefix & thousand separator)
-  - Pengalaman Kerja
-  - Upload CV (PDF)
-- [x] Backend proxy for wilayah.id API (CORS bypass)
-- [x] File upload for CV/Resume
+## Pending / Known Issues
+- **P0**: Production site `makar.id` broken (needs redeployment with latest code)
+- **P2**: Custom domain routing blocked by Emergent platform limitations
 
-### UI/UX & Branding (Complete)
-- [x] Rebranded to Makar.id
-- [x] Bilingual support (ID/EN)
-- [x] Marketing landing page
+## Backlog
+- Self-hosting deployment guide (DEPLOYMENT.md)
+- Performance optimizations
+- Email notifications via SMTP
 
-## Component Architecture
-```
-AdminDashboard.jsx (orchestrator)
-├── components/admin/OverviewTab.jsx
-├── components/admin/JobsTab.jsx
-├── components/admin/ApplicationsTab.jsx
-├── components/admin/JobFormDialog.jsx
-└── components/admin/AppDetailDialog.jsx
-```
+## Key Files
+- `/app/backend/server.py` - All backend logic
+- `/app/frontend/src/pages/AdminDashboard.jsx` - Company admin dashboard
+- `/app/frontend/src/components/admin/ActivityLogTab.jsx` - Activity log UI
+- `/app/frontend/src/contexts/AuthContext.js` - Auth context
+- `/app/frontend/src/index.js` - Axios interceptor for production
 
-## Key API Endpoints
-- Wilayah proxy: /api/wilayah/provinces, /api/wilayah/regencies/{code}, /api/wilayah/districts/{code}, /api/wilayah/villages/{code}
-- Public careers: /api/public/careers/{slug}/jobs/{id}
-- Applications: /api/applications-session, /api/applications-session/{id}/status
-
-## Credentials
-- **Super Admin**: muhaikal88@gmail.com / Admin@2026! (2FA enabled)
-- **Super Admin Backup**: superadmin@makar.id / admin123 (2FA enabled)
-- **Company Admin**: admin@demo.co.id / admin123
-- **Employee**: employee@demo.co.id / emp123
-
-## Prioritized Backlog
-
-### P1 - High Priority
-1. Full Activity Log integration across all backend endpoints
-2. Employee Dashboard (currently placeholder)
-
-### P2 - Medium Priority
-3. Email notification system (SMTP integration)
-4. Public company profile page
-5. DNS/Custom domain guidance documentation
-
-### P3 - Future
-6. Database Karyawan (Employee records)
-7. Sistem Kehadiran (Attendance/Clock-in/out)
-8. Pengajuan Cuti dan Izin Sakit
-9. Modul Penggajian (Payroll)
-10. Employee self-service portal
-
-## Known Infrastructure Issues
-- Custom domains require production deployment (preview URLs cannot be used as CNAME targets)
-- User needs wildcard CNAME record for *.makar.id
-- Data discrepancy between production and preview (separate databases)
+## Test Credentials
+- Super Admin: muhaikal88@gmail.com / Admin@2026!
+- Company Admin: admin@lucky.com / Admin@2026! (PT. LUCKY PERDANA MULTIMEDIA)
