@@ -686,7 +686,7 @@ def build_email_header(company_name: str, company_logo: str = None):
 
 def build_email_footer(company_name: str):
     return f'''<div style="background:#f9fafb;padding:14px 24px;text-align:center;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
-        <p style="color:#9ca3af;font-size:12px;margin:0;">&copy; 2026 {company_name} &middot; Powered by Makar.id</p>
+        <p style="color:#9ca3af;font-size:12px;margin:0;">2026 {company_name} - Powered by Makar.id</p>
     </div>'''
 
 async def send_application_confirmation_email(application: dict, job: dict, company: dict):
@@ -700,23 +700,21 @@ async def send_application_confirmation_email(application: dict, job: dict, comp
     company_name = company.get("name", "Perusahaan")
     job_title = job.get("title", "Posisi")
     
-    subject = f"Lamaran Anda Diterima - {job_title} di {company_name}"
+    subject = f"Konfirmasi Lamaran - {job_title} di {company_name}"
     
-    html_body = f'''<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;">
+    html_body = f'''<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
         {build_email_header(company_name)}
         <div style="background:#fff;padding:28px 24px;border:1px solid #e5e7eb;border-top:none;">
             <h2 style="color:#1f2937;margin:0 0 12px;font-size:18px;">Halo {applicant_name},</h2>
             <p style="color:#4b5563;line-height:1.7;margin:0 0 16px;">
-                Terima kasih telah melamar posisi <strong>{job_title}</strong> di <strong>{company_name}</strong>.
+                Terima kasih telah melamar posisi <b>{job_title}</b> di <b>{company_name}</b>.
                 Lamaran Anda telah kami terima dan sedang dalam proses peninjauan.
             </p>
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin:16px 0;">
-                <p style="color:#1e40af;margin:0;font-size:14px;"><strong>Detail Lamaran:</strong></p>
-                <table style="margin:8px 0 0;font-size:13px;color:#1e40af;">
-                    <tr><td style="padding:2px 12px 2px 0;">Posisi</td><td><strong>{job_title}</strong></td></tr>
-                    <tr><td style="padding:2px 12px 2px 0;">Perusahaan</td><td>{company_name}</td></tr>
-                    <tr><td style="padding:2px 12px 2px 0;">Status</td><td>Menunggu Review</td></tr>
-                </table>
+                <p style="color:#1e40af;margin:0 0 8px;font-size:14px;"><b>Detail Lamaran:</b></p>
+                <p style="color:#1e40af;margin:0;font-size:13px;">Posisi: <b>{job_title}</b></p>
+                <p style="color:#1e40af;margin:4px 0 0;font-size:13px;">Perusahaan: {company_name}</p>
+                <p style="color:#1e40af;margin:4px 0 0;font-size:13px;">Status: Menunggu Review</p>
             </div>
             <p style="color:#6b7280;font-size:13px;line-height:1.6;">
                 Kami akan menghubungi Anda jika ada perkembangan. Harap bersabar menunggu proses seleksi.
@@ -725,7 +723,7 @@ async def send_application_confirmation_email(application: dict, job: dict, comp
         {build_email_footer(company_name)}
     </div>'''
     
-    text_body = f"Halo {applicant_name},\n\nTerima kasih telah melamar posisi {job_title} di {company_name}.\nLamaran Anda telah kami terima dan sedang dalam proses peninjauan.\n\nStatus: Menunggu Review\n\nKami akan menghubungi Anda jika ada perkembangan."
+    text_body = f"Halo {applicant_name},\n\nTerima kasih telah melamar posisi {job_title} di {company_name}.\nLamaran Anda telah kami terima dan sedang dalam proses peninjauan.\n\nPosisi: {job_title}\nPerusahaan: {company_name}\nStatus: Menunggu Review\n\nKami akan menghubungi Anda jika ada perkembangan."
     
     await send_notification_email(applicant_email, subject, html_body, text_body, company.get("id"))
 
@@ -740,47 +738,48 @@ async def send_status_update_email(application: dict, job: dict, company: dict, 
     company_name = company.get("name", "Perusahaan")
     job_title = job.get("title", "Posisi")
     status_label = STATUS_LABELS.get(new_status, new_status.title())
+    old_status_label = STATUS_LABELS.get(old_status, old_status.title())
     
     # Color based on status
     if new_status == "hired":
         status_bg, status_border, status_color = "#f0fdf4", "#bbf7d0", "#166534"
-        status_icon = "&#10004;"
     elif new_status == "rejected":
         status_bg, status_border, status_color = "#fef2f2", "#fecaca", "#991b1b"
-        status_icon = "&#10008;"
     elif new_status in ("offered", "shortlisted"):
         status_bg, status_border, status_color = "#eff6ff", "#bfdbfe", "#1e40af"
-        status_icon = "&#9733;"
     else:
         status_bg, status_border, status_color = "#fffbeb", "#fde68a", "#92400e"
-        status_icon = "&#9654;"
     
-    subject = f"Update Status Lamaran - {job_title} di {company_name}"
+    if new_status in ('hired', 'offered'):
+        closing_msg = 'Selamat! Tim kami akan segera menghubungi Anda untuk langkah selanjutnya.'
+    elif new_status == 'rejected':
+        closing_msg = 'Terima kasih telah melamar. Jangan berkecil hati, tetap semangat!'
+    else:
+        closing_msg = 'Terima kasih atas kesabaran Anda dalam proses seleksi ini.'
     
-    html_body = f'''<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;">
+    subject = f"Info Lamaran - {job_title} di {company_name}"
+    
+    html_body = f'''<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
         {build_email_header(company_name)}
         <div style="background:#fff;padding:28px 24px;border:1px solid #e5e7eb;border-top:none;">
             <h2 style="color:#1f2937;margin:0 0 12px;font-size:18px;">Halo {applicant_name},</h2>
             <p style="color:#4b5563;line-height:1.7;margin:0 0 16px;">
-                Ada pembaruan status untuk lamaran Anda di posisi <strong>{job_title}</strong>.
+                Ada pembaruan status untuk lamaran Anda di posisi <b>{job_title}</b>.
             </p>
             <div style="background:{status_bg};border:1px solid {status_border};border-radius:8px;padding:20px;margin:16px 0;text-align:center;">
-                <p style="font-size:28px;margin:0 0 8px;">{status_icon}</p>
                 <p style="color:{status_color};margin:0;font-size:18px;font-weight:bold;">{status_label}</p>
             </div>
-            <table style="width:100%;font-size:13px;color:#4b5563;margin:16px 0;">
-                <tr><td style="padding:4px 0;border-bottom:1px solid #f3f4f6;">Posisi</td><td style="padding:4px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:600;">{job_title}</td></tr>
-                <tr><td style="padding:4px 0;border-bottom:1px solid #f3f4f6;">Perusahaan</td><td style="padding:4px 0;border-bottom:1px solid #f3f4f6;text-align:right;">{company_name}</td></tr>
-                <tr><td style="padding:4px 0;">Status Sebelumnya</td><td style="padding:4px 0;text-align:right;">{STATUS_LABELS.get(old_status, old_status.title())}</td></tr>
-            </table>
-            <p style="color:#6b7280;font-size:13px;line-height:1.6;">
-                {'Selamat! Tim kami akan segera menghubungi Anda untuk langkah selanjutnya.' if new_status in ('hired', 'offered') else 'Terima kasih atas kesabaran Anda dalam proses seleksi ini.' if new_status != 'rejected' else 'Terima kasih telah melamar. Jangan berkecil hati, tetap semangat!'}
-            </p>
+            <div style="margin:16px 0;font-size:13px;color:#4b5563;">
+                <p style="margin:0 0 6px;"><b>Posisi:</b> {job_title}</p>
+                <p style="margin:0 0 6px;"><b>Perusahaan:</b> {company_name}</p>
+                <p style="margin:0;"><b>Status sebelumnya:</b> {old_status_label}</p>
+            </div>
+            <p style="color:#6b7280;font-size:13px;line-height:1.6;">{closing_msg}</p>
         </div>
         {build_email_footer(company_name)}
     </div>'''
     
-    text_body = f"Halo {applicant_name},\n\nAda pembaruan status lamaran Anda:\n\nPosisi: {job_title}\nPerusahaan: {company_name}\nStatus Baru: {status_label}\nStatus Sebelumnya: {STATUS_LABELS.get(old_status, old_status)}\n\nTerima kasih."
+    text_body = f"Halo {applicant_name},\n\nAda pembaruan status lamaran Anda:\n\nPosisi: {job_title}\nPerusahaan: {company_name}\nStatus Baru: {status_label}\nStatus Sebelumnya: {old_status_label}\n\n{closing_msg}"
     
     await send_notification_email(applicant_email, subject, html_body, text_body, company.get("id"))
 
