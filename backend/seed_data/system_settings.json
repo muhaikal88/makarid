@@ -1,0 +1,13 @@
+[
+  {
+    "smtp_settings": {
+      "host": "musharna.id.rapidplex.com",
+      "port": 465,
+      "username": "notif@makar.id",
+      "password": "buF]=a{iW]$q=z.v",
+      "from_email": "notif@makar.id",
+      "from_name": "Makar.id Notifications",
+      "use_tls": true
+    }
+  }
+]

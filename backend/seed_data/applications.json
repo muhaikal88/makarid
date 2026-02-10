@@ -1,0 +1,127 @@
+[
+  {
+    "id": "df18214f-eef7-425d-bf0c-dff6ec6caa0f",
+    "job_id": "72cb00b7-6b15-4ad0-ab79-e4bbe54daa53",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "form_data": {
+      "full_name": "Budi Santoso",
+      "email": "budi.santoso@gmail.com",
+      "phone": "081234567890",
+      "birth_place": "Jakarta",
+      "birth_date": "1995-05-15",
+      "education": "S1",
+      "major": "Teknik Informatika",
+      "province": "DKI Jakarta",
+      "city": "Jakarta Selatan",
+      "district": "Kebayoran Baru",
+      "village": "Gunung",
+      "full_address": "Jl. Kebayoran Baru No. 123, RT 05 / RW 03",
+      "expected_salary": "5.000.000"
+    },
+    "resume_url": null,
+    "status": "pending",
+    "notes": null,
+    "created_at": "2026-02-09T05:18:07.665499+00:00",
+    "updated_at": "2026-02-09T06:32:44.231873+00:00"
+  },
+  {
+    "id": "0baddb7c-ab46-4ce3-af67-ecc5d39841e4",
+    "job_id": "5b2330f0-ef65-4ba0-ad39-0d0ede450eba",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "form_data": {
+      "full_name": "Muhammad Iqbal Tawakal",
+      "email": "muhaikal88@gmail.com",
+      "phone": "081288003534",
+      "address": "Villa Nusa Indah 2 Blok GG9 No.20 Rt.04 Rw.08",
+      "education": "S2",
+      "experience": "2",
+      "resume": ""
+    },
+    "resume_url": "/api/uploads/b4529c2c-ece8-4fef-a25d-84f07891852c.pdf",
+    "status": "interviewed",
+    "notes": null,
+    "created_at": "2026-02-09T06:55:25.479831+00:00",
+    "updated_at": "2026-02-10T07:35:18.843215+00:00"
+  },
+  {
+    "id": "3c1f48bc-d717-4b6a-824b-fe84fa08a341",
+    "job_id": "b8e502b6-1508-427f-8857-c0a273d344af",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "form_data": {
+      "full_name": "Tawakal",
+      "email": "muhaikal88@gmail.com",
+      "phone": "081288003534",
+      "birth_place": "Jakarta",
+      "birth_date": "2026-02-09",
+      "education": "S1",
+      "major": "Teknik Informasi",
+      "province": "DKI Jakarta",
+      "city": "Kota Administrasi Jakarta Selatan",
+      "district": "Kebayoran Lama",
+      "village": "Grogol Utara",
+      "full_address": "Villa Nusa Indah 2 Blok GG9 No.20 Rt.04 Rw.08",
+      "expected_salary": "9.000.000",
+      "resume": ""
+    },
+    "resume_url": "/api/uploads/1d926329-8d7f-42d2-b84b-a393d3945554.png",
+    "status": "reviewed",
+    "notes": null,
+    "created_at": "2026-02-09T07:27:57.581515+00:00",
+    "updated_at": "2026-02-09T07:32:59.766255+00:00"
+  },
+  {
+    "id": "ba1e3f56-8358-462f-b035-af323c340a63",
+    "job_id": "379474f5-3119-47b6-b644-e8eb74bccd3a",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "form_data": {
+      "full_name": "Siti Rahayu",
+      "email": "siti.rahayu@gmail.com",
+      "phone": "082198765432",
+      "birth_place": "Bandung",
+      "birth_date": "1998-03-22",
+      "education": "S1",
+      "major": "Manajemen",
+      "province": "Jawa Barat",
+      "city": "Bandung",
+      "district": "Coblong",
+      "village": "Dago",
+      "full_address": "Jl. Ir. H. Djuanda No. 45, RT 02 / RW 05",
+      "expected_salary": "4.500.000"
+    },
+    "resume_url": null,
+    "status": "pending",
+    "notes": null,
+    "created_at": "2026-02-09T07:42:28.898240+00:00",
+    "updated_at": "2026-02-09T07:42:28.898240+00:00"
+  },
+  {
+    "id": "c6f5dce0-0100-4f4b-8fa9-0a5875a6b9e0",
+    "job_id": "0e2d579c-9791-4f9b-940a-092f16fa9e11",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "form_data": {
+      "full_name": "Tes Pelamar",
+      "email": "muhaikal88@gmail.com",
+      "phone": "08123456789"
+    },
+    "resume_url": null,
+    "status": "pending",
+    "notes": null,
+    "created_at": "2026-02-10T07:04:30.910951+00:00",
+    "updated_at": "2026-02-10T07:04:30.910961+00:00"
+  },
+  {
+    "id": "e28a8b74-4cbf-4246-89f1-a8a8f2ef5984",
+    "job_id": "0e2d579c-9791-4f9b-940a-092f16fa9e11",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "form_data": {
+      "full_name": "Test Kompresi",
+      "email": "test@example.com",
+      "phone": "08123456789"
+    },
+    "resume_url": "/api/uploads/365c612a-c15b-4cba-9222-80368617f027.jpg",
+    "status": "pending",
+    "notes": null,
+    "created_at": "2026-02-10T08:25:17.144452+00:00",
+    "updated_at": "2026-02-10T08:25:17.144465+00:00"
+  }
+]

@@ -1,0 +1,322 @@
+[
+  {
+    "id": "f2747dc6-1314-4660-b088-fe60987a9f00",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "full_name",
+    "field_label": "Nama Lengkap",
+    "field_type": "text",
+    "is_required": true,
+    "placeholder": "Masukkan nama lengkap",
+    "order": 1,
+    "options": null
+  },
+  {
+    "id": "915f554f-2875-4a30-880c-dee47503498c",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "email",
+    "field_label": "Email",
+    "field_type": "email",
+    "is_required": true,
+    "placeholder": "contoh@email.com",
+    "order": 2,
+    "options": null
+  },
+  {
+    "id": "222b13d1-f6a8-4b41-8115-f7ef845b7553",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "phone",
+    "field_label": "No. Telepon",
+    "field_type": "phone",
+    "is_required": true,
+    "placeholder": "08xxxxxxxxxx",
+    "order": 3,
+    "options": null
+  },
+  {
+    "id": "8045e3f9-0d2f-456c-970b-6a0a762a6c6b",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "birth_place",
+    "field_label": "Tempat Lahir",
+    "field_type": "text",
+    "is_required": true,
+    "placeholder": "Masukkan tempat lahir",
+    "order": 4,
+    "options": null
+  },
+  {
+    "id": "c11a72c0-a1ae-48bb-8aa8-ce445d8aa036",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "birth_date",
+    "field_label": "Tanggal Lahir",
+    "field_type": "date",
+    "is_required": true,
+    "placeholder": "",
+    "order": 5,
+    "options": null
+  },
+  {
+    "id": "da2f860d-6b56-4907-8cee-11f0b8c68119",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "education",
+    "field_label": "Pendidikan Terakhir",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih pendidikan terakhir",
+    "order": 6,
+    "options": [
+      "SMA/SMK",
+      "D3",
+      "S1",
+      "S2",
+      "S3"
+    ]
+  },
+  {
+    "id": "de84de51-23d1-4cd9-83c8-3c86ac554d1b",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "major",
+    "field_label": "Jurusan",
+    "field_type": "text",
+    "is_required": true,
+    "placeholder": "Masukkan jurusan/program studi",
+    "order": 7,
+    "options": null
+  },
+  {
+    "id": "828521d8-1be5-46ed-b032-90c6d4a50bb5",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "province",
+    "field_label": "Provinsi",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih Provinsi",
+    "order": 8,
+    "options": null
+  },
+  {
+    "id": "439200d8-0b3b-415f-8d62-644e774eebe3",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "city",
+    "field_label": "Kota/Kabupaten",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih Kota/Kabupaten",
+    "order": 9,
+    "options": null
+  },
+  {
+    "id": "414f2272-6057-4638-b2a4-58889f78e0b2",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "district",
+    "field_label": "Kecamatan",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih Kecamatan",
+    "order": 10,
+    "options": null
+  },
+  {
+    "id": "cf2a9919-33f7-47d6-9d04-05d58739273f",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "village",
+    "field_label": "Kelurahan/Desa",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih Kelurahan/Desa",
+    "order": 11,
+    "options": null
+  },
+  {
+    "id": "e986b765-d103-4fd8-a544-2a3383f9463d",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "full_address",
+    "field_label": "Alamat Lengkap",
+    "field_type": "textarea",
+    "is_required": true,
+    "placeholder": "Masukkan alamat lengkap (RT/RW, Jalan, dll)",
+    "order": 12,
+    "options": null
+  },
+  {
+    "id": "f82043e9-a39d-4116-bd26-5c3447a8ed2c",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "expected_salary",
+    "field_label": "Gaji yang Diharapkan (Rp)",
+    "field_type": "number",
+    "is_required": true,
+    "placeholder": "5.000.000",
+    "order": 13,
+    "options": null
+  },
+  {
+    "id": "8a6eb77d-cc7c-46bc-aa87-a669502667ca",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "field_name": "resume",
+    "field_label": "Upload CV/Resume",
+    "field_type": "file",
+    "is_required": true,
+    "placeholder": "",
+    "order": 15,
+    "options": null
+  },
+  {
+    "id": "dce0611e-3f18-4777-9a84-090ce2a541a6",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "full_name",
+    "field_label": "Nama Lengkap",
+    "field_type": "text",
+    "is_required": true,
+    "placeholder": "Masukkan nama lengkap",
+    "order": 1,
+    "options": null
+  },
+  {
+    "id": "1ede1216-0edd-4e9f-bb19-a39ce62937ed",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "email",
+    "field_label": "Email",
+    "field_type": "email",
+    "is_required": true,
+    "placeholder": "contoh@email.com",
+    "order": 2,
+    "options": null
+  },
+  {
+    "id": "6a022cf3-6793-47b8-ad5d-4bb5d9aacd03",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "phone",
+    "field_label": "No. Telepon",
+    "field_type": "phone",
+    "is_required": true,
+    "placeholder": "08xxxxxxxxxx",
+    "order": 3,
+    "options": null
+  },
+  {
+    "id": "2cb3fe86-c875-4875-b2d2-c76c20700cc3",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "birth_place",
+    "field_label": "Tempat Lahir",
+    "field_type": "text",
+    "is_required": true,
+    "placeholder": "Masukkan tempat lahir",
+    "order": 4,
+    "options": null
+  },
+  {
+    "id": "4b505684-a9bf-4dec-b00b-ce90d342ae93",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "birth_date",
+    "field_label": "Tanggal Lahir",
+    "field_type": "date",
+    "is_required": true,
+    "placeholder": "",
+    "order": 5,
+    "options": null
+  },
+  {
+    "id": "83f3991a-6945-449e-b686-5ef10d279cbc",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "education",
+    "field_label": "Pendidikan Terakhir",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih pendidikan terakhir",
+    "order": 6,
+    "options": [
+      "SMA/SMK",
+      "D3",
+      "S1",
+      "S2",
+      "S3"
+    ]
+  },
+  {
+    "id": "e10ca193-e5f6-4864-a37e-36a884c7bcac",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "major",
+    "field_label": "Jurusan",
+    "field_type": "text",
+    "is_required": true,
+    "placeholder": "Masukkan jurusan/program studi",
+    "order": 7,
+    "options": null
+  },
+  {
+    "id": "4a148fe0-3535-4302-beb9-0cfd4d6cf403",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "province",
+    "field_label": "Provinsi",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih Provinsi",
+    "order": 8,
+    "options": null
+  },
+  {
+    "id": "a124b2b4-8bfe-418d-acd4-75d8e2d60ad9",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "city",
+    "field_label": "Kota/Kabupaten",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih Kota/Kabupaten",
+    "order": 9,
+    "options": null
+  },
+  {
+    "id": "28364530-f631-4906-9245-c34d3973fa40",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "district",
+    "field_label": "Kecamatan",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih Kecamatan",
+    "order": 10,
+    "options": null
+  },
+  {
+    "id": "35f147b8-9d4b-489d-a64b-063f8db6949c",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "village",
+    "field_label": "Kelurahan/Desa",
+    "field_type": "select",
+    "is_required": true,
+    "placeholder": "Pilih Kelurahan/Desa",
+    "order": 11,
+    "options": null
+  },
+  {
+    "id": "3be28a0d-2244-4dfb-9292-c5595cad3f69",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "full_address",
+    "field_label": "Alamat Lengkap",
+    "field_type": "textarea",
+    "is_required": true,
+    "placeholder": "Masukkan alamat lengkap (RT/RW, Jalan, dll)",
+    "order": 12,
+    "options": null
+  },
+  {
+    "id": "f3219268-f0cd-4157-89cb-6d6fb79e4354",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "expected_salary",
+    "field_label": "Gaji yang Diharapkan (Rp)",
+    "field_type": "number",
+    "is_required": true,
+    "placeholder": "5.000.000",
+    "order": 13,
+    "options": null
+  },
+  {
+    "id": "4648c768-16dc-45ea-ba85-c8ca73b5de76",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "field_name": "resume",
+    "field_label": "Upload CV/Resume",
+    "field_type": "file",
+    "is_required": true,
+    "placeholder": "",
+    "order": 15,
+    "options": null
+  }
+]

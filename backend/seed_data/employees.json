@@ -1,0 +1,30 @@
+[
+  {
+    "id": "emp_2e0829ac893e",
+    "email": "employee@demo.co.id",
+    "name": "Employee Demo",
+    "password": "e03d3ec8d5035f8721f5dc64546e59ed790dbcb3b7b598fe57057ccd7b683b00",
+    "picture": null,
+    "companies": [
+      "15144e0a-42f8-4061-a26c-a754e7225ceb"
+    ],
+    "is_active": false,
+    "auth_provider": "email",
+    "created_at": "2026-02-05T04:10:38.182181+00:00",
+    "updated_at": "2026-02-05T07:39:51.471427+00:00"
+  },
+  {
+    "id": "emp_4e56f656bc4b",
+    "email": "employee@lucky.com",
+    "name": "Employee Lucky",
+    "password": "e03d3ec8d5035f8721f5dc64546e59ed790dbcb3b7b598fe57057ccd7b683b00",
+    "picture": null,
+    "companies": [
+      "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715"
+    ],
+    "is_active": true,
+    "auth_provider": "email",
+    "created_at": "2026-02-05T04:38:48.072973+00:00",
+    "updated_at": "2026-02-05T04:38:48.072980+00:00"
+  }
+]

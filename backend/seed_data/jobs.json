@@ -1,0 +1,119 @@
+[
+  {
+    "id": "0e2d579c-9791-4f9b-940a-092f16fa9e11",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "title": "Sales Counter",
+    "department": "Sales",
+    "location": "Jakarta Timur",
+    "job_type": "full_time",
+    "description": "Kami mencari Sales Counter yang energik dan ramah untuk melayani pelanggan di toko kami. Posisi ini bertanggung jawab untuk memberikan pelayanan terbaik dan mencapai target penjualan.",
+    "requirements": [
+      "Pendidikan minimal SMA/SMK",
+      "Usia maksimal 28 tahun",
+      "Berpenampilan menarik dan komunikatif",
+      "Berpengalaman di bidang retail (diutamakan)",
+      "Mampu bekerja dalam tim"
+    ],
+    "responsibilities": [
+      "Melayani pelanggan dengan ramah",
+      "Menjelaskan produk kepada pelanggan",
+      "Mencapai target penjualan",
+      "Menjaga kebersihan area kerja",
+      "Membuat laporan penjualan harian"
+    ],
+    "salary_min": 3500000,
+    "salary_max": 5000000,
+    "show_salary": true,
+    "status": "published",
+    "created_at": "2026-02-04T06:50:03.218320+00:00",
+    "updated_at": "2026-02-04T06:50:03.218328+00:00"
+  },
+  {
+    "id": "b8e502b6-1508-427f-8857-c0a273d344af",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "title": "Teknisi Handphone",
+    "department": "Service",
+    "location": "Jakarta Timur",
+    "job_type": "full_time",
+    "description": "Dibutuhkan Teknisi Handphone berpengalaman untuk menangani service dan perbaikan berbagai merk handphone. Kandidat ideal memiliki keahlian dalam troubleshooting hardware dan software.",
+    "requirements": [
+      "Pendidikan minimal SMK Elektronika/Teknik",
+      "Pengalaman minimal 1 tahun sebagai teknisi HP",
+      "Menguasai perbaikan hardware dan software",
+      "Teliti dan bertanggung jawab",
+      "Mampu bekerja di bawah tekanan"
+    ],
+    "responsibilities": [
+      "Mendiagnosa kerusakan handphone",
+      "Melakukan perbaikan hardware dan software",
+      "Memberikan estimasi biaya perbaikan",
+      "Menjaga peralatan kerja",
+      "Memberikan garansi service"
+    ],
+    "salary_min": 4000000,
+    "salary_max": 6000000,
+    "show_salary": true,
+    "status": "published",
+    "created_at": "2026-02-04T06:50:12.871552+00:00",
+    "updated_at": "2026-02-04T06:50:12.871560+00:00"
+  },
+  {
+    "id": "5b2330f0-ef65-4ba0-ad39-0d0ede450eba",
+    "company_id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "title": "Test Position 065318",
+    "department": "Engineering",
+    "location": "Jakarta",
+    "job_type": "full_time",
+    "description": "This is a test job posting for recruitment system testing",
+    "requirements": [
+      "Bachelor's degree",
+      "2+ years experience",
+      "Team player"
+    ],
+    "responsibilities": [
+      "Develop software",
+      "Write tests",
+      "Code reviews"
+    ],
+    "salary_min": 8000000,
+    "salary_max": 12000000,
+    "show_salary": true,
+    "status": "closed",
+    "created_at": "2026-02-04T06:53:18.735678+00:00",
+    "updated_at": "2026-02-09T07:26:06.012225+00:00"
+  },
+  {
+    "id": "72cb00b7-6b15-4ad0-ab79-e4bbe54daa53",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "title": "Senior Developer",
+    "department": "IT",
+    "location": "Jakarta",
+    "job_type": "full_time",
+    "description": "Looking for experienced developer...",
+    "requirements": null,
+    "responsibilities": null,
+    "salary_min": null,
+    "salary_max": null,
+    "show_salary": false,
+    "status": "draft",
+    "created_at": "2026-02-05T08:37:56.191736+00:00",
+    "updated_at": "2026-02-05T08:37:56.191744+00:00"
+  },
+  {
+    "id": "379474f5-3119-47b6-b644-e8eb74bccd3a",
+    "company_id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "title": "Admin",
+    "department": "Administrasi & HRD",
+    "location": "Ciracas",
+    "job_type": "full_time",
+    "description": "1. Usia 25\u201335 tahun\n2. Pengalaman kerja minimal 2\u20133 tahun\n   * Diutamakan pengalaman di retail handphone\n3. Pendidikan lulusan SMK / SMA atau sederajat\n4. Memiliki sifat jujur dan teliti\n5. Memiliki kemampuan komunikasi yang baik\n6. Cepat belajar\n7. Mampu bekerja dalam tim maupun individu\n8. Ulet dan bertanggung jawab\n9. Bersedia bekerja shift\n10. Terbiasa menggunakan software ERP\n11. Bersedia bergabung secepatnya\n12. Diutamakan berdomisili di Jakarta Timur",
+    "requirements": [],
+    "responsibilities": [],
+    "salary_min": 3000000,
+    "salary_max": 4500000,
+    "show_salary": true,
+    "status": "published",
+    "created_at": "2026-02-05T09:07:12.630521+00:00",
+    "updated_at": "2026-02-05T09:16:45.080877+00:00"
+  }
+]

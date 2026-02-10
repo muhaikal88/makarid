@@ -1,0 +1,79 @@
+[
+  {
+    "name": "Test Company UI",
+    "domain": "testcompanyui.com",
+    "address": "Jakarta, Indonesia",
+    "phone": "+62-21-999888",
+    "email": "test@testcompanyui.com",
+    "logo_url": "",
+    "is_active": true,
+    "id": "3172f49d-2951-400c-8e27-8ae6b4044566",
+    "created_at": "2026-02-04T06:35:14.105724+00:00",
+    "updated_at": "2026-02-05T03:53:23.636669+00:00",
+    "slug": "testui"
+  },
+  {
+    "name": "PT. LUCKY PERDANA MULTIMEDIA",
+    "domain": "luckycell.co.id",
+    "address": "Jl. Raya Ciracas 07 Rt.001 Rw.005 Ciracas",
+    "phone": "085793100100",
+    "email": "muhaikal88@gmail.com",
+    "logo_url": "https://luckycellciracas.com/uploads/web/logo/1/lucky__1___1_.jpg",
+    "is_active": true,
+    "id": "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715",
+    "created_at": "2026-02-04T06:35:43.026568+00:00",
+    "updated_at": "2026-02-07T11:16:33.886029+00:00",
+    "profile": {
+      "benefits": [
+        "Gaji kompetitif",
+        "BPJS Kesehatan & Ketenagakerjaan",
+        "Tunjangan makan",
+        "Bonus tahunan",
+        "Pelatihan & pengembangan karir",
+        "Lingkungan kerja yang nyaman"
+      ],
+      "culture": "Kami percaya bahwa karyawan adalah aset terpenting. Di Lucky Cell, kami menerapkan budaya kerja yang kolaboratif, inovatif, dan berorientasi pada kepuasan pelanggan.",
+      "description": "PT. Lucky Perdana Multimedia adalah perusahaan retail yang bergerak di bidang penjualan handphone, aksesoris, dan elektronik. Berdiri sejak 2010, kami telah melayani ribuan pelanggan dengan komitmen memberikan produk berkualitas dengan harga terjangkau.",
+      "mission": "Menyediakan produk berkualitas dengan harga kompetitif, memberikan pelayanan prima kepada pelanggan, dan menciptakan lingkungan kerja yang positif bagi karyawan.",
+      "tagline": "Your Trusted Mobile & Electronics Partner",
+      "vision": "Menjadi retailer handphone dan elektronik terpercaya di Indonesia dengan jaringan toko yang luas dan pelayanan terbaik."
+    },
+    "custom_domains": {
+      "main": "luckycell.co.id",
+      "careers": "career.luckycell.co.id",
+      "hr": "hr.luckycell.co.id"
+    },
+    "license_end": "2027-02-04T09:20:27.758696+00:00",
+    "slug": "lucky"
+  },
+  {
+    "name": "PT Demo Indonesia",
+    "slug": "demo",
+    "domain": "demo.co.id",
+    "address": null,
+    "phone": null,
+    "email": "contact@demo.co.id",
+    "logo_url": null,
+    "is_active": true,
+    "license_start": "2026-02-05T03:52:11.964246+00:00",
+    "license_end": "2026-03-07T03:52:11.964247+00:00",
+    "license_type": "trial",
+    "custom_domains": null,
+    "smtp_settings": null,
+    "id": "15144e0a-42f8-4061-a26c-a754e7225ceb",
+    "created_at": "2026-02-05T03:52:11.964221+00:00",
+    "updated_at": "2026-02-05T03:52:11.964225+00:00",
+    "profile": {
+      "tagline": null,
+      "description": null,
+      "vision": null,
+      "mission": null,
+      "history": null,
+      "culture": null,
+      "benefits": [],
+      "social_links": {},
+      "gallery_images": [],
+      "cover_image": null
+    }
+  }
+]

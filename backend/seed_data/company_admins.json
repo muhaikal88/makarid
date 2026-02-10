@@ -1,0 +1,29 @@
+[
+  {
+    "id": "admin_2e7f836b7c37",
+    "email": "admin@lucky.com",
+    "name": "Admin Lucky",
+    "password": "f0ce0e86206541c60bc47be815f83eba98004f63c883e6d71ff5cc929cb5f9ca",
+    "picture": null,
+    "companies": [
+      "d0b4c4cc-e7a3-4c0f-b042-f9fd74be0715"
+    ],
+    "is_active": true,
+    "auth_provider": "email",
+    "created_at": "2026-02-05T04:38:48.072024+00:00",
+    "updated_at": "2026-02-05T04:38:48.072036+00:00"
+  },
+  {
+    "id": "admin_8855a112e4f1",
+    "email": "admin@demo.co.id",
+    "name": "Admin Demo",
+    "password": "$2b$12$tXnkPAYQBHyEpKb4r7HVE.G0qNFBfsLfAfCwppeDJpW0mmmzy4kiO",
+    "companies": [
+      "15144e0a-42f8-4061-a26c-a754e7225ceb"
+    ],
+    "is_active": true,
+    "auth_provider": "email",
+    "created_at": "2026-02-09T10:01:19.089925+00:00",
+    "updated_at": "2026-02-09T10:01:19.089940+00:00"
+  }
+]
