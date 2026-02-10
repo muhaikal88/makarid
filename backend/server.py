@@ -3228,6 +3228,9 @@ async def export_applications(data: ExportRequest, request: Request):
     """Export selected applications to Excel + CV files as ZIP"""
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.drawing.image import Image as XlImage
+    from openpyxl.utils import get_column_letter
+    from PIL import Image as PILImage
     
     session = await require_session_admin(request)
     
@@ -3260,6 +3263,9 @@ async def export_applications(data: ExportRequest, request: Request):
         if job:
             jobs_map[jid] = job
     
+    IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+    THUMB_HEIGHT = 120  # pixels
+    
     # Create Excel workbook
     wb = Workbook()
     ws = wb.active
@@ -3275,10 +3281,10 @@ async def export_applications(data: ExportRequest, request: Request):
         top=Side(style="thin", color="D0D0D0"),
         bottom=Side(style="thin", color="D0D0D0"),
     )
+    link_font = Font(color="2E4DA7", underline="single", size=10)
     
     # Build headers
     headers = ["No", "Posisi", "Departemen", "Status", "Tanggal Melamar"]
-    # Add form_data keys as headers (capitalize nicely)
     field_labels = {
         "full_name": "Nama Lengkap", "name": "Nama", "email": "Email",
         "phone": "No. Telepon", "tempat_lahir": "Tempat Lahir",
@@ -3292,6 +3298,7 @@ async def export_applications(data: ExportRequest, request: Request):
     }
     for key in all_keys:
         headers.append(field_labels.get(key, key.replace("_", " ").title()))
+    headers.append("Preview CV")
     headers.append("File CV")
     
     # Write headers
@@ -3304,6 +3311,14 @@ async def export_applications(data: ExportRequest, request: Request):
     
     # Track CV files to include in ZIP
     cv_files = []
+    # Track temp thumbnail files to cleanup
+    temp_thumbs = []
+    
+    cv_preview_col = 6 + len(all_keys)    # "Preview CV" column
+    cv_link_col = cv_preview_col + 1       # "File CV" column
+    
+    # Set preview column width
+    ws.column_dimensions[get_column_letter(cv_preview_col)].width = 22
     
     # Write data rows
     for row_idx, app in enumerate(apps, 2):
@@ -3315,9 +3330,7 @@ async def export_applications(data: ExportRequest, request: Request):
         ws.cell(row=row_idx, column=1, value=row_idx - 1).border = thin_border
         ws.cell(row=row_idx, column=2, value=job.get("title", "-")).border = thin_border
         ws.cell(row=row_idx, column=3, value=job.get("department", "-")).border = thin_border
-        
-        status_cell = ws.cell(row=row_idx, column=4, value=app.get("status", "-"))
-        status_cell.border = thin_border
+        ws.cell(row=row_idx, column=4, value=app.get("status", "-")).border = thin_border
         
         date_str = app.get("created_at", "")
         try:
@@ -3336,29 +3349,68 @@ async def export_applications(data: ExportRequest, request: Request):
             cell.border = thin_border
             cell.alignment = Alignment(wrap_text=True)
         
-        # CV file column
-        cv_col = 6 + len(all_keys)
+        # CV columns
         resume_url = app.get("resume_url")
         if resume_url:
             filename = resume_url.split("/")[-1]
             file_path = UPLOAD_DIR / filename
             safe_name = f"{applicant_name.replace(' ', '_')}_{filename}"
+            ext = Path(filename).suffix.lower()
+            
             if file_path.exists():
                 cv_files.append({"path": file_path, "name": f"CV/{safe_name}"})
-                ws.cell(row=row_idx, column=cv_col, value=safe_name).border = thin_border
+                
+                # Preview column: embed image or show link
+                if ext in IMAGE_EXTS:
+                    try:
+                        # Create thumbnail
+                        with PILImage.open(file_path) as img:
+                            ratio = THUMB_HEIGHT / img.height
+                            thumb_w = int(img.width * ratio)
+                            thumb = img.resize((thumb_w, THUMB_HEIGHT), PILImage.LANCZOS)
+                            if thumb.mode in ("RGBA", "P"):
+                                thumb = thumb.convert("RGB")
+                            
+                            thumb_path = Path(tempfile.mktemp(suffix=".jpg"))
+                            thumb.save(thumb_path, "JPEG", quality=80)
+                            temp_thumbs.append(thumb_path)
+                        
+                        xl_img = XlImage(str(thumb_path))
+                        cell_ref = f"{get_column_letter(cv_preview_col)}{row_idx}"
+                        ws.add_image(xl_img, cell_ref)
+                        
+                        # Set row height to fit image
+                        ws.row_dimensions[row_idx].height = THUMB_HEIGHT * 0.75 + 10
+                    except Exception as e:
+                        ws.cell(row=row_idx, column=cv_preview_col, value=f"(gagal preview: {ext})").border = thin_border
+                else:
+                    # Non-image file: show file type info
+                    preview_cell = ws.cell(row=row_idx, column=cv_preview_col, value=f"[File {ext.upper()}]")
+                    preview_cell.border = thin_border
+                    preview_cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+                # Link column: hyperlink to CV file in ZIP
+                link_cell = ws.cell(row=row_idx, column=cv_link_col, value=safe_name)
+                link_cell.hyperlink = f"CV/{safe_name}"
+                link_cell.font = link_font
+                link_cell.border = thin_border
             else:
-                ws.cell(row=row_idx, column=cv_col, value="(file tidak ditemukan)").border = thin_border
+                ws.cell(row=row_idx, column=cv_preview_col, value="(file tidak ditemukan)").border = thin_border
+                ws.cell(row=row_idx, column=cv_link_col, value="-").border = thin_border
         else:
-            ws.cell(row=row_idx, column=cv_col, value="-").border = thin_border
+            ws.cell(row=row_idx, column=cv_preview_col, value="-").border = thin_border
+            ws.cell(row=row_idx, column=cv_link_col, value="-").border = thin_border
     
-    # Auto-fit column widths
+    # Auto-fit column widths (skip preview column which is fixed)
     for col_idx in range(1, len(headers) + 1):
+        if col_idx == cv_preview_col:
+            continue
         max_len = 0
         for row in ws.iter_rows(min_col=col_idx, max_col=col_idx, min_row=1, max_row=len(apps) + 1):
             for cell in row:
                 if cell.value:
                     max_len = max(max_len, len(str(cell.value)))
-        ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = min(max_len + 4, 50)
+        ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 4, 50)
     
     # Create ZIP in memory
     zip_buffer = io.BytesIO()
@@ -3374,6 +3426,13 @@ async def export_applications(data: ExportRequest, request: Request):
             zf.write(cv["path"], cv["name"])
     
     zip_buffer.seek(0)
+    
+    # Cleanup temp thumbnails
+    for tp in temp_thumbs:
+        try:
+            tp.unlink()
+        except:
+            pass
     
     # Log activity
     await create_activity_log(
