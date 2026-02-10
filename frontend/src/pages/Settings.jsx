@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { Globe, Bell, Shield, Palette, Mail, Eye, EyeOff, Server, AlertCircle } from 'lucide-react';
+import { Globe, Bell, Shield, Palette, Mail, Eye, EyeOff, Server, AlertCircle, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -27,6 +27,8 @@ export const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
   
   const [smtpSettings, setSmtpSettings] = useState({
     host: '',
