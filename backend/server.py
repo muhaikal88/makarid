@@ -620,6 +620,7 @@ async def send_notification_email(to_email: str, subject: str, html_body: str, t
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
+    import asyncio
     
     smtp = await get_smtp_settings(company_id)
     if not smtp:
@@ -633,21 +634,39 @@ async def send_notification_email(to_email: str, subject: str, html_body: str, t
     msg.attach(MIMEText(text_body, "plain"))
     msg.attach(MIMEText(html_body, "html"))
     
-    try:
+    def _send():
         port = int(smtp.get("port", 587))
         if port == 465:
-            server = smtplib.SMTP_SSL(smtp["host"], port, timeout=15)
+            server = smtplib.SMTP_SSL(smtp["host"], port, timeout=20)
         else:
-            server = smtplib.SMTP(smtp["host"], port, timeout=15)
+            server = smtplib.SMTP(smtp["host"], port, timeout=20)
             if smtp.get("use_tls", True):
                 server.starttls()
         server.login(smtp["username"], smtp["password"])
         server.sendmail(smtp.get("from_email", smtp["username"]), to_email, msg.as_string())
         server.quit()
+    
+    try:
+        # Run synchronous smtplib in thread pool to avoid blocking event loop
+        await asyncio.to_thread(_send)
         logging.info(f"Email sent to {to_email}: {subject}")
+        # Store success log
+        await db.email_logs.insert_one({
+            "to": to_email, "subject": subject, "status": "sent",
+            "company_id": company_id,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
         return True
     except Exception as e:
-        logging.error(f"Failed to send email to {to_email}: {e}")
+        error_msg = str(e)
+        logging.error(f"Failed to send email to {to_email}: {error_msg}")
+        # Store error log for visibility
+        await db.email_logs.insert_one({
+            "to": to_email, "subject": subject, "status": "failed",
+            "error": error_msg, "company_id": company_id,
+            "smtp_host": smtp.get("host"), "smtp_port": smtp.get("port"),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
         return False
 
 STATUS_LABELS = {
