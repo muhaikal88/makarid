@@ -189,11 +189,48 @@ export const ApplicationsTab = ({
         />
       </div>
 
-      {/* Hint */}
-      {filteredApplications.length > 1 && selectedIds.size === 0 && (
-        <p className="text-xs text-gray-400">
-          {language === 'id' ? 'Centang lamaran untuk membandingkan' : 'Check applications to compare'}
-        </p>
+      {/* Select All + Export bar */}
+      {filteredApplications.length > 0 && (
+        <div className="flex items-center justify-between bg-white border rounded-lg px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div onClick={toggleSelectAll} className="cursor-pointer flex items-center gap-2">
+              <Checkbox
+                checked={isAllSelected}
+                className="border-gray-300"
+                data-testid="select-all-checkbox"
+              />
+              <span className="text-sm text-gray-700 select-none">
+                {isAllSelected
+                  ? (language === 'id' ? 'Batal pilih semua' : 'Deselect all')
+                  : (language === 'id' ? 'Pilih semua' : 'Select all')}
+              </span>
+            </div>
+            {selectedIds.size > 0 && (
+              <span className="text-sm text-gray-500">
+                {selectedIds.size} dari {filteredApplications.length} dipilih
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {selectedIds.size > 0 && (
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={handleExport}
+                disabled={exporting}
+                data-testid="export-excel-btn"
+              >
+                {exporting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                {exporting ? 'Mengexport...' : `Export Excel (${selectedIds.size})`}
+              </Button>
+            )}
+          </div>
+        </div>
       )}
 
       {filteredApplications.length === 0 ? (
