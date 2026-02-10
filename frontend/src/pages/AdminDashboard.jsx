@@ -184,7 +184,6 @@ export const AdminDashboard = () => {
     try {
       await axios.put(`${API}/applications-session/${appId}/status?status=${newStatus}`, {}, { withCredentials: true });
       toast.success('Status berhasil diupdate');
-      setIsAppDetailOpen(false);
       fetchData();
     } catch (error) {
       console.error('Failed to update status:', error);
