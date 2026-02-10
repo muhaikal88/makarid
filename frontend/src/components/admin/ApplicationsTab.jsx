@@ -317,7 +317,7 @@ export const ApplicationsTab = ({
         </div>
       )}
 
-      {/* Floating Compare Bar */}
+      {/* Floating Action Bar */}
       {selectedIds.size >= 2 && (
         <div
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2E4DA7] text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-4"
@@ -345,6 +345,22 @@ export const ApplicationsTab = ({
           >
             <GitCompareArrows className="w-4 h-4 mr-1.5" />
             Bandingkan
+          </Button>
+
+          <Button
+            size="sm"
+            variant="secondary"
+            className="bg-emerald-500 text-white hover:bg-emerald-600 font-semibold"
+            data-testid="floating-export-btn"
+            onClick={handleExport}
+            disabled={exporting}
+          >
+            {exporting ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-1.5" />
+            )}
+            Export
           </Button>
 
           <button
