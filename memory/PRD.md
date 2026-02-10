@@ -27,6 +27,14 @@ Multi-tenant recruitment platform (job board + applicant tracking system) for In
 - Application comparison feature
 - Custom domain mapping UI
 
+### Feb 10, 2026 - Email Template Fix & UI Improvements
+- **Backend**: Cleaned email templates - no HTML entities, no table elements (Gmail deliverability)
+- **Backend**: Added proper email headers (Date, Message-ID, Reply-To, UTF-8)
+- **Frontend**: AppDetailDialog rewritten - added "Simpan" button for status update
+- **Frontend**: Status dropdown now matches backend values (reviewing, shortlisted, interviewed, offered)
+- **Frontend**: CV image error handling (shows fallback on load failure)
+- **Frontend**: Dialog no longer auto-closes on status change
+
 ### Feb 10, 2026 - Email Notifications
 - **Backend**: Auto email on application submit (confirmation) + status update (notification)
 - **Backend**: `POST /api/system/settings/test-email` for testing SMTP
