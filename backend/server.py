@@ -2103,6 +2103,7 @@ async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(r
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
+    import asyncio
     
     settings = await db.system_settings.find_one({}, {"_id": 0})
     if not settings or not settings.get("smtp_settings"):
@@ -2113,7 +2114,6 @@ async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(r
     if not smtp.get("host") or not smtp.get("username") or not smtp.get("password"):
         raise HTTPException(status_code=400, detail="Konfigurasi SMTP tidak lengkap (host, username, password wajib diisi).")
     
-    # Build email
     msg = MIMEMultipart("alternative")
     msg["From"] = f"{smtp.get('from_name', 'Makar.id')} <{smtp.get('from_email', smtp['username'])}>"
     msg["To"] = data.to_email
@@ -2128,7 +2128,7 @@ async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(r
         <div style="background: #ffffff; padding: 32px 24px; border: 1px solid #e5e7eb; border-top: none;">
             <h2 style="color: #1f2937; margin: 0 0 16px; font-size: 20px;">Tes Email Berhasil!</h2>
             <p style="color: #4b5563; line-height: 1.6; margin: 0 0 16px;">
-                Selamat! Jika Anda menerima email ini, berarti konfigurasi SMTP Anda sudah benar dan siap digunakan.
+                Jika Anda menerima email ini, konfigurasi SMTP sudah benar dan siap digunakan.
             </p>
             <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 16px 0;">
                 <p style="color: #166534; margin: 0; font-size: 14px;"><strong>Detail Konfigurasi:</strong></p>
@@ -2136,7 +2136,7 @@ async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(r
                     <li>Host: {smtp.get('host')}</li>
                     <li>Port: {smtp.get('port')}</li>
                     <li>From: {smtp.get('from_email')}</li>
-                    <li>TLS: {'Aktif' if smtp.get('use_tls', True) else 'Nonaktif'}</li>
+                    <li>SSL/TLS: {'Aktif' if smtp.get('use_tls', True) else 'Nonaktif'}</li>
                 </ul>
             </div>
             <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0;">
@@ -2154,23 +2154,21 @@ async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(r
     msg.attach(MIMEText(text_body, "plain"))
     msg.attach(MIMEText(html_body, "html"))
     
-    try:
+    def _send():
         port = int(smtp.get("port", 587))
-        use_tls = smtp.get("use_tls", True)
-        
         if port == 465:
-            # SSL
-            server = smtplib.SMTP_SSL(smtp["host"], port, timeout=15)
+            server = smtplib.SMTP_SSL(smtp["host"], port, timeout=20)
         else:
-            server = smtplib.SMTP(smtp["host"], port, timeout=15)
-            if use_tls:
+            server = smtplib.SMTP(smtp["host"], port, timeout=20)
+            if smtp.get("use_tls", True):
                 server.starttls()
-        
         server.login(smtp["username"], smtp["password"])
         server.sendmail(smtp.get("from_email", smtp["username"]), data.to_email, msg.as_string())
         server.quit()
+    
+    try:
+        await asyncio.to_thread(_send)
         
-        # Log activity
         await create_activity_log(
             user_id=current_user["id"], user_name=current_user["name"], user_email=current_user["email"],
             user_role="super_admin", action="create", resource_type="email",
@@ -2179,16 +2177,22 @@ async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(r
         
         return {"message": f"Email tes berhasil dikirim ke {data.to_email}"}
     
-    except smtplib.SMTPAuthenticationError:
-        raise HTTPException(status_code=400, detail="Autentikasi SMTP gagal. Periksa username dan password.")
-    except smtplib.SMTPConnectError:
-        raise HTTPException(status_code=400, detail=f"Gagal terhubung ke SMTP server {smtp['host']}:{port}. Periksa host dan port.")
-    except smtplib.SMTPRecipientsRefused:
-        raise HTTPException(status_code=400, detail=f"Email tujuan {data.to_email} ditolak oleh server.")
+    except smtplib.SMTPAuthenticationError as e:
+        raise HTTPException(status_code=400, detail=f"Autentikasi SMTP gagal. Periksa username dan password. ({e})")
+    except smtplib.SMTPConnectError as e:
+        raise HTTPException(status_code=400, detail=f"Gagal terhubung ke SMTP server {smtp['host']}:{smtp.get('port')}. ({e})")
+    except smtplib.SMTPRecipientsRefused as e:
+        raise HTTPException(status_code=400, detail=f"Email tujuan {data.to_email} ditolak oleh server. ({e})")
     except TimeoutError:
-        raise HTTPException(status_code=400, detail=f"Timeout saat menghubungi SMTP server {smtp['host']}:{port}.")
+        raise HTTPException(status_code=400, detail=f"Timeout saat menghubungi SMTP server {smtp['host']}:{smtp.get('port')}.")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Gagal mengirim email: {str(e)}")
+
+@api_router.get("/system/email-logs")
+async def get_email_logs(current_user: dict = Depends(require_super_admin), limit: int = 50):
+    """Get email send logs for debugging"""
+    logs = await db.email_logs.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    return logs
 
 
 
