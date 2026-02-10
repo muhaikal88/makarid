@@ -2104,11 +2104,6 @@ class TestEmailRequest(BaseModel):
 @api_router.post("/system/settings/test-email")
 async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(require_super_admin)):
     """Send a test email using the configured SMTP settings"""
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-    import asyncio
-    
     settings = await db.system_settings.find_one({}, {"_id": 0})
     if not settings or not settings.get("smtp_settings"):
         raise HTTPException(status_code=400, detail="SMTP belum dikonfigurasi. Silakan simpan pengaturan SMTP terlebih dahulu.")
@@ -2118,77 +2113,49 @@ async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(r
     if not smtp.get("host") or not smtp.get("username") or not smtp.get("password"):
         raise HTTPException(status_code=400, detail="Konfigurasi SMTP tidak lengkap (host, username, password wajib diisi).")
     
-    msg = MIMEMultipart("alternative")
-    msg["From"] = f"{smtp.get('from_name', 'Makar.id')} <{smtp.get('from_email', smtp['username'])}>"
-    msg["To"] = data.to_email
-    msg["Subject"] = "Tes Email SMTP - Makar.id"
+    subject = "Tes Email SMTP - Makar.id"
     
-    html_body = f"""
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0;">
-        <div style="background: #2E4DA7; padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Makar.id</h1>
-            <p style="color: #c7d2fe; margin: 8px 0 0; font-size: 14px;">Manajemen Karyawan</p>
-        </div>
-        <div style="background: #ffffff; padding: 32px 24px; border: 1px solid #e5e7eb; border-top: none;">
-            <h2 style="color: #1f2937; margin: 0 0 16px; font-size: 20px;">Tes Email Berhasil!</h2>
-            <p style="color: #4b5563; line-height: 1.6; margin: 0 0 16px;">
-                Jika Anda menerima email ini, konfigurasi SMTP sudah benar dan siap digunakan.
-            </p>
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-                <p style="color: #166534; margin: 0; font-size: 14px;"><strong>Detail Konfigurasi:</strong></p>
-                <ul style="color: #166534; margin: 8px 0 0; padding-left: 20px; font-size: 13px;">
-                    <li>Host: {smtp.get('host')}</li>
-                    <li>Port: {smtp.get('port')}</li>
-                    <li>From: {smtp.get('from_email')}</li>
-                    <li>SSL/TLS: {'Aktif' if smtp.get('use_tls', True) else 'Nonaktif'}</li>
-                </ul>
-            </div>
-            <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0;">
-                Dikirim oleh: {current_user.get('name', 'Super Admin')} ({current_user.get('email', '')})
-            </p>
-        </div>
-        <div style="background: #f9fafb; padding: 16px 24px; text-align: center; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-            <p style="color: #9ca3af; font-size: 12px; margin: 0;">&copy; 2026 Makar.id - Manajemen Karyawan</p>
-        </div>
+    html_body = f"""<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+    <div style="background:#2E4DA7;padding:28px 24px;text-align:center;border-radius:12px 12px 0 0;">
+        <h1 style="color:#fff;margin:0;font-size:22px;">Makar.id</h1>
+        <p style="color:#c7d2fe;margin:8px 0 0;font-size:14px;">Manajemen Karyawan</p>
     </div>
-    """
+    <div style="background:#fff;padding:28px 24px;border:1px solid #e5e7eb;border-top:none;">
+        <h2 style="color:#1f2937;margin:0 0 16px;font-size:18px;">Tes Email Berhasil!</h2>
+        <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
+            Jika Anda menerima email ini, konfigurasi SMTP sudah benar dan siap digunakan.
+        </p>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:16px 0;">
+            <p style="color:#166534;margin:0 0 8px;font-size:14px;"><b>Detail Konfigurasi:</b></p>
+            <p style="color:#166534;margin:0;font-size:13px;">Host: {smtp.get('host')}</p>
+            <p style="color:#166534;margin:4px 0 0;font-size:13px;">Port: {smtp.get('port')}</p>
+            <p style="color:#166534;margin:4px 0 0;font-size:13px;">From: {smtp.get('from_email')}</p>
+        </div>
+        <p style="color:#6b7280;font-size:13px;margin:16px 0 0;">
+            Dikirim oleh: {current_user.get('name', 'Super Admin')} ({current_user.get('email', '')})
+        </p>
+    </div>
+    <div style="background:#f9fafb;padding:14px 24px;text-align:center;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
+        <p style="color:#9ca3af;font-size:12px;margin:0;">2026 Makar.id - Manajemen Karyawan</p>
+    </div>
+    </div>"""
     
     text_body = f"Tes Email SMTP Makar.id\n\nJika Anda menerima email ini, konfigurasi SMTP sudah benar.\n\nHost: {smtp.get('host')}\nPort: {smtp.get('port')}\nFrom: {smtp.get('from_email')}\n\nDikirim oleh: {current_user.get('name', 'Super Admin')}"
     
-    msg.attach(MIMEText(text_body, "plain"))
-    msg.attach(MIMEText(html_body, "html"))
-    
-    def _send():
-        port = int(smtp.get("port", 587))
-        if port == 465:
-            server = smtplib.SMTP_SSL(smtp["host"], port, timeout=20)
-        else:
-            server = smtplib.SMTP(smtp["host"], port, timeout=20)
-            if smtp.get("use_tls", True):
-                server.starttls()
-        server.login(smtp["username"], smtp["password"])
-        server.sendmail(smtp.get("from_email", smtp["username"]), data.to_email, msg.as_string())
-        server.quit()
-    
     try:
-        await asyncio.to_thread(_send)
+        result = await send_notification_email(data.to_email, subject, html_body, text_body)
         
-        await create_activity_log(
-            user_id=current_user["id"], user_name=current_user["name"], user_email=current_user["email"],
-            user_role="super_admin", action="create", resource_type="email",
-            description=f"Mengirim tes email ke {data.to_email}"
-        )
-        
-        return {"message": f"Email tes berhasil dikirim ke {data.to_email}"}
-    
-    except smtplib.SMTPAuthenticationError as e:
-        raise HTTPException(status_code=400, detail=f"Autentikasi SMTP gagal. Periksa username dan password. ({e})")
-    except smtplib.SMTPConnectError as e:
-        raise HTTPException(status_code=400, detail=f"Gagal terhubung ke SMTP server {smtp['host']}:{smtp.get('port')}. ({e})")
-    except smtplib.SMTPRecipientsRefused as e:
-        raise HTTPException(status_code=400, detail=f"Email tujuan {data.to_email} ditolak oleh server. ({e})")
-    except TimeoutError:
-        raise HTTPException(status_code=400, detail=f"Timeout saat menghubungi SMTP server {smtp['host']}:{smtp.get('port')}.")
+        if result:
+            await create_activity_log(
+                user_id=current_user["id"], user_name=current_user["name"], user_email=current_user["email"],
+                user_role="super_admin", action="create", resource_type="email",
+                description=f"Mengirim tes email ke {data.to_email}"
+            )
+            return {"message": f"Email tes berhasil dikirim ke {data.to_email}"}
+        else:
+            raise HTTPException(status_code=400, detail="Gagal mengirim email. Cek Log Pengiriman Email untuk detail error.")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Gagal mengirim email: {str(e)}")
 
