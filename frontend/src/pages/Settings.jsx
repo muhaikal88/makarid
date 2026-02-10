@@ -15,8 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { Globe, Bell, Shield, Palette, Mail, Eye, EyeOff, Server, AlertCircle, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { Globe, Bell, Shield, Palette, Mail, Eye, EyeOff, Server, AlertCircle, Send, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '../components/ui/badge';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
