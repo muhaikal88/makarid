@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import {
-  Building2, Briefcase, FileText, Globe, Bell, User, Settings, LogOut, LayoutDashboard, Trash2
+  Building2, Briefcase, FileText, Globe, Bell, User, Settings, LogOut, LayoutDashboard, Trash2, ClipboardList
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ import { JobFormDialog } from '../components/admin/JobFormDialog';
 import { AppDetailDialog } from '../components/admin/AppDetailDialog';
 import { CompareDialog } from '../components/admin/CompareDialog';
 import { TrashTab } from '../components/admin/TrashTab';
+import { ActivityLogTab } from '../components/admin/ActivityLogTab';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -371,6 +372,10 @@ export const AdminDashboard = () => {
                 <span className="ml-1 px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded-full">{trashApps.length}</span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="logs" className="flex items-center gap-2" data-testid="tab-logs">
+              <ClipboardList className="w-4 h-4" />
+              {language === 'id' ? 'Log Aktivitas' : 'Activity Logs'}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -424,6 +429,10 @@ export const AdminDashboard = () => {
               getInitials={getInitials}
               formatDate={formatDate}
             />
+          </TabsContent>
+
+          <TabsContent value="logs">
+            <ActivityLogTab language={language} />
           </TabsContent>
         </Tabs>
       </main>
