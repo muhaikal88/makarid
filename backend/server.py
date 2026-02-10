@@ -4026,6 +4026,24 @@ async def seed_database(data: SeedRequest = SeedRequest()):
         "superadmin_id": super_admin["id"]
     }
 
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    new_password: str
+
+@api_router.post("/seed/reset-password")
+async def reset_superadmin_password(data: ResetPasswordRequest):
+    """Reset superadmin password. Use from VPS terminal only."""
+    admin = await db.superadmins.find_one({"email": data.email}, {"_id": 0})
+    if not admin:
+        return {"status": "error", "message": f"Superadmin with email {data.email} not found"}
+    
+    hashed = hash_password(data.new_password)
+    await db.superadmins.update_one(
+        {"email": data.email},
+        {"$set": {"password": hashed, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"status": "success", "message": f"Password for {data.email} has been reset"}
+
 @api_router.get("/seed/status")
 async def seed_status():
     """Check database status - useful for debugging deployment"""
