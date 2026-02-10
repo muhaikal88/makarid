@@ -930,9 +930,33 @@ async def require_admin_or_super(current_user: dict = Depends(get_current_user))
 
 @app.on_event("startup")
 async def startup_event():
-    # Create default super admin ONLY if no super admins exist at all
+    """Auto-seed database from seed_data files if database is empty, otherwise create default superadmin."""
     total_admins = await db.superadmins.count_documents({})
     if total_admins == 0:
+        # Try to seed from seed_data files first
+        seed_dir = ROOT_DIR / "seed_data"
+        if seed_dir.exists():
+            seed_collections = [
+                'superadmins', 'companies', 'company_admins', 'employees',
+                'users', 'jobs', 'form_fields', 'applications', 'system_settings'
+            ]
+            seeded = False
+            for coll_name in seed_collections:
+                seed_file = seed_dir / f'{coll_name}.json'
+                if seed_file.exists():
+                    existing = await db[coll_name].count_documents({})
+                    if existing == 0:
+                        with open(seed_file) as f:
+                            docs = json.load(f)
+                        if docs:
+                            await db[coll_name].insert_many(docs)
+                            logging.info(f"Seeded {coll_name}: {len(docs)} documents")
+                            seeded = True
+            if seeded:
+                logging.info("Database seeded from seed_data files")
+                return
+        
+        # Fallback: create default superadmin
         super_admin = {
             "id": str(uuid.uuid4()),
             "email": "superadmin@makar.id",
