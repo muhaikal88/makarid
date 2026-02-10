@@ -28,13 +28,14 @@ Multi-tenant recruitment platform (job board + applicant tracking system) for In
 - Custom domain mapping UI
 
 ### Feb 10, 2026 - Email Notifications
-- **Backend**: Helper `send_notification_email` with thread pool execution (non-blocking)
 - **Backend**: Auto email on application submit (confirmation) + status update (notification)
 - **Backend**: `POST /api/system/settings/test-email` for testing SMTP
-- **Backend**: `GET /api/system/email-logs` for debugging email delivery
-- **Frontend**: "Kirim Tes" button + email input in Settings page
-- **Frontend**: "Log Pengiriman Email" section showing sent/failed history
-- **SMTP**: Tested with musharna.id.rapidplex.com:465 (SSL) - working
+- **Backend**: `GET /api/system/email-logs` for debugging delivery
+- **Backend**: Proper email headers (Date, Message-ID, Reply-To) + UTF-8 charset
+- **Backend**: Clean HTML templates (no HTML entities, no table elements - Gmail compatible)
+- **Frontend**: "Kirim Tes" button + email input + "Log Pengiriman Email" in Settings page
+- **SMTP**: musharna.id.rapidplex.com:465 (SSL), cPanel has hourly rate limit
+- **Known**: cPanel rate limits ~50 emails/hour, server accepts but queues silently
 
 ### Feb 10, 2026 - Export to Excel Feature (Enhanced)
 - **Backend**: `POST /api/applications-session/export` generates ZIP (Excel + CV files)
