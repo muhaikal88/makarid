@@ -1541,9 +1541,12 @@ async def get_my_activity_logs(
     action: Optional[str] = None,
     resource_type: Optional[str] = None,
     search: Optional[str] = None,
-    limit: int = 100
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50
 ):
-    """Get activity logs for current company (Company Admin only)"""
+    """Get activity logs for current company (Company Admin only) with pagination"""
     session = await require_session_admin(request)
     
     query = {"company_id": session["company_id"]}
@@ -1558,9 +1561,18 @@ async def get_my_activity_logs(
             {"user_email": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}}
         ]
+    if start_date or end_date:
+        date_query = {}
+        if start_date:
+            date_query["$gte"] = start_date
+        if end_date:
+            end_dt = datetime.fromisoformat(end_date) + timedelta(days=1)
+            date_query["$lt"] = end_dt.isoformat()
+        query["timestamp"] = date_query
     
-    logs = await db.activity_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
-    return logs
+    total = await db.activity_logs.count_documents(query)
+    logs = await db.activity_logs.find(query, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(limit).to_list(limit)
+    return {"logs": logs, "total": total, "skip": skip, "limit": limit}
 
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
@@ -2503,6 +2515,14 @@ async def create_job_session(data: JobCreate, request: Request):
     
     await db.jobs.insert_one(job_doc)
     
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="create", resource_type="job",
+        description=f"Membuat lowongan baru: {job_doc['title']}",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=job_doc["id"]
+    )
+    
     return JobResponse(
         id=job_doc["id"],
         company_id=job_doc["company_id"],
@@ -2538,6 +2558,15 @@ async def update_job_session(job_id: str, data: JobUpdate, request: Request):
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
     await db.jobs.update_one({"id": job_id}, {"$set": update_data})
+    
+    changes = ", ".join(update_data.keys())
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="update", resource_type="job",
+        description=f"Update lowongan '{job['title']}': {changes}",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=job_id
+    )
     
     updated = await db.jobs.find_one({"id": job_id}, {"_id": 0})
     app_count = await db.applications.count_documents({"job_id": job_id})
@@ -2577,6 +2606,14 @@ async def delete_job_session(job_id: str, request: Request):
     # Delete related applications
     await db.applications.delete_many({"job_id": job_id})
     await db.jobs.delete_one({"id": job_id})
+    
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="delete", resource_type="job",
+        description=f"Menghapus lowongan: {job['title']}",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=job_id
+    )
     
     return {"message": "Job deleted successfully"}
 
@@ -3036,6 +3073,7 @@ async def update_application_status_session(app_id: str, status: str, notes: Opt
     if application["company_id"] != session["company_id"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    old_status = application.get("status", "unknown")
     await db.applications.update_one(
         {"id": app_id},
         {"$set": {
@@ -3043,6 +3081,16 @@ async def update_application_status_session(app_id: str, status: str, notes: Opt
             "notes": notes,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
+    )
+    
+    form_data = application.get("form_data", {})
+    applicant_name = form_data.get("full_name", form_data.get("name", "Unknown"))
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="update", resource_type="application",
+        description=f"Update status lamaran '{applicant_name}': {old_status} -> {status}",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=app_id
     )
     
     return {"message": "Status updated successfully"}
@@ -3077,6 +3125,17 @@ async def soft_delete_application(app_id: str, request: Request):
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
     await db.applications.update_one({"id": app_id}, {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}})
+    
+    form_data = application.get("form_data", {})
+    applicant_name = form_data.get("full_name", form_data.get("name", "Unknown"))
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="delete", resource_type="application",
+        description=f"Memindahkan lamaran '{applicant_name}' ke tempat sampah",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=app_id
+    )
+    
     return {"message": "Application moved to trash"}
 
 @api_router.get("/applications-session-trash", response_model=List[ApplicationResponse])
@@ -3112,6 +3171,17 @@ async def restore_application(app_id: str, request: Request):
     if not application:
         raise HTTPException(status_code=404, detail="Application not found in trash")
     await db.applications.update_one({"id": app_id}, {"$unset": {"deleted_at": ""}})
+    
+    form_data = application.get("form_data", {})
+    applicant_name = form_data.get("full_name", form_data.get("name", "Unknown"))
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="update", resource_type="application",
+        description=f"Memulihkan lamaran '{applicant_name}' dari tempat sampah",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=app_id
+    )
+    
     return {"message": "Application restored"}
 
 @api_router.delete("/applications-session/{app_id}/permanent")
@@ -3121,8 +3191,19 @@ async def permanent_delete_application(app_id: str, request: Request):
     application = await db.applications.find_one({"id": app_id, "company_id": session["company_id"], "deleted_at": {"$exists": True}}, {"_id": 0})
     if not application:
         raise HTTPException(status_code=404, detail="Application not found in trash")
+    
+    form_data = application.get("form_data", {})
+    applicant_name = form_data.get("full_name", form_data.get("name", "Unknown"))
+    
     await db.applications.delete_one({"id": app_id})
-    return {"message": "Application permanently deleted"}
+    
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="delete", resource_type="application",
+        description=f"Menghapus permanen lamaran: {applicant_name}",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=app_id
+    )
 
 
 @api_router.put("/applications/{app_id}/status")
