@@ -45,6 +45,7 @@ export const Settings = () => {
 
   useEffect(() => {
     fetchSettings();
+    fetchEmailLogs();
   }, []);
 
   const fetchSettings = async () => {
