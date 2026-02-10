@@ -3375,6 +3375,15 @@ async def update_application_status_session(app_id: str, status: str, notes: Opt
         resource_id=app_id
     )
     
+    # Send email notification to applicant
+    try:
+        job = await db.jobs.find_one({"id": application["job_id"]}, {"_id": 0})
+        company = await db.companies.find_one({"id": application["company_id"]}, {"_id": 0})
+        if job and company:
+            await send_status_update_email(application, job, company, old_status, status)
+    except Exception as e:
+        logging.error(f"Failed to send status update email: {e}")
+    
     return {"message": "Status updated successfully"}
 
 @api_router.get("/applications-session/{app_id}")
