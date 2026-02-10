@@ -59,6 +59,7 @@ export const ApplicationsTab = ({
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const departments = useMemo(() => {
     const depts = new Set();
@@ -76,9 +77,55 @@ export const ApplicationsTab = ({
     });
   };
 
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredApplications.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredApplications.map(a => a.id)));
+    }
+  };
+
   const clearSelection = () => setSelectedIds(new Set());
 
   const selectedApps = filteredApplications.filter(a => selectedIds.has(a.id));
+
+  const isAllSelected = filteredApplications.length > 0 && selectedIds.size === filteredApplications.length;
+  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < filteredApplications.length;
+
+  const handleExport = async () => {
+    if (selectedIds.size === 0) return;
+    setExporting(true);
+    try {
+      const response = await axios.post(
+        `${API}/applications-session/export`,
+        { application_ids: [...selectedIds] },
+        { withCredentials: true, responseType: 'blob' }
+      );
+
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'Export_Lamaran.zip';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = match[1];
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success(`Berhasil export ${selectedIds.size} data lamaran`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Gagal export data lamaran');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
