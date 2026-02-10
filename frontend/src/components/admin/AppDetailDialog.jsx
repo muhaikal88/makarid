@@ -243,13 +243,24 @@ export const AppDetailDialog = ({ isOpen, onClose, selectedApp, handleUpdateStat
                 </Button>
               </div>
               {isImage ? (
-                <div className="rounded-lg overflow-hidden border bg-slate-50">
+                <div className="rounded-lg overflow-hidden border bg-slate-50" data-testid="cv-preview-container">
                   <img
                     src={fullResumeUrl} alt="CV"
                     className="w-full h-auto max-h-[500px] object-contain"
                     data-testid="cv-preview-image"
-                    onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<p class="p-8 text-center text-gray-500">Gagal memuat gambar CV</p>'; }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      const fallback = e.target.parentElement.querySelector('.cv-fallback');
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
                   />
+                  <div className="cv-fallback hidden flex-col items-center justify-center p-8 gap-3">
+                    <FileText className="w-10 h-10 text-gray-300" />
+                    <p className="text-sm text-gray-500">Gagal memuat preview gambar CV</p>
+                    <Button variant="outline" size="sm" onClick={() => window.open(fullResumeUrl, '_blank')}>
+                      <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Coba buka langsung
+                    </Button>
+                  </div>
                 </div>
               ) : isPdf ? (
                 <div className="rounded-lg overflow-hidden border bg-slate-50">
