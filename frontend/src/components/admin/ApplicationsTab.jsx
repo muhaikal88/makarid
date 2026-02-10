@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import axios from 'axios';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -21,7 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { FileText, ChevronRight, GitCompareArrows, X, Trash2, AlertTriangle } from 'lucide-react';
+import { FileText, ChevronRight, GitCompareArrows, X, Trash2, AlertTriangle, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',
