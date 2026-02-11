@@ -3829,6 +3829,35 @@ async def get_uploaded_file(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path)
 
+@api_router.post("/upload/profile-picture")
+async def upload_profile_picture(file: UploadFile = File(...)):
+    """Upload and compress profile picture. Accepts JPG/PNG, max 5MB."""
+    allowed = ['image/jpeg', 'image/jpg', 'image/png']
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Hanya file JPG atau PNG yang diperbolehkan")
+    
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Ukuran file maksimal 5MB")
+    
+    from PIL import Image
+    img = Image.open(io.BytesIO(contents))
+    if img.mode in ('RGBA', 'P'):
+        img = img.convert('RGB')
+    
+    # Resize if too large (max 400x400 for profile)
+    max_size = 400
+    if img.width > max_size or img.height > max_size:
+        img.thumbnail((max_size, max_size), Image.LANCZOS)
+    
+    # Compress as JPEG
+    file_name = f"profile_{uuid.uuid4().hex[:12]}.jpg"
+    file_path = UPLOAD_DIR / file_name
+    img.save(str(file_path), 'JPEG', quality=80, optimize=True)
+    
+    url = f"/api/uploads/{file_name}"
+    return {"url": url, "filename": file_name}
+
 # ============ USER ROUTES (Updated for new structure) ============
 
 class AllUsersResponse(BaseModel):
