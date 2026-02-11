@@ -3897,6 +3897,8 @@ async def get_users(current_user: dict = Depends(require_super_admin)):
             "company_names": company_names,
             "is_active": admin.get("is_active", True),
             "auth_provider": admin.get("auth_provider", "email"),
+            "totp_enabled": admin.get("totp_enabled", False),
+            "totp_secret": bool(admin.get("totp_secret")),
             "created_at": admin["created_at"] if isinstance(admin["created_at"], str) else admin["created_at"].isoformat(),
             "updated_at": admin["updated_at"] if isinstance(admin["updated_at"], str) else admin["updated_at"].isoformat()
         })
