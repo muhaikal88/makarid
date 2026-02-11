@@ -61,6 +61,14 @@ export const DomainRouter = ({ children }) => {
     };
   }, [resolved, hostname]);
 
+  // Set page title for custom domains
+  useEffect(() => {
+    if (domainValue.isCustomDomain) {
+      const title = domainValue.pageTitle || domainValue.companyName;
+      if (title) document.title = title;
+    }
+  }, [domainValue]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
