@@ -86,74 +86,55 @@ export const OverviewTab = ({ stats, applications, session, language, formatDate
         </Card>
       </div>
 
-      {/* Careers Page Link */}
-      <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-emerald-50">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1">
-              <div className="p-3 bg-white rounded-xl shadow-sm">
-                <Globe className="w-6 h-6 text-[#2E4DA7]" />
+      {/* License Info */}
+      {session?.license_end && (
+        <Card className={`border-0 shadow-sm ${
+          session?.license_status === 'expired' ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' :
+          session?.days_remaining !== null && session?.days_remaining <= 30 ? 'bg-gradient-to-r from-amber-50 to-yellow-50' :
+          'bg-gradient-to-r from-emerald-50 to-teal-50'
+        }`}>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-xl shadow-sm ${
+                session?.license_status === 'expired' ? 'bg-red-100' :
+                session?.days_remaining !== null && session?.days_remaining <= 30 ? 'bg-amber-100' : 'bg-emerald-100'
+              }`}>
+                {session?.license_status === 'expired' ? (
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                ) : (
+                  <Shield className="w-6 h-6 text-emerald-600" />
+                )}
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-1">
-                  {language === 'id' ? 'Link Halaman Karir Anda' : 'Your Careers Page Link'}
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  {language === 'id'
-                    ? 'Bagikan link ini ke kandidat untuk melihat lowongan Anda'
-                    : 'Share this link with candidates to view your job openings'}
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-500">Default URL:</span>
-                    <code className="flex-1 px-3 py-2 bg-white rounded-lg text-sm font-mono text-[#2E4DA7] border">
-                      {session?.company_slug}.makar.id
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      data-testid="copy-default-url-btn"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`https://${session?.company_slug}.makar.id`);
-                        toast.success('Link disalin!');
-                      }}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  {session?.custom_domain && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-emerald-600">Custom Domain:</span>
-                      <code className="flex-1 px-3 py-2 bg-white rounded-lg text-sm font-mono text-emerald-600 border border-emerald-200">
-                        {session?.custom_domain}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        data-testid="copy-custom-domain-btn"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`https://${session?.custom_domain}`);
-                          toast.success('Link disalin!');
-                        }}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-gray-900">
+                    {language === 'id' ? 'Status Lisensi' : 'License Status'}
+                  </h3>
+                  <Badge className={
+                    session?.license_status === 'expired' ? 'bg-red-100 text-red-700' :
+                    session?.license_status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                    'bg-gray-100 text-gray-700'
+                  }>
+                    {session?.license_type === 'lifetime' ? 'Lifetime' :
+                     session?.license_status === 'expired' ? 'Expired' : 'Aktif'}
+                  </Badge>
                 </div>
+                {session?.days_remaining !== null && session?.license_type !== 'lifetime' && (
+                  <p className={`text-sm ${
+                    session?.license_status === 'expired' ? 'text-red-600 font-medium' :
+                    session?.days_remaining <= 30 ? 'text-amber-700' : 'text-gray-600'
+                  }`}>
+                    {session?.license_status === 'expired'
+                      ? (language === 'id' ? 'Lisensi telah berakhir. Hubungi administrator untuk perpanjangan.' : 'License has expired. Contact administrator to renew.')
+                      : (language === 'id' ? `Sisa ${session.days_remaining} hari lagi` : `${session.days_remaining} days remaining`)
+                    }
+                  </p>
+                )}
               </div>
             </div>
-            <Button
-              variant="outline"
-              data-testid="open-careers-page-btn"
-              onClick={() => window.open(`/careers/${session?.company_slug}`, '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              {language === 'id' ? 'Buka' : 'Open'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Applications */}
       <Card className="border-0 shadow-sm">
