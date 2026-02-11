@@ -2441,6 +2441,9 @@ async def update_company_domains(
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
+    # Extract page_title from domains payload, save separately
+    page_title = domains.pop("page_title", None)
+    
     # Validate domains are not used by other companies
     for domain_type, domain_value in domains.items():
         if domain_value:
@@ -2459,15 +2462,19 @@ async def update_company_domains(
                     detail=f"Domain {domain_value} is already used by another company"
                 )
     
+    update_data = {
+        "custom_domains": domains,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    if page_title is not None:
+        update_data["page_title"] = page_title
+    
     await db.companies.update_one(
         {"id": company_id},
-        {"$set": {
-            "custom_domains": domains,
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }}
+        {"$set": update_data}
     )
     
-    return {"message": "Domains updated successfully", "domains": domains}
+    return {"message": "Domains updated successfully", "domains": domains, "page_title": page_title}
 
 # ============ LICENSE MANAGEMENT ROUTES ============
 
