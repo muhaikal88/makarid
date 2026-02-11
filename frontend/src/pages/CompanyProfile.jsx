@@ -9,12 +9,15 @@ import {
   Briefcase, ArrowRight, Users, Target, Eye,
   Facebook, Instagram, Linkedin, Twitter
 } from 'lucide-react';
+import { useDomain } from '../contexts/DomainContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
-export const CompanyProfile = () => {
-  const { domain } = useParams();
+export const CompanyProfile = ({ domainOverride }) => {
+  const { domain: paramDomain } = useParams();
+  const domain = domainOverride || paramDomain;
   const { language } = useLanguage();
+  const { isCustomDomain } = useDomain();
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
