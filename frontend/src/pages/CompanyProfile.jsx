@@ -316,11 +316,13 @@ export const CompanyProfile = ({ domainOverride }) => {
       <footer className="bg-slate-900 text-white py-8">
         <div className="max-w-6xl mx-auto px-8 text-center">
           <p className="text-sm text-gray-400">
-            © {new Date().getFullYear()} {company.name}. All rights reserved.
+            &copy; {new Date().getFullYear()} {company.name}. All rights reserved.
           </p>
-          <p className="text-xs text-gray-500 mt-2">
-            Powered by Makar.id
-          </p>
+          {!isCustomDomain && (
+            <p className="text-xs text-gray-500 mt-2">
+              Powered by Makar.id
+            </p>
+          )}
         </div>
       </footer>
     </div>
