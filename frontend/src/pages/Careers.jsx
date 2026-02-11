@@ -311,14 +311,16 @@ export const Careers = ({ domainOverride }) => {
               <span className="text-gray-600">{company?.name}</span>
             </div>
             <div className="flex gap-4">
-              <Link to={`/company/${domain}`} className="text-gray-500 hover:text-[#2E4DA7] text-sm">
+              <Link to={isCustomDomain ? '/' : `/company/${domain}`} className="text-gray-500 hover:text-[#2E4DA7] text-sm">
                 {language === 'id' ? 'Tentang Perusahaan' : 'About Company'}
               </Link>
             </div>
           </div>
-          <p className="text-center text-xs text-gray-400 mt-6">
-            Powered by Makar.id
-          </p>
+          {!isCustomDomain && (
+            <p className="text-center text-xs text-gray-400 mt-6">
+              Powered by Makar.id
+            </p>
+          )}
         </div>
       </footer>
     </div>
