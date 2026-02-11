@@ -69,7 +69,7 @@ const getInitials = (name) => {
 const CvPreview = ({ resumeUrl }) => {
   if (!resumeUrl) return <span className="text-sm text-gray-400">Tidak ada CV</span>;
 
-  const url = `${process.env.REACT_APP_BACKEND_URL}${resumeUrl}`;
+  const url = `${process.env.REACT_APP_BACKEND_URL || ''}${resumeUrl}`;
   const ext = resumeUrl.split('.').pop()?.toLowerCase();
   const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
   const isPdf = ext === 'pdf';

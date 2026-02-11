@@ -289,7 +289,7 @@ export const ApplicationsTab = ({
                       </div>
                       {app.resume_url && (
                         <a
-                          href={`${process.env.REACT_APP_BACKEND_URL}${app.resume_url}`}
+                          href={`${process.env.REACT_APP_BACKEND_URL || ''}${app.resume_url}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200"
