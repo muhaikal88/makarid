@@ -2386,7 +2386,8 @@ async def lookup_domain(hostname: str):
                 slug=company["slug"],
                 domain=company["domain"],
                 page_type="main",
-                logo_url=company.get("logo_url")
+                logo_url=company.get("logo_url"),
+                page_title=company.get("page_title")
             )
     
     # Check custom_domains or primary domain
