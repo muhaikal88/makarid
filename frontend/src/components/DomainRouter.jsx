@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
@@ -14,7 +14,9 @@ const isOwnDomain = (hostname) => {
 export const DomainRouter = ({ children }) => {
   const [resolved, setResolved] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [redirected, setRedirected] = useState(false);
   const hostname = window.location.hostname;
+  const location = useLocation();
 
   useEffect(() => {
     if (isOwnDomain(hostname)) {
@@ -51,27 +53,36 @@ export const DomainRouter = ({ children }) => {
     return children;
   }
 
-  // Custom domain resolved
-  if (resolved) {
+  // Custom domain resolved - redirect only once, then render children
+  if (resolved && !redirected) {
     const slug = resolved.slug || resolved.company_name;
     const pageType = resolved.page_type;
 
+    let targetPath;
     if (pageType === 'careers') {
-      // Check if there's a path like /apply/xxx
       const path = window.location.pathname;
       const applyMatch = path.match(/\/apply\/(.+)/);
       if (applyMatch) {
-        return <Navigate to={`/careers/${slug}/apply/${applyMatch[1]}`} replace />;
+        targetPath = `/careers/${slug}/apply/${applyMatch[1]}`;
+      } else {
+        targetPath = `/careers/${slug}`;
       }
-      return <Navigate to={`/careers/${slug}`} replace />;
+    } else if (pageType === 'hr') {
+      targetPath = '/company-login';
+    } else {
+      targetPath = `/company/${slug}`;
     }
-    if (pageType === 'hr') {
-      return <Navigate to="/company-login" replace />;
+
+    // If already on the target path, skip redirect and render children
+    if (location.pathname === targetPath || location.pathname.startsWith(`/careers/${slug}`) || location.pathname.startsWith(`/company/${slug}`)) {
+      return children;
     }
-    // main or default
-    return <Navigate to={`/company/${slug}`} replace />;
+
+    // Mark as redirected so we don't loop
+    setRedirected(true);
+    return <Navigate to={targetPath} replace />;
   }
 
-  // Not found → show normal app
+  // After redirect or not found → render children (the actual pages)
   return children;
 };
