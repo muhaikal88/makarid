@@ -146,11 +146,13 @@ export const ApplicationsTab = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="reviewed">Reviewed</SelectItem>
-            <SelectItem value="interview">Interview</SelectItem>
-            <SelectItem value="hired">Hired</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="pending">Pending (Baru Masuk)</SelectItem>
+            <SelectItem value="reviewing">Reviewing (Sedang Direview)</SelectItem>
+            <SelectItem value="shortlisted">Shortlisted (Masuk Shortlist)</SelectItem>
+            <SelectItem value="interviewed">Interviewed (Sudah Interview)</SelectItem>
+            <SelectItem value="offered">Offered (Mendapat Penawaran)</SelectItem>
+            <SelectItem value="hired">Hired (Diterima)</SelectItem>
+            <SelectItem value="rejected">Rejected (Ditolak)</SelectItem>
           </SelectContent>
         </Select>
 
