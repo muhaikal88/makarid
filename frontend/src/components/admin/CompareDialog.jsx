@@ -104,6 +104,13 @@ const CvPreview = ({ resumeUrl }) => {
 };
 
 export const CompareDialog = ({ isOpen, onClose, compareApps, handleUpdateStatus }) => {
+  const [pendingStatuses, setPendingStatuses] = useState({});
+
+  // Reset pending statuses when dialog opens/apps change
+  useEffect(() => {
+    setPendingStatuses({});
+  }, [compareApps]);
+
   if (!compareApps || compareApps.length === 0) return null;
 
   const allKeys = new Set();
