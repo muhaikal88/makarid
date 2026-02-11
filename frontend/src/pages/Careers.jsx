@@ -230,7 +230,7 @@ export const Careers = ({ domainOverride }) => {
               <div 
                 key={job.id} 
                 className={`bg-white rounded-xl p-6 shadow-sm transition-shadow ${isClosed ? 'opacity-70' : 'hover:shadow-md cursor-pointer group'}`}
-                onClick={() => !isClosed && navigate(`/careers/${domain}/apply/${job.id}`)}
+                onClick={() => !isClosed && navigate(isCustomDomain ? `/apply/${job.id}` : `/careers/${domain}/apply/${job.id}`)}
                 data-testid={`job-card-${job.id}`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
