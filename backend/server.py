@@ -1425,6 +1425,9 @@ async def get_me_session(request: Request):
     if company and company.get("custom_domains"):
         custom_careers_domain = company["custom_domains"].get("careers")
     
+    # Get license info
+    license_status, days_remaining = get_license_status(company) if company else ("active", None)
+    
     return {
         "user_id": session["user_id"],
         "email": session["email"],
@@ -1434,7 +1437,11 @@ async def get_me_session(request: Request):
         "company_name": company["name"] if company else None,
         "company_slug": company.get("slug") if company else None,
         "custom_domain": custom_careers_domain,
-        "role": session["role"]
+        "role": session["role"],
+        "license_type": company.get("license_type", "trial") if company else None,
+        "license_end": company.get("license_end") if company else None,
+        "license_status": license_status,
+        "days_remaining": days_remaining
     }
 
 @api_router.post("/auth/logout")
