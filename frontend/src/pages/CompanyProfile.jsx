@@ -52,15 +52,34 @@ export const CompanyProfile = ({ domainOverride }) => {
   }
 
   if (error) {
+    const isExpired = error === 'license_expired';
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Company Not Found</h1>
-          <p className="text-gray-500 mb-4">{error}</p>
-          <Link to="/">
-            <Button className="bg-[#2E4DA7]">Back to Home</Button>
-          </Link>
+        <div className="text-center max-w-md px-6">
+          {isExpired ? (
+            <>
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-red-500" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                {language === 'id' ? 'Lisensi Tidak Aktif' : 'License Inactive'}
+              </h1>
+              <p className="text-gray-500 mb-4">
+                {language === 'id'
+                  ? 'Maaf, halaman ini sedang tidak tersedia. Silakan hubungi administrator perusahaan untuk informasi lebih lanjut.'
+                  : 'Sorry, this page is currently unavailable. Please contact the company administrator for more information.'}
+              </p>
+            </>
+          ) : (
+            <>
+              <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">Company Not Found</h1>
+              <p className="text-gray-500 mb-4">{error}</p>
+              <Link to="/">
+                <Button className="bg-[#2E4DA7]">Back to Home</Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     );
