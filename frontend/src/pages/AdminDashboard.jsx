@@ -142,18 +142,27 @@ export const AdminDashboard = () => {
   const handleSubmitJob = async (e) => {
     e.preventDefault();
     try {
+      // Clean form data - convert empty strings to null for optional integer fields
+      const cleanData = {
+        ...jobFormData,
+        salary_min: jobFormData.salary_min ? parseInt(jobFormData.salary_min) : null,
+        salary_max: jobFormData.salary_max ? parseInt(jobFormData.salary_max) : null,
+      };
+      
       if (selectedJob) {
-        await axios.put(`${API}/jobs-session/${selectedJob.id}`, jobFormData, { withCredentials: true });
+        await axios.put(`${API}/jobs-session/${selectedJob.id}`, cleanData, { withCredentials: true });
         toast.success('Lowongan berhasil diupdate');
       } else {
-        await axios.post(`${API}/jobs-session`, jobFormData, { withCredentials: true });
+        await axios.post(`${API}/jobs-session`, cleanData, { withCredentials: true });
         toast.success('Lowongan berhasil ditambahkan');
       }
       setIsJobFormOpen(false);
       fetchData();
     } catch (error) {
       console.error('Failed to save job:', error);
-      toast.error(error.response?.data?.detail || 'Gagal menyimpan lowongan');
+      const detail = error.response?.data?.detail;
+      const msg = Array.isArray(detail) ? detail.map(d => d.msg).join(', ') : (detail || 'Gagal menyimpan lowongan');
+      toast.error(msg);
     }
   };
 
