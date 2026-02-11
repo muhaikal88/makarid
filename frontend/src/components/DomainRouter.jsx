@@ -57,6 +57,7 @@ export const DomainRouter = ({ children }) => {
       companyLogo: resolved.logo_url,
       companyDomain: resolved.domain,
       companyId: resolved.company_id,
+      pageTitle: resolved.page_title,
     };
   }, [resolved, hostname]);
 
