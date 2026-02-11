@@ -154,7 +154,7 @@ export const AppDetailDialog = ({ isOpen, onClose, selectedApp, handleUpdateStat
   };
 
   const resumeUrl = selectedApp.resume_url;
-  const fullResumeUrl = resumeUrl ? `${process.env.REACT_APP_BACKEND_URL}${resumeUrl}` : null;
+  const fullResumeUrl = resumeUrl ? `${process.env.REACT_APP_BACKEND_URL || ''}${resumeUrl}` : null;
   const ext = resumeUrl ? resumeUrl.split('.').pop()?.toLowerCase() : '';
   const isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
   const isPdf = ext === 'pdf';
