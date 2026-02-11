@@ -32,8 +32,9 @@ const jobTypeLabels = {
   internship: { en: 'Internship', id: 'Magang' }
 };
 
-export const ApplyJob = () => {
-  const { domain, jobId } = useParams();
+export const ApplyJob = ({ domainOverride }) => {
+  const { domain: paramDomain, jobId } = useParams();
+  const domain = domainOverride || paramDomain;
   const { language } = useLanguage();
   const navigate = useNavigate();
   
