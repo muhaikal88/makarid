@@ -82,7 +82,8 @@ export const Companies = () => {
   const [domainData, setDomainData] = useState({
     main: '',
     careers: '',
-    hr: ''
+    hr: '',
+    page_title: ''
   });
 
   // License form state
