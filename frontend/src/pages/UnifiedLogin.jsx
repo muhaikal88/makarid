@@ -217,7 +217,7 @@ export const UnifiedLogin = () => {
 
         {/* Footer */}
         <p className="text-center text-sm text-white/50 mt-6">
-          © {new Date().getFullYear()} Makar.id
+          &copy; {new Date().getFullYear()} {isCustomDomain ? companyName : 'Makar.id'}
         </p>
       </div>
       <Toaster position="top-right" richColors />
