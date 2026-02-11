@@ -89,6 +89,7 @@ function CustomDomainRouter() {
       <Route path="/" element={<CompanyProfile domainOverride={companySlug} />} />
       <Route path="/careers" element={<Careers domainOverride={companySlug} />} />
       <Route path="/careers/apply/:jobId" element={<ApplyJob domainOverride={companySlug} />} />
+      <Route path="/apply/:jobId" element={<ApplyJob domainOverride={companySlug} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
