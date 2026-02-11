@@ -427,9 +427,9 @@ export const Users = () => {
                             <Switch
                               checked={user.totp_enabled || false}
                               onCheckedChange={(checked) => handleToggle2FA(user, checked)}
-                              disabled={!user.totp_secret}
+                              disabled={!user.totp_enabled && !user.totp_secret}
                             />
-                            <span className="text-xs text-gray-500">
+                            <span className={`text-xs ${user.totp_enabled ? 'text-emerald-600 font-medium' : 'text-gray-500'}`}>
                               {user.totp_enabled ? 'Aktif' : 'Tidak Aktif'}
                             </span>
                           </div>
