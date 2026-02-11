@@ -31,7 +31,13 @@ export const CompanyProfile = ({ domainOverride }) => {
       const response = await axios.get(`${API}/public/company/${domain}`);
       setCompany(response.data);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Company not found');
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail || 'Company not found';
+      if (status === 403 && detail.includes('expired')) {
+        setError('license_expired');
+      } else {
+        setError(detail);
+      }
     } finally {
       setLoading(false);
     }
