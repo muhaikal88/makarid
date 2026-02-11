@@ -8,12 +8,14 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Building2, Eye, EyeOff, AlertCircle, Mail, Lock } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+import { useDomain } from '../contexts/DomainContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 export const UnifiedLogin = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { isCustomDomain, companyName, companyLogo } = useDomain();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
