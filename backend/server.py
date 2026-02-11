@@ -234,6 +234,7 @@ class CompanyBase(BaseModel):
     license_type: str = "trial"  # trial, monthly, yearly, lifetime
     # Custom domain settings for white-label (optional)
     custom_domains: Optional[Dict[str, str]] = None  # {"main": "company.co.id", "careers": "careers.company.co.id", "hr": "hr.company.co.id"}
+    page_title: Optional[str] = None  # Custom HTML page title for white-label domains
     # SMTP settings (optional - for custom email notifications)
     smtp_settings: Optional[Dict[str, str]] = None  # {"host": "smtp.gmail.com", "port": "587", "user": "noreply@company.com", "password": "***", "from_email": "noreply@company.com", "from_name": "Company Name"}
 
