@@ -22,6 +22,7 @@ import {
   FileText, Send
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
+import { useDomain } from '../contexts/DomainContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -37,6 +38,7 @@ export const ApplyJob = ({ domainOverride }) => {
   const domain = domainOverride || paramDomain;
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { isCustomDomain } = useDomain();
   
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -481,7 +483,7 @@ export const ApplyJob = ({ domainOverride }) => {
             {language === 'id' ? 'Lowongan Tidak Ditemukan' : 'Job Not Found'}
           </h1>
           <p className="text-gray-500 mb-4">{error}</p>
-          <Link to={`/careers/${domain}`}>
+          <Link to={isCustomDomain ? "/" : `/careers/${domain}`}>
             <Button className="bg-[#2E4DA7]">
               {language === 'id' ? 'Kembali ke Daftar Lowongan' : 'Back to Job List'}
             </Button>
@@ -508,12 +510,12 @@ export const ApplyJob = ({ domainOverride }) => {
                 : 'Thank you for applying. Our HR team will contact you if your qualifications match.'}
             </p>
             <div className="flex flex-col gap-3">
-              <Link to={`/careers/${domain}`}>
+              <Link to={isCustomDomain ? "/" : `/careers/${domain}`}>
                 <Button className="w-full bg-[#2E4DA7]">
                   {language === 'id' ? 'Lihat Lowongan Lainnya' : 'View Other Jobs'}
                 </Button>
               </Link>
-              <Link to={`/company/${domain}`}>
+              <Link to={isCustomDomain ? "/" : `/company/${domain}`}>
                 <Button variant="outline" className="w-full">
                   {language === 'id' ? 'Tentang Perusahaan' : 'About Company'}
                 </Button>
@@ -536,7 +538,7 @@ export const ApplyJob = ({ domainOverride }) => {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => navigate(`/careers/${domain}`)}
+              onClick={() => navigate(isCustomDomain ? "/" : `/careers/${domain}`)}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600" />
