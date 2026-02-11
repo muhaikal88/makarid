@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { DomainProvider } from '../contexts/DomainContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
-// Domains that belong to us (not custom domains)
 const OWN_DOMAINS = ['makar.id', 'localhost', 'preview.emergentagent.com'];
 
 const isOwnDomain = (hostname) => {
@@ -14,9 +13,7 @@ const isOwnDomain = (hostname) => {
 export const DomainRouter = ({ children }) => {
   const [resolved, setResolved] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [redirected, setRedirected] = useState(false);
   const hostname = window.location.hostname;
-  const location = useLocation();
 
   useEffect(() => {
     if (isOwnDomain(hostname)) {
@@ -40,6 +37,29 @@ export const DomainRouter = ({ children }) => {
     lookup();
   }, [hostname]);
 
+  const domainValue = useMemo(() => {
+    if (!resolved || isOwnDomain(hostname)) {
+      return {
+        isCustomDomain: false,
+        companySlug: null,
+        pageType: null,
+        companyName: null,
+        companyLogo: null,
+        companyDomain: null,
+        companyId: null,
+      };
+    }
+    return {
+      isCustomDomain: true,
+      companySlug: resolved.slug || resolved.company_name,
+      pageType: resolved.page_type,
+      companyName: resolved.company_name,
+      companyLogo: resolved.logo_url,
+      companyDomain: resolved.domain,
+      companyId: resolved.company_id,
+    };
+  }, [resolved, hostname]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -48,41 +68,9 @@ export const DomainRouter = ({ children }) => {
     );
   }
 
-  // Own domain → normal routing
-  if (isOwnDomain(hostname)) {
-    return children;
-  }
-
-  // Custom domain resolved - redirect only once, then render children
-  if (resolved && !redirected) {
-    const slug = resolved.slug || resolved.company_name;
-    const pageType = resolved.page_type;
-
-    let targetPath;
-    if (pageType === 'careers') {
-      const path = window.location.pathname;
-      const applyMatch = path.match(/\/apply\/(.+)/);
-      if (applyMatch) {
-        targetPath = `/careers/${slug}/apply/${applyMatch[1]}`;
-      } else {
-        targetPath = `/careers/${slug}`;
-      }
-    } else if (pageType === 'hr') {
-      targetPath = '/company-login';
-    } else {
-      targetPath = `/company/${slug}`;
-    }
-
-    // If already on the target path, skip redirect and render children
-    if (location.pathname === targetPath || location.pathname.startsWith(`/careers/${slug}`) || location.pathname.startsWith(`/company/${slug}`)) {
-      return children;
-    }
-
-    // Mark as redirected so we don't loop
-    setRedirected(true);
-    return <Navigate to={targetPath} replace />;
-  }
-
-  // After redirect or not found → render children (the actual pages)
-  return children;
+  return (
+    <DomainProvider value={domainValue}>
+      {children}
+    </DomainProvider>
+  );
 };
