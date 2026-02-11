@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { FileText, ExternalLink } from 'lucide-react';
+import { FileText, ExternalLink, Save } from 'lucide-react';
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',
