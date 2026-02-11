@@ -222,27 +222,45 @@ export const CompareDialog = ({ isOpen, onClose, compareApps, handleUpdateStatus
                   <td className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wide border-r bg-white sticky left-0 align-top">
                     Update Status
                   </td>
-                  {compareApps.map(app => (
-                    <td key={app.id} className="p-4 align-top">
-                      <Select
-                        value={app.status}
-                        onValueChange={(value) => handleUpdateStatus(app.id, value)}
-                      >
-                        <SelectTrigger className="w-full" data-testid={`compare-status-${app.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending (Baru Masuk)</SelectItem>
-                          <SelectItem value="reviewing">Reviewing (Sedang Direview)</SelectItem>
-                          <SelectItem value="shortlisted">Shortlisted (Masuk Shortlist)</SelectItem>
-                          <SelectItem value="interviewed">Interviewed (Sudah Interview)</SelectItem>
-                          <SelectItem value="offered">Offered (Mendapat Penawaran)</SelectItem>
-                          <SelectItem value="hired">Hired (Diterima)</SelectItem>
-                          <SelectItem value="rejected">Rejected (Ditolak)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </td>
-                  ))}
+                  {compareApps.map(app => {
+                    const currentStatus = pendingStatuses[app.id] || app.status;
+                    const hasChanged = pendingStatuses[app.id] && pendingStatuses[app.id] !== app.status;
+                    return (
+                      <td key={app.id} className="p-4 align-top">
+                        <div className="space-y-2">
+                          <Select
+                            value={currentStatus}
+                            onValueChange={(value) => setPendingStatuses(prev => ({ ...prev, [app.id]: value }))}
+                          >
+                            <SelectTrigger className="w-full" data-testid={`compare-status-${app.id}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending (Baru Masuk)</SelectItem>
+                              <SelectItem value="reviewing">Reviewing (Sedang Direview)</SelectItem>
+                              <SelectItem value="shortlisted">Shortlisted (Masuk Shortlist)</SelectItem>
+                              <SelectItem value="interviewed">Interviewed (Sudah Interview)</SelectItem>
+                              <SelectItem value="offered">Offered (Mendapat Penawaran)</SelectItem>
+                              <SelectItem value="hired">Hired (Diterima)</SelectItem>
+                              <SelectItem value="rejected">Rejected (Ditolak)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {hasChanged && (
+                            <Button
+                              size="sm" className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90"
+                              onClick={() => {
+                                handleUpdateStatus(app.id, pendingStatuses[app.id]);
+                                setPendingStatuses(prev => { const n = {...prev}; delete n[app.id]; return n; });
+                              }}
+                              data-testid={`compare-save-status-${app.id}`}
+                            >
+                              <Save className="w-3.5 h-3.5 mr-1.5" /> Simpan
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
                 </tr>
               </tbody>
             </table>
