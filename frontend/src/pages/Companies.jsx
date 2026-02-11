@@ -796,6 +796,23 @@ export const Companies = () => {
               </div>
             </div>
 
+            {/* Page Title Setting */}
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-purple-600" />
+                <Label className="font-semibold text-sm">Page Title (Judul Tab Browser)</Label>
+              </div>
+              <Input
+                value={domainData.page_title}
+                onChange={(e) => setDomainData({ ...domainData, page_title: e.target.value })}
+                placeholder={selectedCompany?.name || 'Nama Perusahaan'}
+                data-testid="domain-page-title-input"
+              />
+              <p className="text-xs text-gray-400 mt-1.5">
+                Judul yang muncul di tab browser saat mengakses custom domain. Kosongkan untuk menggunakan nama perusahaan.
+              </p>
+            </div>
+
             {/* Default URLs */}
             <div className="p-4 bg-slate-50 rounded-lg space-y-2">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Default URL (tanpa custom domain):</p>
