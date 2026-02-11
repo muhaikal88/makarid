@@ -230,7 +230,8 @@ export const Companies = () => {
     setDomainData({
       main: company.custom_domains?.main || company.domain || '',
       careers: company.custom_domains?.careers || '',
-      hr: company.custom_domains?.hr || ''
+      hr: company.custom_domains?.hr || '',
+      page_title: company.page_title || ''
     });
     setIsDomainsOpen(true);
   };
