@@ -254,6 +254,7 @@ class CompanyUpdate(BaseModel):
     license_end: Optional[str] = None
     license_type: Optional[str] = None
     custom_domains: Optional[Dict[str, str]] = None
+    page_title: Optional[str] = None
     smtp_settings: Optional[Dict[str, str]] = None
 
 class Company(CompanyBase):
