@@ -9,6 +9,7 @@ import {
   Building2, MapPin, Briefcase, Clock, Search,
   ArrowRight, ChevronRight, DollarSign, Users
 } from 'lucide-react';
+import { useDomain } from '../contexts/DomainContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -19,9 +20,11 @@ const jobTypeLabels = {
   internship: { en: 'Internship', id: 'Magang' }
 };
 
-export const Careers = () => {
-  const { domain } = useParams();
+export const Careers = ({ domainOverride }) => {
+  const { domain: paramDomain } = useParams();
+  const domain = domainOverride || paramDomain;
   const { language } = useLanguage();
+  const { isCustomDomain } = useDomain();
   const navigate = useNavigate();
   
   const [data, setData] = useState(null);
