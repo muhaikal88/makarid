@@ -118,7 +118,7 @@ export const CompanyProfile = ({ domainOverride }) => {
                 </a>
               )}
             </div>
-            <Link to={`/careers/${domain}`}>
+            <Link to={isCustomDomain ? '/careers' : `/careers/${domain}`}>
               <Button className="bg-[#E31E24] hover:bg-[#E31E24]/90">
                 <Briefcase className="w-4 h-4 mr-2" />
                 {language === 'id' ? 'Lihat Lowongan' : 'View Jobs'}
