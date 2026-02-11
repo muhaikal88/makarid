@@ -125,7 +125,7 @@ export const Careers = ({ domainOverride }) => {
               )}
             </div>
             <div>
-              <Link to={`/company/${domain}`} className="hover:underline">
+              <Link to={isCustomDomain ? '/' : `/company/${domain}`} className="hover:underline">
                 <h1 className="text-3xl font-bold font-['Manrope']">{company?.name}</h1>
               </Link>
               {company?.tagline && (
