@@ -8,6 +8,7 @@ const DomainContext = createContext({
   companyLogo: null,
   companyDomain: null,
   companyId: null,
+  pageTitle: null,
 });
 
 export const DomainProvider = DomainContext.Provider;
