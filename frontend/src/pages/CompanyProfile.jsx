@@ -301,7 +301,7 @@ export const CompanyProfile = ({ domainOverride }) => {
                   ? 'Lihat posisi yang tersedia dan mulai karir Anda bersama kami'
                   : 'Check available positions and start your career with us'}
               </p>
-              <Link to={`/careers/${domain}`}>
+              <Link to={isCustomDomain ? '/careers' : `/careers/${domain}`}>
                 <Button className="w-full bg-white text-[#2E4DA7] hover:bg-white/90">
                   {language === 'id' ? 'Lihat Lowongan' : 'View Jobs'}
                   <ArrowRight className="w-4 h-4 ml-2" />
