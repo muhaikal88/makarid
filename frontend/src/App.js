@@ -4,6 +4,7 @@ import axios from "axios";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { useDomain } from "./contexts/DomainContext";
 import { Login } from "./pages/Login";
 import { CompanyLogin } from "./pages/CompanyLogin";
 import { Dashboard } from "./pages/Dashboard";
@@ -28,13 +29,10 @@ import { ActivityLogs } from "./pages/ActivityLogs";
 import { DomainRouter } from "./components/DomainRouter";
 
 // Production domain fix: ensure API calls use same-origin when on production
-// This fixes CORS issues when REACT_APP_BACKEND_URL was baked with a different domain
 axios.interceptors.request.use((config) => {
   const hostname = window.location.hostname;
-  // If we're on a production domain (not localhost, not preview), force same-origin API calls
   if (hostname !== 'localhost' && !hostname.includes('preview.emergentagent.com')) {
     const url = config.url || '';
-    // If the URL points to an external backend (different host), rewrite to relative
     if (url.includes('emergentagent.com') || url.includes('emergent.host')) {
       const apiPath = url.replace(/^https?:\/\/[^/]+/, '');
       config.url = apiPath;
@@ -56,32 +54,68 @@ axios.interceptors.response.use(null, async (error) => {
   return Promise.reject(error);
 });
 
+function CustomDomainRouter() {
+  const { pageType, companySlug } = useDomain();
+
+  if (pageType === 'careers') {
+    return (
+      <Routes>
+        <Route path="/" element={<Careers domainOverride={companySlug} />} />
+        <Route path="/apply/:jobId" element={<ApplyJob domainOverride={companySlug} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  if (pageType === 'hr') {
+    return (
+      <Routes>
+        <Route path="/" element={<UnifiedLogin />} />
+        <Route path="/select-company" element={<CompanySelector />} />
+        <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/settings" element={<CompanySettings />} />
+        <Route path="/admin/profile" element={<UserProfile />} />
+        <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+        <Route path="/employee/profile" element={<UserProfile />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  // Default: main company profile
+  return (
+    <Routes>
+      <Route path="/" element={<CompanyProfile domainOverride={companySlug} />} />
+      <Route path="/careers" element={<Careers domainOverride={companySlug} />} />
+      <Route path="/careers/apply/:jobId" element={<ApplyJob domainOverride={companySlug} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 function AppRouter() {
+  const { isCustomDomain } = useDomain();
   const location = window.location;
   
-  // Synchronously check for session_id in URL fragment (prevents race conditions)
   if (location.hash && location.hash.includes('session_id=')) {
     return <GoogleAuthCallback />;
   }
+
+  // Custom domain: render company-specific routes
+  if (isCustomDomain) {
+    return <CustomDomainRouter />;
+  }
   
+  // Own domain (makar.id): full app routing
   return (
     <Routes>
-      {/* Landing Page */}
       <Route path="/" element={<LandingPage />} />
-      
-      {/* Unified Login - New single login for all company users */}
       <Route path="/company-login" element={<UnifiedLogin />} />
-      
-      {/* Company/Role Selector */}
       <Route path="/select-company" element={<CompanySelector />} />
-      
-      {/* Google OAuth Callback */}
       <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
-      
-      {/* Auth - Super Admin (separate) */}
       <Route path="/login" element={<Login />} />
       
-      {/* Super Admin Dashboard */}
       <Route path="/superadmin/dashboard" element={<Dashboard />} />
       <Route path="/superadmin/admins" element={<SuperAdmins />} />
       <Route path="/superadmin/companies" element={<Companies />} />
@@ -90,24 +124,18 @@ function AppRouter() {
       <Route path="/superadmin/settings" element={<Settings />} />
       <Route path="/superadmin/profile" element={<SuperAdminProfile />} />
       
-      {/* Company Admin Dashboard */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/settings" element={<CompanySettings />} />
       <Route path="/admin/profile" element={<UserProfile />} />
       
-      {/* Employee Dashboard */}
       <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
       <Route path="/employee/profile" element={<UserProfile />} />
       
-      {/* Public Pages */}
       <Route path="/company/:domain" element={<CompanyProfile />} />
       <Route path="/careers/:domain" element={<Careers />} />
       <Route path="/careers/:domain/apply/:jobId" element={<ApplyJob />} />
       
-      {/* Old routes - keep for backward compatibility */}
       <Route path="/login/:domain" element={<CompanyLogin />} />
-      
-      {/* Redirects */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
