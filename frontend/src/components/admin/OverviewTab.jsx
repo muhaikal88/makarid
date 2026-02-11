@@ -1,12 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
-  Briefcase, Eye, FileText, Clock, Globe, Copy, ExternalLink
+  Briefcase, Eye, FileText, Clock, Shield, AlertTriangle
 } from 'lucide-react';
-import { toast } from 'sonner';
 
 const statusColors = {
   pending: 'bg-amber-100 text-amber-700',
