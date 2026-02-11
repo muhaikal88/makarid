@@ -2423,7 +2423,8 @@ async def lookup_domain(hostname: str):
         slug=company["slug"],
         domain=company["domain"],
         page_type=page_type,
-        logo_url=company.get("logo_url")
+        logo_url=company.get("logo_url"),
+        page_title=company.get("page_title")
     )
 
 @api_router.put("/companies/{company_id}/domains")
