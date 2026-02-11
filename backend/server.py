@@ -2360,6 +2360,7 @@ class DomainLookupResponse(BaseModel):
     domain: Optional[str] = None
     page_type: Optional[str] = None  # "main", "careers", "hr"
     logo_url: Optional[str] = None
+    page_title: Optional[str] = None
 
 @api_router.get("/public/domain-lookup")
 async def lookup_domain(hostname: str):
