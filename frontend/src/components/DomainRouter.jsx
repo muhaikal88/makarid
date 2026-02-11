@@ -61,11 +61,22 @@ export const DomainRouter = ({ children }) => {
     };
   }, [resolved, hostname]);
 
-  // Set page title for custom domains
+  // Set page title and favicon for custom domains
   useEffect(() => {
     if (domainValue.isCustomDomain) {
+      // Set title
       const title = domainValue.pageTitle || domainValue.companyName;
       if (title) document.title = title;
+
+      // Set favicon
+      const faviconEl = document.getElementById('dynamic-favicon');
+      if (domainValue.companyLogo) {
+        // Use company logo as favicon
+        if (faviconEl) faviconEl.href = domainValue.companyLogo;
+      } else {
+        // No logo = no favicon on custom domain
+        if (faviconEl) faviconEl.remove();
+      }
     }
   }, [domainValue]);
 
