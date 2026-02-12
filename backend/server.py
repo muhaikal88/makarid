@@ -255,7 +255,7 @@ class CompanyUpdate(BaseModel):
     license_type: Optional[str] = None
     custom_domains: Optional[Dict[str, str]] = None
     page_title: Optional[str] = None
-    smtp_settings: Optional[Dict[str, str]] = None
+    smtp_settings: Optional[Dict[str, Any]] = None
 
 class Company(CompanyBase):
     model_config = ConfigDict(extra="ignore")
