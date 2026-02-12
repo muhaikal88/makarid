@@ -1,7 +1,7 @@
 #!/bin/bash
 # ================================================
 # Makar.id - Auto Deploy Script
-# Jalankan: sudo bash scripts/deploy.sh
+# Jalankan: cd ~/makarid && sudo bash scripts/deploy.sh
 # ================================================
 
 set -e
@@ -10,85 +10,88 @@ echo "========================================="
 echo "  Makar.id Auto Deploy"
 echo "========================================="
 
-# Detect project directory
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR"
 
-echo "[1/5] Pulling latest code..."
+echo "[1/6] Pulling latest code..."
 git pull
 
-echo "[2/5] Installing backend dependencies..."
+echo "[2/6] Installing backend dependencies..."
 cd "$PROJECT_DIR/backend"
 if [ -d "venv" ]; then
     source venv/bin/activate
 fi
-pip install -r requirements.txt -q 2>/dev/null || pip3 install -r requirements.txt -q 2>/dev/null
+pip install -r requirements.txt -q 2>/dev/null || pip3 install -r requirements.txt -q
 
-echo "[3/5] Building frontend..."
+echo "[3/6] Building frontend..."
 cd "$PROJECT_DIR/frontend"
 yarn install --silent 2>/dev/null
 yarn build
 
-echo "[4/5] Deploying files..."
-# Copy frontend build
+echo "[4/6] Deploying frontend..."
 if [ -d "/var/www/makar" ]; then
     cp -r build/* /var/www/makar/
-    echo "  Frontend deployed to /var/www/makar/"
+    echo "  Copied to /var/www/makar/"
 fi
 
-# Patch Nginx config for social media crawlers (OG meta)
-NGINX_CONF=""
-for f in /etc/nginx/sites-enabled/makar* /etc/nginx/conf.d/makar* /etc/nginx/sites-available/makar*; do
+echo "[5/6] Updating Nginx config..."
+NGINX_CONF_SRC="$PROJECT_DIR/nginx/makar.id.conf"
+NGINX_CONF_DST=""
+
+# Find existing nginx config
+for f in /etc/nginx/sites-enabled/makar* /etc/nginx/conf.d/makar*; do
     if [ -f "$f" ]; then
-        NGINX_CONF="$f"
+        NGINX_CONF_DST="$f"
         break
     fi
 done
 
-if [ -n "$NGINX_CONF" ]; then
-    # Check if already patched
-    if grep -q "facebookexternalhit\|WhatsApp.*Twitterbot" "$NGINX_CONF"; then
-        echo "  Nginx OG meta already configured"
+if [ -n "$NGINX_CONF_DST" ] && [ -f "$NGINX_CONF_SRC" ]; then
+    # Backup old config
+    cp "$NGINX_CONF_DST" "${NGINX_CONF_DST}.bak"
+    
+    # Read SSL cert paths from existing config (preserve user's cert paths)
+    SSL_CERT=$(grep -m1 "ssl_certificate " "$NGINX_CONF_DST" | awk '{print $2}' | tr -d ';')
+    SSL_KEY=$(grep -m1 "ssl_certificate_key " "$NGINX_CONF_DST" | awk '{print $2}' | tr -d ';')
+    
+    # Read server_name from existing config (preserve user's domains)
+    SERVER_NAMES=$(grep -A5 "listen 443" "$NGINX_CONF_DST" | grep "server_name" | sed 's/server_name//' | tr -d ';' | xargs)
+    
+    # Copy new template
+    cp "$NGINX_CONF_SRC" "$NGINX_CONF_DST"
+    
+    # Patch SSL paths if different
+    if [ -n "$SSL_CERT" ]; then
+        sed -i "s|ssl_certificate .*|ssl_certificate $SSL_CERT;|" "$NGINX_CONF_DST"
+    fi
+    if [ -n "$SSL_KEY" ]; then
+        sed -i "s|ssl_certificate_key .*|ssl_certificate_key $SSL_KEY;|" "$NGINX_CONF_DST"
+    fi
+    
+    # Validate
+    if nginx -t 2>&1; then
+        systemctl reload nginx
+        echo "  Nginx updated and reloaded"
     else
-        echo "  Patching Nginx for social media link previews..."
-        # Replace simple 'try_files $uri /index.html;' with crawler detection
-        sed -i 's|try_files \$uri /index.html;|# Social media crawler detection for dynamic OG meta\n        if (\$http_user_agent ~* "facebookexternalhit|WhatsApp|Twitterbot|LinkedIn|Slackbot|TelegramBot") {\n            rewrite ^(.*)$ /api/og-meta?path=\$1 break;\n            proxy_pass http://127.0.0.1:8001;\n        }\n        try_files \$uri /index.html;|' "$NGINX_CONF"
-        
-        # Validate nginx config
-        if nginx -t 2>/dev/null; then
-            systemctl reload nginx
-            echo "  Nginx patched and reloaded successfully"
-        else
-            echo "  WARNING: Nginx config test failed. Reverting..."
-            # Revert the change
-            sed -i '/# Social media crawler detection/d' "$NGINX_CONF"
-            sed -i '/facebookexternalhit/d' "$NGINX_CONF"
-            sed -i '/rewrite.*og-meta/d' "$NGINX_CONF"
-            sed -i '/proxy_pass.*8001/{ /location/!d }' "$NGINX_CONF"
-            echo "  Reverted. Please check Nginx config manually."
-        fi
+        echo "  ERROR: Nginx config invalid. Restoring backup..."
+        cp "${NGINX_CONF_DST}.bak" "$NGINX_CONF_DST"
+        nginx -t && systemctl reload nginx
+        echo "  Restored old config. Please check nginx/makar.id.conf manually."
     fi
 else
-    echo "  WARNING: Nginx config not found. Skipping OG meta patch."
-    echo "  You may need to manually configure Nginx."
+    echo "  WARNING: Nginx config not found. Copy manually:"
+    echo "  sudo cp $PROJECT_DIR/nginx/makar.id.conf /etc/nginx/sites-enabled/makar.id"
+    echo "  sudo nginx -t && sudo systemctl reload nginx"
 fi
 
-echo "[5/5] Restarting backend..."
+echo "[6/6] Restarting backend..."
 if systemctl is-active --quiet makar 2>/dev/null; then
     systemctl restart makar
-    echo "  Backend service restarted"
-elif command -v supervisorctl &>/dev/null; then
-    supervisorctl restart backend 2>/dev/null || true
-    echo "  Backend restarted via supervisor"
+    echo "  Backend restarted"
 fi
 
 echo ""
 echo "========================================="
 echo "  Deploy selesai!"
 echo "========================================="
-echo ""
-echo "  Test:"
-echo "  - https://makar.id/api/health"
-echo "  - https://makar.id/api/seed/status"
 echo ""
