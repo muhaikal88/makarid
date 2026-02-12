@@ -276,14 +276,15 @@ class CompanyResponse(BaseModel):
     license_start: Optional[str] = None
     license_end: Optional[str] = None
     license_type: Optional[str] = None
-    license_status: Optional[str] = None  # active, expired, suspended
+    license_status: Optional[str] = None
     days_remaining: Optional[int] = None
     created_at: str
     updated_at: str
     admin_count: int = 0
     employee_count: int = 0
     custom_domains: Optional[Dict[str, str]] = None
-    custom_domains: Optional[Dict[str, str]] = None
+    page_title: Optional[str] = None
+    smtp_settings: Optional[Dict[str, Any]] = None
 
 # Company Profile Models
 class CompanyProfileUpdate(BaseModel):
