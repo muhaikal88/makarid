@@ -2726,7 +2726,7 @@ async def update_company_profile(company_id: str, data: CompanyProfileUpdate, cu
 
 class CompanySettingsUpdate(BaseModel):
     custom_domains: Optional[Dict[str, str]] = None
-    smtp_settings: Optional[Dict[str, str]] = None
+    smtp_settings: Optional[Dict[str, Any]] = None
 
 @api_router.get("/company/settings")
 async def get_company_settings(current_user: dict = Depends(require_admin_or_super)):
