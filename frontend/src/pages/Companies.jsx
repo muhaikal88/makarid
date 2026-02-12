@@ -328,7 +328,31 @@ export const Companies = () => {
       from_name: smtp.from_name || company.name,
       use_tls: smtp.use_tls !== false
     });
+    setTestEmail('');
     setIsSMTPOpen(true);
+    fetchCompanyEmailLogs(company.id);
+  };
+
+  const fetchCompanyEmailLogs = async (companyId) => {
+    try {
+      const response = await axios.get(`${API}/companies/${companyId}/email-logs`, { headers: getAuthHeaders() });
+      setCompanyEmailLogs(response.data);
+    } catch { setCompanyEmailLogs([]); }
+  };
+
+  const handleTestCompanyEmail = async () => {
+    if (!testEmail) { toast.error('Masukkan email tujuan'); return; }
+    setTestingEmail(true);
+    try {
+      await axios.post(`${API}/companies/${selectedCompany.id}/test-email`, { to_email: testEmail }, { headers: getAuthHeaders() });
+      toast.success(`Email tes berhasil dikirim ke ${testEmail}`);
+      fetchCompanyEmailLogs(selectedCompany.id);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal mengirim email tes');
+      fetchCompanyEmailLogs(selectedCompany.id);
+    } finally {
+      setTestingEmail(false);
+    }
   };
 
   const handleSaveSMTP = async () => {
