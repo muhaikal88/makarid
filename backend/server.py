@@ -2178,7 +2178,7 @@ async def send_test_email(data: TestEmailRequest, current_user: dict = Depends(r
         </p>
     </div>
     <div style="background:#f9fafb;padding:14px 24px;text-align:center;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
-        <p style="color:#9ca3af;font-size:12px;margin:0;">2026 Makar.id - Manajemen Karyawan</p>
+        <p style="color:#9ca3af;font-size:12px;margin:0;">2026 Makar.id</p>
     </div>
     </div>"""
     
