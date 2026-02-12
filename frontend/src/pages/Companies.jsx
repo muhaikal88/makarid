@@ -103,6 +103,9 @@ export const Companies = () => {
     from_name: '',
     use_tls: true
   });
+  const [testEmail, setTestEmail] = useState('');
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [companyEmailLogs, setCompanyEmailLogs] = useState([]);
   
   // Form state
   const [formData, setFormData] = useState({
