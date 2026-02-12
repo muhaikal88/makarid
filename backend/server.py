@@ -700,7 +700,7 @@ def build_email_header(company_name: str, company_logo: str = None):
 
 def build_email_footer(company_name: str):
     return f'''<div style="background:#f9fafb;padding:14px 24px;text-align:center;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;">
-        <p style="color:#9ca3af;font-size:12px;margin:0;">2026 {company_name} - Powered by Makar.id</p>
+        <p style="color:#9ca3af;font-size:12px;margin:0;">2026 {company_name}</p>
     </div>'''
 
 async def send_application_confirmation_email(application: dict, job: dict, company: dict):
