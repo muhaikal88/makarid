@@ -827,7 +827,9 @@ def build_company_response(company: dict, admin_count: int = 0, emp_count: int =
         updated_at=company["updated_at"] if isinstance(company["updated_at"], str) else company["updated_at"].isoformat(),
         admin_count=admin_count,
         employee_count=emp_count,
-        custom_domains=company.get("custom_domains")
+        custom_domains=company.get("custom_domains"),
+        page_title=company.get("page_title"),
+        smtp_settings=company.get("smtp_settings")
     )
 
 async def check_company_license(company_id: str = None, domain: str = None):
