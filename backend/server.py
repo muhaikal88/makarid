@@ -2201,6 +2201,51 @@ async def get_email_logs(current_user: dict = Depends(require_super_admin), limi
     logs = await db.email_logs.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return logs
 
+@api_router.post("/companies/{company_id}/test-email")
+async def test_company_email(company_id: str, data: TestEmailRequest, current_user: dict = Depends(require_super_admin)):
+    """Send test email using company-specific SMTP settings"""
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    smtp = company.get("smtp_settings")
+    if not smtp or not smtp.get("host") or not smtp.get("username") or not smtp.get("password"):
+        raise HTTPException(status_code=400, detail="SMTP perusahaan belum dikonfigurasi lengkap")
+    
+    company_name = company.get("name", "Perusahaan")
+    subject = f"Tes Email SMTP - {company_name}"
+    
+    html_body = f'''<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+    {build_email_header(company_name)}
+    <div style="background:#fff;padding:28px 24px;border:1px solid #e5e7eb;border-top:none;">
+        <h2 style="color:#1f2937;margin:0 0 16px;font-size:18px;">Tes Email Berhasil!</h2>
+        <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
+            Konfigurasi SMTP untuk {company_name} sudah benar dan siap digunakan.
+        </p>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:16px 0;">
+            <p style="color:#166534;margin:0 0 8px;font-size:14px;"><b>Detail:</b></p>
+            <p style="color:#166534;margin:0;font-size:13px;">Host: {smtp.get('host')}</p>
+            <p style="color:#166534;margin:4px 0 0;font-size:13px;">Port: {smtp.get('port')}</p>
+            <p style="color:#166534;margin:4px 0 0;font-size:13px;">From: {smtp.get('from_email', smtp['username'])}</p>
+        </div>
+    </div>
+    {build_email_footer(company_name)}
+    </div>'''
+    
+    text_body = f"Tes Email SMTP {company_name}\n\nKonfigurasi SMTP sudah benar.\nHost: {smtp.get('host')}\nPort: {smtp.get('port')}\nFrom: {smtp.get('from_email', smtp['username'])}"
+    
+    result = await send_notification_email(data.to_email, subject, html_body, text_body, company_id)
+    if result:
+        return {"message": f"Email tes berhasil dikirim ke {data.to_email}"}
+    raise HTTPException(status_code=400, detail="Gagal mengirim email. Cek log untuk detail.")
+
+@api_router.get("/companies/{company_id}/email-logs")
+async def get_company_email_logs(company_id: str, current_user: dict = Depends(require_super_admin), limit: int = 20):
+    """Get email logs for a specific company"""
+    logs = await db.email_logs.find({"company_id": company_id}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    return logs
+
+
 
 
 # ============ COMPANY ROUTES ============
