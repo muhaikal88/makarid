@@ -1195,6 +1195,59 @@ export const Companies = () => {
               {formLoading ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
+
+          {/* Test Email Section */}
+          {smtpData.host && smtpData.username && (
+            <div className="border-t pt-4 mt-2 space-y-4">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Tes Kirim Email</h4>
+                <div className="flex gap-2">
+                  <Input
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="email@contoh.com"
+                    type="email"
+                    data-testid="company-test-email-input"
+                  />
+                  <Button
+                    onClick={handleTestCompanyEmail}
+                    disabled={testingEmail || !testEmail}
+                    className="bg-emerald-600 hover:bg-emerald-700 shrink-0"
+                    data-testid="company-test-email-btn"
+                  >
+                    {testingEmail ? 'Mengirim...' : 'Kirim Tes'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Email Logs */}
+              {companyEmailLogs.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-gray-700">Log Email</h4>
+                    <Button variant="ghost" size="sm" onClick={() => fetchCompanyEmailLogs(selectedCompany?.id)} className="text-xs">
+                      Refresh
+                    </Button>
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {companyEmailLogs.map((log, i) => (
+                      <div key={i} className={`p-2 rounded text-xs ${log.status === 'sent' ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{log.to}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs ${log.status === 'sent' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                            {log.status === 'sent' ? 'Terkirim' : 'Gagal'}
+                          </span>
+                        </div>
+                        <p className="text-gray-500 mt-0.5">{log.subject}</p>
+                        {log.error && <p className="text-red-500 mt-0.5">{log.error}</p>}
+                        <p className="text-gray-400 mt-0.5">{new Date(log.timestamp).toLocaleString('id-ID')}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
