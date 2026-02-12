@@ -61,22 +61,34 @@ export const DomainRouter = ({ children }) => {
     };
   }, [resolved, hostname]);
 
-  // Set page title and favicon for custom domains
+  // Set page title, favicon, and OG meta for custom domains
   useEffect(() => {
     if (domainValue.isCustomDomain) {
-      // Set title
       const title = domainValue.pageTitle || domainValue.companyName;
       if (title) document.title = title;
 
       // Set favicon
       const faviconEl = document.getElementById('dynamic-favicon');
       if (domainValue.companyLogo) {
-        // Use company logo as favicon
         if (faviconEl) faviconEl.href = domainValue.companyLogo;
       } else {
-        // No logo = no favicon on custom domain
         if (faviconEl) faviconEl.remove();
       }
+
+      // Update OG meta tags & description
+      const setMeta = (prop, content) => {
+        if (!content) return;
+        let el = document.querySelector(`meta[property="${prop}"]`) || document.querySelector(`meta[name="${prop}"]`);
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute(prop.startsWith('og:') ? 'property' : 'name', prop);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', content);
+      };
+      setMeta('og:title', title);
+      setMeta('og:image', domainValue.companyLogo);
+      setMeta('description', title);
     }
   }, [domainValue]);
 
