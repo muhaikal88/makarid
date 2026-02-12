@@ -631,14 +631,20 @@ async def send_notification_email(to_email: str, subject: str, html_body: str, t
         logging.warning(f"SMTP not configured, skipping email to {to_email}")
         return False
     
+    from_email = smtp.get("from_email", smtp["username"])
+    from_name = smtp.get("from_name", "Notification")
+    from_domain = from_email.split("@")[1] if "@" in from_email else "makar.id"
+    
     msg = MIMEMultipart("alternative")
-    msg["From"] = f"{smtp.get('from_name', 'Makar.id')} <{smtp.get('from_email', smtp['username'])}>"
+    msg["From"] = f"{from_name} <{from_email}>"
     msg["To"] = to_email
     msg["Subject"] = subject
     msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid(domain="makar.id")
-    msg["Reply-To"] = smtp.get("from_email", smtp["username"])
-    msg["X-Mailer"] = "Makar.id"
+    msg["Message-ID"] = make_msgid(domain=from_domain)
+    msg["Reply-To"] = from_email
+    msg["X-Mailer"] = from_name
+    msg["List-Unsubscribe"] = f"<mailto:{from_email}?subject=unsubscribe>"
+    msg["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
     msg.attach(MIMEText(text_body, "plain", "utf-8"))
     msg.attach(MIMEText(html_body, "html", "utf-8"))
     
