@@ -4098,7 +4098,16 @@ async def og_meta(request: Request, path: str = "/"):
     """Return HTML with dynamic OG meta tags for social media crawlers (WhatsApp, Facebook, etc.)"""
     from fastapi.responses import HTMLResponse
     
-    hostname = request.headers.get("x-original-host", request.headers.get("host", "")).split(":")[0]
+    # Get real hostname from various headers (Nginx proxy headers)
+    hostname = (
+        request.headers.get("x-original-host") or 
+        request.headers.get("x-forwarded-host") or 
+        request.headers.get("host") or ""
+    ).split(":")[0]
+    
+    # Skip localhost/internal IPs
+    if hostname in ("127.0.0.1", "localhost", "0.0.0.0", ""):
+        hostname = ""
     
     # Default OG tags for makar.id
     og_title = "Makar.id | Sistem HR Modern"
