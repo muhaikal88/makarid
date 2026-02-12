@@ -4091,6 +4091,73 @@ async def root():
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+# ============ OG META FOR SOCIAL CRAWLERS ============
+
+@api_router.get("/og-meta")
+async def og_meta(request: Request, path: str = "/"):
+    """Return HTML with dynamic OG meta tags for social media crawlers (WhatsApp, Facebook, etc.)"""
+    from fastapi.responses import HTMLResponse
+    
+    hostname = request.headers.get("x-original-host", request.headers.get("host", ""))
+    
+    # Default OG tags for makar.id
+    og_title = "Makar.id | Sistem HR Modern"
+    og_description = "Platform manajemen HR all-in-one untuk bisnis Indonesia"
+    og_image = ""
+    
+    # Check if this is a custom domain
+    own_domains = ["makar.id", "localhost", "preview.emergentagent.com"]
+    is_own = any(hostname == d or hostname.endswith(f".{d}") for d in own_domains)
+    
+    if not is_own and hostname:
+        company = await db.companies.find_one({
+            "$or": [
+                {"custom_domains.main": hostname},
+                {"custom_domains.careers": hostname},
+                {"custom_domains.hr": hostname},
+                {"domain": hostname}
+            ],
+            "is_active": True
+        }, {"_id": 0})
+        
+        if company:
+            company_name = company.get("name", "")
+            og_title = company.get("page_title") or company_name
+            og_image = company.get("logo_url", "")
+            
+            # Check if it's a careers domain
+            custom_domains = company.get("custom_domains", {})
+            if custom_domains.get("careers") == hostname:
+                og_title = f"Lowongan Kerja - {company_name}"
+                og_description = f"Lihat lowongan kerja terbaru di {company_name}"
+            elif custom_domains.get("hr") == hostname:
+                og_title = f"{company_name} - Portal Karyawan"
+                og_description = f"Portal karyawan {company_name}"
+            else:
+                og_description = company.get("profile", {}).get("tagline") or f"Profil perusahaan {company_name}"
+            
+            # Check for specific job in path /apply/{job_id}
+            if "/apply/" in path:
+                job_id = path.split("/apply/")[-1].strip("/")
+                if job_id:
+                    job = await db.jobs.find_one({"id": job_id}, {"_id": 0})
+                    if job:
+                        og_title = f"{job['title']} - {company_name}"
+                        og_description = f"Lamar posisi {job['title']} di {company_name}"
+    
+    html = f'''<!DOCTYPE html>
+<html><head>
+<meta property="og:title" content="{og_title}" />
+<meta property="og:description" content="{og_description}" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://{hostname}{path}" />
+{f'<meta property="og:image" content="{og_image}" />' if og_image else ''}
+<meta name="description" content="{og_description}" />
+<title>{og_title}</title>
+</head><body></body></html>'''
+    
+    return HTMLResponse(content=html)
+
 # ============ DATABASE SEED ENDPOINT ============
 
 class SeedRequest(BaseModel):
