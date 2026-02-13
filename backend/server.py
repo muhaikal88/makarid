@@ -221,22 +221,19 @@ class UserResponse(BaseModel):
 
 class CompanyBase(BaseModel):
     name: str
-    slug: str  # URL-friendly identifier (e.g., demo) - used for subdomain
+    slug: Optional[str] = None  # Auto-generated from name if not provided
     domain: str  # Primary identifier (e.g., company.co.id)
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
     logo_url: Optional[str] = None
     is_active: bool = True
-    # License management
-    license_start: Optional[str] = None  # ISO date string
-    license_end: Optional[str] = None    # ISO date string
-    license_type: str = "trial"  # trial, monthly, yearly, lifetime
-    # Custom domain settings for white-label (optional)
-    custom_domains: Optional[Dict[str, str]] = None  # {"main": "company.co.id", "careers": "careers.company.co.id", "hr": "hr.company.co.id"}
-    page_title: Optional[str] = None  # Custom HTML page title for white-label domains
-    # SMTP settings (optional - for custom email notifications)
-    smtp_settings: Optional[Dict[str, Any]] = None  # {"host": "smtp.gmail.com", "port": "587", "user": "noreply@company.com", "password": "***", "from_email": "noreply@company.com", "from_name": "Company Name"}
+    license_start: Optional[str] = None
+    license_end: Optional[str] = None
+    license_type: str = "trial"
+    custom_domains: Optional[Dict[str, str]] = None
+    page_title: Optional[str] = None
+    smtp_settings: Optional[Dict[str, Any]] = None
 
 class CompanyCreate(CompanyBase):
     pass
