@@ -2725,6 +2725,103 @@ async def update_company_profile(company_id: str, data: CompanyProfileUpdate, cu
         cover_image=profile.get("cover_image")
     )
 
+
+# ============ COMPANY PROFILE ROUTES (Session-based for Company Admin) ============
+
+@api_router.get("/company-profile-session")
+async def get_company_profile_session(request: Request):
+    """Get company profile for editing (session-based auth for company admin)"""
+    session = await require_session_admin(request)
+    company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    profile = company.get("profile", {})
+    return {
+        "id": company["id"],
+        "name": company["name"],
+        "domain": company["domain"],
+        "slug": company.get("slug"),
+        "logo_url": company.get("logo_url"),
+        "address": company.get("address"),
+        "phone": company.get("phone"),
+        "email": company.get("email"),
+        "tagline": profile.get("tagline"),
+        "description": profile.get("description"),
+        "vision": profile.get("vision"),
+        "mission": profile.get("mission"),
+        "history": profile.get("history"),
+        "culture": profile.get("culture"),
+        "benefits": profile.get("benefits", []),
+        "social_links": profile.get("social_links", {}),
+        "gallery_images": profile.get("gallery_images", []),
+        "cover_image": profile.get("cover_image")
+    }
+
+@api_router.put("/company-profile-session")
+async def update_company_profile_session(data: CompanyProfileUpdate, request: Request):
+    """Update company profile (session-based auth for company admin)"""
+    session = await require_session_admin(request)
+    company_id = session["company_id"]
+    
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    profile_update = {f"profile.{k}": v for k, v in data.model_dump().items() if v is not None}
+    profile_update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.companies.update_one({"id": company_id}, {"$set": profile_update})
+    
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="update", resource_type="company_profile",
+        description=f"Update profil perusahaan",
+        company_id=company_id, company_name=session.get("company_name")
+    )
+    
+    return {"message": "Profile updated successfully"}
+
+@api_router.put("/company-info-session")
+async def update_company_info_session(request: Request, name: Optional[str] = None, address: Optional[str] = None, phone: Optional[str] = None, email: Optional[str] = None, logo_url: Optional[str] = None):
+    """Update basic company info (name, address, phone, email, logo) - session-based"""
+    session = await require_session_admin(request)
+    company_id = session["company_id"]
+    
+    update_data = {}
+    if name is not None: update_data["name"] = name
+    if address is not None: update_data["address"] = address
+    if phone is not None: update_data["phone"] = phone
+    if email is not None: update_data["email"] = email
+    if logo_url is not None: update_data["logo_url"] = logo_url
+    
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.companies.update_one({"id": company_id}, {"$set": update_data})
+    
+    return {"message": "Company info updated"}
+
+class CompanyInfoUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    logo_url: Optional[str] = None
+
+@api_router.put("/company-info-session-json")
+async def update_company_info_session_json(data: CompanyInfoUpdate, request: Request):
+    """Update basic company info via JSON body - session-based"""
+    session = await require_session_admin(request)
+    company_id = session["company_id"]
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.companies.update_one({"id": company_id}, {"$set": update_data})
+    
+    return {"message": "Company info updated"}
+
+
 # ============ COMPANY SETTINGS ROUTES (For Company Admin) ============
 
 class CompanySettingsUpdate(BaseModel):
