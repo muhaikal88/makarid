@@ -344,6 +344,9 @@ export const AdminDashboard = () => {
                   <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
                     <User className="w-4 h-4 mr-2" /> Profile
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin/company-profile')}>
+                    <Building2 className="w-4 h-4 mr-2" /> Profil Perusahaan
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
                     <Settings className="w-4 h-4 mr-2" /> Settings
                   </DropdownMenuItem>
