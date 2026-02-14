@@ -77,6 +77,7 @@ function CustomDomainRouter() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/settings" element={<CompanySettings />} />
         <Route path="/admin/profile" element={<UserProfile />} />
+        <Route path="/admin/company-profile" element={<CompanyProfileEdit />} />
         <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
         <Route path="/employee/profile" element={<UserProfile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
