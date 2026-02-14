@@ -26,6 +26,7 @@ import { SuperAdminProfile } from "./pages/SuperAdminProfile";
 import { UserProfile } from "./pages/UserProfile";
 import { SuperAdmins } from "./pages/SuperAdmins";
 import { ActivityLogs } from "./pages/ActivityLogs";
+import { CompanyProfileEdit } from "./pages/CompanyProfileEdit";
 import { DomainRouter } from "./components/DomainRouter";
 
 // Production domain fix: ensure API calls use same-origin when on production
