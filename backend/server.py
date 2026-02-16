@@ -2758,7 +2758,8 @@ async def get_company_profile_session(request: Request):
         "benefits": profile.get("benefits", []),
         "social_links": profile.get("social_links", {}),
         "gallery_images": profile.get("gallery_images", []),
-        "cover_image": profile.get("cover_image")
+        "cover_image": profile.get("cover_image"),
+        "primary_color": profile.get("primary_color", "#2E4DA7")
     }
 
 @api_router.put("/company-profile-session")
