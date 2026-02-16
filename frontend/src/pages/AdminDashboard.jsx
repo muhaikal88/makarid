@@ -38,7 +38,8 @@ const defaultJobForm = {
   salary_min: '',
   salary_max: '',
   show_salary: false,
-  status: 'draft'
+  status: 'draft',
+  allow_existing_applicant: true
 };
 
 export const AdminDashboard = () => {
