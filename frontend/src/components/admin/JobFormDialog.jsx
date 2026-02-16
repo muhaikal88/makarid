@@ -162,6 +162,26 @@ export const JobFormDialog = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Allow existing applicant setting */}
+            <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="allow_existing"
+                  data-testid="job-allow-existing-checkbox"
+                  checked={jobFormData.allow_existing_applicant !== false}
+                  onChange={(e) => setJobFormData({ ...jobFormData, allow_existing_applicant: e.target.checked })}
+                  className="rounded"
+                />
+                <Label htmlFor="allow_existing" className="text-sm cursor-pointer font-medium">
+                  Izinkan pelamar dari lowongan lain
+                </Label>
+              </div>
+              <p className="text-xs text-gray-500 ml-6">
+                Jika dicentang, pelamar yang sudah melamar di posisi lain di perusahaan Anda tetap bisa melamar di lowongan ini. Jika tidak dicentang, pelamar yang sudah melamar di posisi lain tidak bisa melamar lagi.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
