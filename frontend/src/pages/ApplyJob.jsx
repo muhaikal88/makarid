@@ -523,23 +523,25 @@ export const ApplyJob = ({ domainOverride }) => {
             <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Check className="w-10 h-10 text-emerald-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              {language === 'id' ? 'Lamaran Terkirim!' : 'Application Submitted!'}
+            <h1 className="text-2xl font-bold text-gray-800 mb-3">
+              {language === 'id' ? 'Lamaran Berhasil Dikirim!' : 'Application Submitted!'}
             </h1>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-600 mb-2">
               {language === 'id'
-                ? 'Terima kasih telah melamar. Tim HR kami akan menghubungi Anda jika kualifikasi Anda sesuai.'
-                : 'Thank you for applying. Our HR team will contact you if your qualifications match.'}
+                ? 'Terima kasih telah melamar. Lamaran Anda telah kami terima dan sedang dalam proses peninjauan.'
+                : 'Thank you for applying. Your application has been received and is being reviewed.'}
             </p>
+            <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700 mb-6">
+              <p>
+                {language === 'id'
+                  ? 'Silakan cek inbox email atau folder spam Anda untuk mengetahui perkembangan lamaran.'
+                  : 'Please check your email inbox or spam folder for application updates.'}
+              </p>
+            </div>
             <div className="flex flex-col gap-3">
               <Link to={isCustomDomain ? "/" : `/careers/${domain}`}>
                 <Button className="w-full bg-[#2E4DA7]">
                   {language === 'id' ? 'Lihat Lowongan Lainnya' : 'View Other Jobs'}
-                </Button>
-              </Link>
-              <Link to={isCustomDomain ? "/" : `/company/${domain}`}>
-                <Button variant="outline" className="w-full">
-                  {language === 'id' ? 'Tentang Perusahaan' : 'About Company'}
                 </Button>
               </Link>
             </div>
