@@ -279,9 +279,7 @@ export const CompanyProfileEdit = () => {
 
             <div className="grid gap-2">
               <Label>Deskripsi Perusahaan</Label>
-              <div className="border rounded-lg overflow-hidden">
-                <ReactQuill theme="snow" value={profile.description} onChange={(val) => setProfile({ ...profile, description: val })} modules={quillModules} placeholder="Ceritakan tentang perusahaan Anda..." />
-              </div>
+              <RichEditor value={profile.description} onChange={(val) => setProfile({ ...profile, description: val })} placeholder="Ceritakan tentang perusahaan Anda..." />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
@@ -297,16 +295,12 @@ export const CompanyProfileEdit = () => {
 
             <div className="grid gap-2">
               <Label>Sejarah Perusahaan</Label>
-              <div className="border rounded-lg overflow-hidden">
-                <ReactQuill theme="snow" value={profile.history} onChange={(val) => setProfile({ ...profile, history: val })} modules={quillModules} placeholder="Opsional" />
-              </div>
+              <RichEditor value={profile.history} onChange={(val) => setProfile({ ...profile, history: val })} placeholder="Opsional" />
             </div>
 
             <div className="grid gap-2">
               <Label>Budaya Perusahaan</Label>
-              <div className="border rounded-lg overflow-hidden">
-                <ReactQuill theme="snow" value={profile.culture} onChange={(val) => setProfile({ ...profile, culture: val })} modules={quillModules} />
-              </div>
+              <RichEditor value={profile.culture} onChange={(val) => setProfile({ ...profile, culture: val })} />
             </div>
 
             {/* Benefits */}
