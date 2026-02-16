@@ -702,7 +702,7 @@ export const ApplyJob = ({ domainOverride }) => {
                     <Button 
                       type="submit" 
                       className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 h-12"
-                      disabled={submitting}
+                      disabled={submitting || alreadyApplied}
                       data-testid="submit-application"
                     >
                       {submitting ? (
