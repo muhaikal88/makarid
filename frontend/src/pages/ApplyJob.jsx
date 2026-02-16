@@ -221,6 +221,20 @@ export const ApplyJob = ({ domainOverride }) => {
       return;
     }
 
+    // Check duplicate before submit
+    if (formData.email) {
+      try {
+        const checkRes = await axios.get(`${API}/public/check-application?job_id=${jobId}&email=${encodeURIComponent(formData.email)}`);
+        if (checkRes.data.applied) {
+          setAlreadyApplied(true);
+          toast.error(language === 'id' 
+            ? 'Anda sudah pernah melamar posisi ini. Satu email hanya dapat melamar satu kali per lowongan.'
+            : 'You have already applied for this position.');
+          return;
+        }
+      } catch {}
+    }
+
     setSubmitting(true);
     
     try {
@@ -236,16 +250,23 @@ export const ApplyJob = ({ domainOverride }) => {
       });
 
       setSubmitted(true);
-      toast.success(
-        language === 'id' 
-          ? 'Lamaran berhasil dikirim!' 
-          : 'Application submitted successfully!'
-      );
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to submit application');
+      const detail = err.response?.data?.detail || 'Failed to submit application';
+      if (detail.includes('sudah pernah melamar') || detail.includes('sudah melamar')) {
+        setAlreadyApplied(true);
+      }
+      toast.error(detail);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const checkEmailDuplicate = async (email) => {
+    if (!email || !jobId) return;
+    try {
+      const res = await axios.get(`${API}/public/check-application?job_id=${jobId}&email=${encodeURIComponent(email)}`);
+      setAlreadyApplied(res.data.applied);
+    } catch {}
   };
 
   const renderField = (field) => {
