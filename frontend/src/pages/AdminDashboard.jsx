@@ -297,22 +297,22 @@ export const AdminDashboard = () => {
     <div className="min-h-screen bg-slate-50" data-testid="admin-dashboard">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-[#2E4DA7] rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#2E4DA7] rounded-lg flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <div>
-                <h1 className="font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-xs text-gray-500">{session?.name}</p>
+              <div className="min-w-0">
+                <h1 className="font-bold text-gray-900 text-sm sm:text-base truncate">Admin Dashboard</h1>
+                <p className="text-xs text-gray-500 truncate">{session?.name}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 sm:gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2" data-testid="language-toggle">
+                  <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2" data-testid="language-toggle">
                     <Globe className="w-4 h-4" />
                     <span>{language.toUpperCase()}</span>
                   </Button>
@@ -323,10 +323,10 @@ export const AdminDashboard = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="ghost" size="icon" className="relative" data-testid="notifications-btn">
-                <Bell className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9" data-testid="notifications-btn">
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                 {stats.pendingApplications > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#E31E24] text-white text-xs rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#E31E24] text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center">
                     {stats.pendingApplications}
                   </span>
                 )}
@@ -334,15 +334,18 @@ export const AdminDashboard = () => {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2" data-testid="profile-menu-btn">
-                    <Avatar className="w-8 h-8 bg-[#2E4DA7]">
-                      <AvatarFallback className="bg-[#2E4DA7] text-white text-sm">
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2" data-testid="profile-menu-btn">
+                    <Avatar className="w-7 h-7 sm:w-8 sm:h-8 bg-[#2E4DA7]">
+                      <AvatarFallback className="bg-[#2E4DA7] text-white text-xs sm:text-sm">
                         {getInitials(session?.name)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setLanguage(language === 'id' ? 'en' : 'id')} className="sm:hidden">
+                    <Globe className="w-4 h-4 mr-2" /> {language === 'id' ? 'English' : 'Indonesia'}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
                     <User className="w-4 h-4 mr-2" /> Profile
                   </DropdownMenuItem>
