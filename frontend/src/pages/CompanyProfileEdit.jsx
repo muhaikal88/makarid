@@ -13,21 +13,26 @@ import { Toaster, toast } from 'sonner';
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 // Lazy load ReactQuill to avoid React 19 concurrent rendering issues
-let ReactQuill = null;
-try {
-  ReactQuill = require('react-quill-new').default;
-  require('react-quill-new/dist/quill.snow.css');
-} catch (e) {
-  console.warn('ReactQuill not available');
-}
-
 const RichEditor = ({ value, onChange, placeholder }) => {
-  if (!ReactQuill) {
-    return <Textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={4} />;
+  const [QuillComponent, setQuillComponent] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    import('react-quill-new').then(mod => {
+      setQuillComponent(() => mod.default);
+    }).catch(() => {});
+    // Load CSS
+    import('react-quill-new/dist/quill.snow.css').catch(() => {});
+  }, []);
+
+  if (!mounted || !QuillComponent) {
+    return <Textarea value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={4} />;
   }
+
   return (
     <div className="border rounded-lg overflow-hidden">
-      <ReactQuill
+      <QuillComponent
         theme="snow" value={value || ''} onChange={onChange} placeholder={placeholder}
         modules={{
           toolbar: [
