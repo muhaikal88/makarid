@@ -221,10 +221,14 @@ export const CompanyProfile = ({ domainOverride }) => {
             {/* Culture */}
             {company.culture && (
               <section id="culture">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4 font-['Manrope']">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 font-['Manrope']">
                   {language === 'id' ? 'Budaya Perusahaan' : 'Our Culture'}
                 </h2>
-                <p className="text-gray-600 leading-relaxed whitespace-pre-line">{company.culture}</p>
+                {company.culture.includes('<') ? (
+                  <div className="text-gray-600 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: company.culture }} />
+                ) : (
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-line">{company.culture}</p>
+                )}
               </section>
             )}
 
