@@ -3387,6 +3387,20 @@ async def delete_form_field(field_id: str, current_user: dict = Depends(require_
 
 # ============ APPLICATION ROUTES ============
 
+@api_router.get("/public/check-application")
+async def check_existing_application(job_id: str, email: str):
+    """Check if email already applied to this job"""
+    email = email.strip().lower()
+    if not email or not job_id:
+        return {"applied": False}
+    
+    existing = await db.applications.find_one({
+        "job_id": job_id,
+        "form_data.email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}
+    })
+    
+    return {"applied": bool(existing)}
+
 @api_router.post("/public/apply")
 async def submit_application(
     job_id: str = Form(...),
