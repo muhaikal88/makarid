@@ -45,6 +45,7 @@ export const ApplyJob = ({ domainOverride }) => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
   
   const [formData, setFormData] = useState({});
   const [resume, setResume] = useState(null);
