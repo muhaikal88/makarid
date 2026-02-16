@@ -157,24 +157,32 @@ export const CompanyProfile = ({ domainOverride }) => {
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-12">
+          <div className="lg:col-span-2 space-y-8 sm:space-y-12">
             {/* About */}
             <section id="about">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 font-['Manrope']">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 font-['Manrope']">
                 {language === 'id' ? 'Tentang Kami' : 'About Us'}
               </h2>
-              <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                {company.description || (language === 'id' ? 'Informasi perusahaan akan segera tersedia.' : 'Company information coming soon.')}
-              </p>
+              {company.description?.includes('<') ? (
+                <div className="text-gray-600 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: company.description }} />
+              ) : (
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                  {company.description || (language === 'id' ? 'Informasi perusahaan akan segera tersedia.' : 'Company information coming soon.')}
+                </p>
+              )}
             </section>
 
             {/* History */}
             {company.history && (
               <section id="history">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4 font-['Manrope']">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 font-['Manrope']">
                   {language === 'id' ? 'Sejarah' : 'Our History'}
                 </h2>
-                <p className="text-gray-600 leading-relaxed whitespace-pre-line">{company.history}</p>
+                {company.history.includes('<') ? (
+                  <div className="text-gray-600 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: company.history }} />
+                ) : (
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-line">{company.history}</p>
+                )}
               </section>
             )}
 
