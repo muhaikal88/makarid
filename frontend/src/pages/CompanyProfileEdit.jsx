@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -9,24 +9,41 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { ArrowLeft, Building2, Camera, Loader2, Save, Plus, X, ExternalLink, Image, Palette } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
-const quillModules = {
-  toolbar: {
-    container: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['blockquote'],
-      ['link', 'image'],
-      ['clean']
-    ],
-  },
+// Lazy load ReactQuill to avoid React 19 concurrent rendering issues
+let ReactQuill = null;
+try {
+  ReactQuill = require('react-quill-new').default;
+  require('react-quill-new/dist/quill.snow.css');
+} catch (e) {
+  console.warn('ReactQuill not available');
+}
+
+const RichEditor = ({ value, onChange, placeholder }) => {
+  if (!ReactQuill) {
+    return <Textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={4} />;
+  }
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <ReactQuill
+        theme="snow" value={value || ''} onChange={onChange} placeholder={placeholder}
+        modules={{
+          toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'align': [] }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['blockquote'],
+            ['link', 'image'],
+            ['clean']
+          ],
+        }}
+      />
+    </div>
+  );
 };
 
 export const CompanyProfileEdit = () => {
