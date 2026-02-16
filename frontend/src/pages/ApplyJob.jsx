@@ -671,6 +671,23 @@ export const ApplyJob = ({ domainOverride }) => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Duplicate email warning */}
+                  {alreadyApplied && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3" data-testid="duplicate-warning">
+                      <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-medium text-amber-800">
+                          {language === 'id' ? 'Anda sudah pernah melamar' : 'You have already applied'}
+                        </p>
+                        <p className="text-sm text-amber-700 mt-1">
+                          {language === 'id'
+                            ? 'Email ini sudah terdaftar untuk posisi ini. Satu email hanya dapat melamar satu kali per lowongan.'
+                            : 'This email is already registered for this position. One email can only apply once per job.'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {form_fields.map(field => (
                     <div key={field.id} className="space-y-2">
                       <Label htmlFor={field.field_name}>
