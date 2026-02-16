@@ -126,27 +126,27 @@ export const CompanyProfile = ({ domainOverride }) => {
 
       {/* Navigation */}
       <div className="bg-white border-b sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16 pt-6 sm:pt-8">
-            <div className="flex gap-6">
-              <a href="#about" className="text-gray-600 hover:text-[#2E4DA7] font-medium">
+        <div className="max-w-6xl mx-auto px-3 sm:px-8">
+          <div className="flex items-center justify-between h-12 sm:h-16 pt-4 sm:pt-8 gap-2">
+            <div className="flex gap-3 sm:gap-6 overflow-x-auto shrink min-w-0">
+              <a href="#about" className="text-xs sm:text-base text-gray-600 hover:text-[#2E4DA7] font-medium whitespace-nowrap">
                 {language === 'id' ? 'Tentang' : 'About'}
               </a>
               {company.vision && (
-                <a href="#vision" className="text-gray-600 hover:text-[#2E4DA7] font-medium">
-                  {language === 'id' ? 'Visi & Misi' : 'Vision & Mission'}
+                <a href="#vision" className="text-xs sm:text-base text-gray-600 hover:text-[#2E4DA7] font-medium whitespace-nowrap">
+                  {language === 'id' ? 'Visi & Misi' : 'Vision'}
                 </a>
               )}
               {company.culture && (
-                <a href="#culture" className="text-gray-600 hover:text-[#2E4DA7] font-medium">
+                <a href="#culture" className="text-xs sm:text-base text-gray-600 hover:text-[#2E4DA7] font-medium whitespace-nowrap">
                   {language === 'id' ? 'Budaya' : 'Culture'}
                 </a>
               )}
             </div>
-            <Link to={isCustomDomain ? '/careers' : `/careers/${domain}`}>
-              <Button className="bg-[#E31E24] hover:bg-[#E31E24]/90">
-                <Briefcase className="w-4 h-4 mr-2" />
-                {language === 'id' ? 'Lihat Lowongan' : 'View Jobs'}
+            <Link to={isCustomDomain ? '/careers' : `/careers/${domain}`} className="shrink-0">
+              <Button className="bg-[#E31E24] hover:bg-[#E31E24]/90 text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4">
+                <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                {language === 'id' ? 'Lowongan' : 'Jobs'}
               </Button>
             </Link>
           </div>
