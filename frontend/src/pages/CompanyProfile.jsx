@@ -96,7 +96,7 @@ export const CompanyProfile = ({ domainOverride }) => {
     <div className="min-h-screen bg-white">
       {/* Header/Cover */}
       <div 
-        className="relative h-80 bg-gradient-to-br from-[#2E4DA7] to-[#1e3a8a]"
+        className="relative h-48 sm:h-80 bg-gradient-to-br from-[#2E4DA7] to-[#1e3a8a]"
         style={company.cover_image ? {
           backgroundImage: `url(${company.cover_image})`,
           backgroundSize: 'cover',
@@ -104,10 +104,10 @@ export const CompanyProfile = ({ domainOverride }) => {
         } : {}}
       >
         <div className="absolute inset-0 bg-[#2E4DA7]/80"></div>
-        <div className="absolute bottom-0 left-0 right-0 p-8">
-          <div className="max-w-6xl mx-auto flex items-end gap-6">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
+          <div className="max-w-6xl mx-auto flex items-end gap-3 sm:gap-6">
             {/* Logo */}
-            <div className="w-32 h-32 bg-white rounded-xl shadow-lg flex items-center justify-center p-3 -mb-16 relative z-10">
+            <div className="w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-xl shadow-lg flex items-center justify-center p-2 sm:p-3 -mb-10 sm:-mb-16 relative z-10">
               {company.logo_url ? (
                 <img src={company.logo_url} alt={company.name} className="w-full h-full object-contain" />
               ) : (
@@ -115,7 +115,7 @@ export const CompanyProfile = ({ domainOverride }) => {
               )}
             </div>
             <div className="text-white pb-4">
-              <h1 className="text-3xl font-bold font-['Manrope']">{company.name}</h1>
+              <h1 className="text-xl sm:text-3xl font-bold font-['Manrope']">{company.name}</h1>
               {company.tagline && (
                 <p className="text-white/80 text-lg mt-1">{company.tagline}</p>
               )}
@@ -126,8 +126,8 @@ export const CompanyProfile = ({ domainOverride }) => {
 
       {/* Navigation */}
       <div className="bg-white border-b sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-8">
-          <div className="flex items-center justify-between h-16 pt-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16 pt-6 sm:pt-8">
             <div className="flex gap-6">
               <a href="#about" className="text-gray-600 hover:text-[#2E4DA7] font-medium">
                 {language === 'id' ? 'Tentang' : 'About'}
@@ -154,8 +154,8 @@ export const CompanyProfile = ({ domainOverride }) => {
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-12">
             {/* About */}
@@ -339,7 +339,7 @@ export const CompanyProfile = ({ domainOverride }) => {
 
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-8">
-        <div className="max-w-6xl mx-auto px-8 text-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 text-center">
           <p className="text-sm text-gray-400">
             &copy; {new Date().getFullYear()} {company.name}. All rights reserved.
           </p>
