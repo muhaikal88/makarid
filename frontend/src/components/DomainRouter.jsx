@@ -67,12 +67,12 @@ export const DomainRouter = ({ children }) => {
       const title = domainValue.pageTitle || domainValue.companyName;
       if (title) document.title = title;
 
-      // Set favicon
-      const faviconEl = document.getElementById('dynamic-favicon');
+      // Set favicon - change ALL favicon links
+      const faviconLinks = document.querySelectorAll('link[rel*="icon"]');
       if (domainValue.companyLogo) {
-        if (faviconEl) faviconEl.href = domainValue.companyLogo;
+        faviconLinks.forEach(el => { el.href = domainValue.companyLogo; });
       } else {
-        if (faviconEl) faviconEl.remove();
+        faviconLinks.forEach(el => el.remove());
       }
 
       // Update OG meta tags & description
