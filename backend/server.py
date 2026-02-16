@@ -3406,6 +3406,27 @@ async def submit_application(
     except:
         raise HTTPException(status_code=400, detail="Invalid form data")
     
+    applicant_email = parsed_data.get("email", "").strip().lower()
+    
+    # Check duplicate: same email + same job
+    if applicant_email:
+        existing_same_job = await db.applications.find_one({
+            "job_id": job_id,
+            "form_data.email": {"$regex": f"^{re.escape(applicant_email)}$", "$options": "i"}
+        })
+        if existing_same_job:
+            raise HTTPException(status_code=400, detail="Anda sudah pernah melamar posisi ini. Satu email hanya dapat melamar satu kali per lowongan.")
+        
+        # Check: existing applicant in other jobs of same company
+        if not job.get("allow_existing_applicant", True):
+            existing_other_job = await db.applications.find_one({
+                "company_id": job["company_id"],
+                "job_id": {"$ne": job_id},
+                "form_data.email": {"$regex": f"^{re.escape(applicant_email)}$", "$options": "i"}
+            })
+            if existing_other_job:
+                raise HTTPException(status_code=400, detail="Anda sudah melamar di posisi lain di perusahaan ini. Lowongan ini tidak mengizinkan pelamar yang sudah mendaftar di posisi lain.")
+    
     resume_url = None
     if resume:
         file_ext = resume.filename.split(".")[-1] if "." in resume.filename else "pdf"
