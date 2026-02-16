@@ -366,31 +366,34 @@ export const AdminDashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border">
-            <TabsTrigger value="overview" className="flex items-center gap-2" data-testid="tab-overview">
-              <LayoutDashboard className="w-4 h-4" />
-              {language === 'id' ? 'Ringkasan' : 'Overview'}
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <TabsList className="bg-white border w-full overflow-x-auto flex justify-start sm:justify-start">
+            <TabsTrigger value="overview" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0" data-testid="tab-overview">
+              <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">{language === 'id' ? 'Ringkasan' : 'Overview'}</span>
+              <span className="xs:hidden">Home</span>
             </TabsTrigger>
-            <TabsTrigger value="jobs" className="flex items-center gap-2" data-testid="tab-jobs">
-              <Briefcase className="w-4 h-4" />
+            <TabsTrigger value="jobs" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0" data-testid="tab-jobs">
+              <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {language === 'id' ? 'Lowongan' : 'Jobs'}
             </TabsTrigger>
-            <TabsTrigger value="applications" className="flex items-center gap-2" data-testid="tab-applications">
-              <FileText className="w-4 h-4" />
-              {language === 'id' ? 'Lamaran' : 'Applications'}
+            <TabsTrigger value="applications" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0" data-testid="tab-applications">
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {language === 'id' ? 'Lamaran' : 'Apps'}
             </TabsTrigger>
-            <TabsTrigger value="trash" className="flex items-center gap-2 relative" data-testid="tab-trash">
-              <Trash2 className="w-4 h-4" />
-              {language === 'id' ? 'Tempat Sampah' : 'Trash'}
+            <TabsTrigger value="trash" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0 relative" data-testid="tab-trash">
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{language === 'id' ? 'Tempat Sampah' : 'Trash'}</span>
+              <span className="sm:hidden">Trash</span>
               {trashApps.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 text-xs bg-red-100 text-red-600 rounded-full">{trashApps.length}</span>
+                <span className="ml-1 px-1 py-0.5 text-[10px] bg-red-100 text-red-600 rounded-full">{trashApps.length}</span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-2" data-testid="tab-logs">
-              <ClipboardList className="w-4 h-4" />
-              {language === 'id' ? 'Log Aktivitas' : 'Activity Logs'}
+            <TabsTrigger value="logs" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0" data-testid="tab-logs">
+              <ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{language === 'id' ? 'Log Aktivitas' : 'Activity Logs'}</span>
+              <span className="sm:hidden">Log</span>
             </TabsTrigger>
           </TabsList>
 
