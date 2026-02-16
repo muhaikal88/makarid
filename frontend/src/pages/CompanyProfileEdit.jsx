@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -9,47 +9,9 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { ArrowLeft, Building2, Camera, Loader2, Save, Plus, X, ExternalLink, Image, Palette } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+import { RichEditor } from '../components/RichEditor';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
-
-// Lazy load ReactQuill to avoid React 19 concurrent rendering issues
-const RichEditor = ({ value, onChange, placeholder }) => {
-  const [QuillComponent, setQuillComponent] = useState(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    import('react-quill-new').then(mod => {
-      setQuillComponent(() => mod.default);
-    }).catch(() => {});
-    // Load CSS
-    import('react-quill-new/dist/quill.snow.css').catch(() => {});
-  }, []);
-
-  if (!mounted || !QuillComponent) {
-    return <Textarea value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={4} />;
-  }
-
-  return (
-    <div className="border rounded-lg overflow-hidden">
-      <QuillComponent
-        theme="snow" value={value || ''} onChange={onChange} placeholder={placeholder}
-        modules={{
-          toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'align': [] }],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['blockquote'],
-            ['link', 'image'],
-            ['clean']
-          ],
-        }}
-      />
-    </div>
-  );
-};
 
 export const CompanyProfileEdit = () => {
   const { language } = useLanguage();
