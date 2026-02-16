@@ -131,7 +131,8 @@ export const AdminDashboard = () => {
         salary_min: job.salary_min || '',
         salary_max: job.salary_max || '',
         show_salary: job.show_salary || false,
-        status: job.status
+        status: job.status,
+        allow_existing_applicant: job.allow_existing_applicant !== false
       });
     } else {
       setSelectedJob(null);
