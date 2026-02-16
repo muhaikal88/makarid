@@ -4043,6 +4043,36 @@ async def upload_profile_picture(file: UploadFile = File(...)):
     url = f"/api/uploads/{file_name}"
     return {"url": url, "filename": file_name}
 
+@api_router.post("/upload/content-image")
+async def upload_content_image(file: UploadFile = File(...)):
+    """Upload and compress content image (for rich text editor, gallery, etc). Max 10MB, auto-compress."""
+    allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Format file tidak didukung. Gunakan JPG, PNG, WebP, atau GIF.")
+    
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Ukuran file maksimal 10MB")
+    
+    from PIL import Image
+    img = Image.open(io.BytesIO(contents))
+    
+    if img.mode in ('RGBA', 'P'):
+        img = img.convert('RGB')
+    
+    # Resize if too large (max 1200px width for content)
+    if img.width > 1200:
+        ratio = 1200 / img.width
+        img = img.resize((1200, int(img.height * ratio)), Image.LANCZOS)
+    
+    file_name = f"content_{uuid.uuid4().hex[:12]}.jpg"
+    file_path = UPLOAD_DIR / file_name
+    img.save(str(file_path), 'JPEG', quality=80, optimize=True)
+    
+    url = f"/api/uploads/{file_name}"
+    return {"url": url, "filename": file_name}
+
+
 # ============ USER ROUTES (Updated for new structure) ============
 
 class AllUsersResponse(BaseModel):
