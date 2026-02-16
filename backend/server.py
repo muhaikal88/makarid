@@ -295,6 +295,7 @@ class CompanyProfileUpdate(BaseModel):
     social_links: Optional[Dict[str, str]] = None
     gallery_images: Optional[List[str]] = None
     cover_image: Optional[str] = None
+    primary_color: Optional[str] = None
 
 class CompanyProfileResponse(BaseModel):
     id: str
