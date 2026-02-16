@@ -22,64 +22,64 @@ export const OverviewTab = ({ stats, applications, session, language, formatDate
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">
                   {language === 'id' ? 'Total Lowongan' : 'Total Jobs'}
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalJobs}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{stats.totalJobs}</p>
               </div>
-              <div className="p-3 bg-blue-50 rounded-xl">
-                <Briefcase className="w-6 h-6 text-[#2E4DA7]" />
+              <div className="p-2 sm:p-3 bg-blue-50 rounded-xl">
+                <Briefcase className="w-5 h-5 sm:w-6 sm:h-6 text-[#2E4DA7]" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">
                   {language === 'id' ? 'Lowongan Aktif' : 'Active Jobs'}
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.publishedJobs}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{stats.publishedJobs}</p>
               </div>
-              <div className="p-3 bg-emerald-50 rounded-xl">
-                <Eye className="w-6 h-6 text-emerald-500" />
+              <div className="p-2 sm:p-3 bg-emerald-50 rounded-xl">
+                <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">
                   {language === 'id' ? 'Total Lamaran' : 'Total Applications'}
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalApplications}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{stats.totalApplications}</p>
               </div>
-              <div className="p-3 bg-purple-50 rounded-xl">
-                <FileText className="w-6 h-6 text-purple-500" />
+              <div className="p-2 sm:p-3 bg-purple-50 rounded-xl">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">
                   {language === 'id' ? 'Menunggu Review' : 'Pending Review'}
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.pendingApplications}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{stats.pendingApplications}</p>
               </div>
-              <div className="p-3 bg-amber-50 rounded-xl">
-                <Clock className="w-6 h-6 text-amber-500" />
+              <div className="p-2 sm:p-3 bg-amber-50 rounded-xl">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
               </div>
             </div>
           </CardContent>
@@ -93,7 +93,7 @@ export const OverviewTab = ({ stats, applications, session, language, formatDate
           session?.days_remaining !== null && session?.days_remaining <= 30 ? 'bg-gradient-to-r from-amber-50 to-yellow-50' :
           'bg-gradient-to-r from-emerald-50 to-teal-50'
         }`}>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-xl shadow-sm ${
                 session?.license_status === 'expired' ? 'bg-red-100' :
@@ -102,7 +102,7 @@ export const OverviewTab = ({ stats, applications, session, language, formatDate
                 {session?.license_status === 'expired' ? (
                   <AlertTriangle className="w-6 h-6 text-red-600" />
                 ) : (
-                  <Shield className="w-6 h-6 text-emerald-600" />
+                  <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
                 )}
               </div>
               <div className="flex-1">
