@@ -356,6 +356,7 @@ class JobCreate(BaseModel):
     salary_max: Optional[int] = None
     show_salary: bool = False
     status: str = JobStatus.DRAFT
+    allow_existing_applicant: bool = True  # Allow applicants who applied to other jobs
 
 class JobUpdate(BaseModel):
     title: Optional[str] = None
@@ -369,6 +370,7 @@ class JobUpdate(BaseModel):
     salary_max: Optional[int] = None
     show_salary: Optional[bool] = None
     status: Optional[str] = None
+    allow_existing_applicant: Optional[bool] = None
 
 class JobResponse(BaseModel):
     id: str
