@@ -481,6 +481,7 @@ export const ApplyJob = ({ domainOverride }) => {
             id={field.field_name}
             value={formData[field.field_name] || ''}
             onChange={(e) => handleInputChange(field.field_name, e.target.value)}
+            onBlur={field.field_type === 'email' ? (e) => checkEmailDuplicate(e.target.value) : undefined}
             placeholder={field.placeholder}
             data-testid={`field-${field.field_name}`}
           />
