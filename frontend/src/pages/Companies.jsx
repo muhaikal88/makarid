@@ -495,6 +495,7 @@ export const Companies = () => {
                     <TableHead className="font-semibold">{t('status')}</TableHead>
                     <TableHead className="font-semibold">Admin</TableHead>
                     <TableHead className="font-semibold">Karyawan</TableHead>
+                    <TableHead className="font-semibold">Storage</TableHead>
                     <TableHead className="text-right font-semibold">{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
