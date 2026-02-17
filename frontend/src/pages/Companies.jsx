@@ -578,6 +578,21 @@ export const Companies = () => {
                           <span className="font-medium">{company.employee_count || 0}</span>
                         </div>
                       </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const cs = storageData?.companies?.find(c => c.company_id === company.id);
+                          if (!cs) return <span className="text-xs text-gray-400">-</span>;
+                          const pct = cs.usage_percent;
+                          return (
+                            <button onClick={() => handleOpenStorage(company)} className="w-full text-left group" title="Kelola Storage">
+                              <div className="text-xs font-medium text-gray-700">{cs.used_mb}MB / {cs.quota_mb}MB</div>
+                              <div className="w-full h-1.5 bg-slate-200 rounded-full mt-1">
+                                <div className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{width: `${Math.min(pct, 100)}%`}} />
+                              </div>
+                            </button>
+                          );
+                        })()}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
