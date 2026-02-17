@@ -1436,6 +1436,20 @@ async def get_session_user(request: Request):
         await db.user_sessions.delete_one({"session_token": session_token})
         raise HTTPException(status_code=401, detail="Session expired")
     
+    # Check if user is still active
+    user_id = session.get("user_id")
+    role = session.get("role")
+    if role == "admin":
+        user = await db.company_admins.find_one({"id": user_id}, {"_id": 0, "is_active": 1})
+    elif role == "employee":
+        user = await db.employees.find_one({"id": user_id}, {"_id": 0, "is_active": 1})
+    else:
+        user = None
+    
+    if user and not user.get("is_active", True):
+        await db.user_sessions.delete_one({"session_token": session_token})
+        raise HTTPException(status_code=401, detail="Akun Anda telah dinonaktifkan")
+    
     return session
 
 @api_router.get("/auth/me-session")
