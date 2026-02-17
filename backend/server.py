@@ -4279,6 +4279,37 @@ async def delete_user(user_id: str, current_user: dict = Depends(require_super_a
 
 import shutil
 
+async def check_company_storage(company_id: str, additional_bytes: int = 0):
+    """Check if company has enough storage. Returns (ok, used, quota)"""
+    company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    if not company:
+        return True, 0, 0
+    
+    quota = company.get("storage_quota", 500 * 1024 * 1024)
+    
+    # Calculate current usage
+    apps = await db.applications.find({"company_id": company_id, "resume_url": {"$ne": None}}, {"_id": 0, "resume_url": 1}).to_list(10000)
+    used = 0
+    for app in apps:
+        url = app.get("resume_url", "")
+        if url:
+            fpath = UPLOAD_DIR / url.split("/")[-1]
+            if fpath.exists():
+                used += fpath.stat().st_size
+    
+    logo = company.get("logo_url", "")
+    if logo and logo.startswith("/api/uploads/"):
+        fpath = UPLOAD_DIR / logo.split("/")[-1]
+        if fpath.exists(): used += fpath.stat().st_size
+    
+    gallery = company.get("profile", {}).get("gallery_images", [])
+    for img in gallery:
+        if img and img.startswith("/api/uploads/"):
+            fpath = UPLOAD_DIR / img.split("/")[-1]
+            if fpath.exists(): used += fpath.stat().st_size
+    
+    return (used + additional_bytes) <= quota, used, quota
+
 @api_router.get("/system/storage")
 async def get_system_storage(current_user: dict = Depends(require_super_admin)):
     """Get total disk usage and per-company storage breakdown"""
