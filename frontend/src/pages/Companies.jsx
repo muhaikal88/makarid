@@ -149,6 +149,37 @@ export const Companies = () => {
     }
   };
 
+  const fetchStorageData = async () => {
+    try {
+      const response = await axios.get(`${API}/system/storage`, { headers: getAuthHeaders() });
+      setStorageData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch storage:', error);
+    }
+  };
+
+  const handleOpenStorage = (company) => {
+    setSelectedCompany(company);
+    const compStorage = storageData?.companies?.find(c => c.company_id === company.id);
+    setStorageQuotaInput(compStorage?.quota_mb || 500);
+    setIsStorageOpen(true);
+  };
+
+  const handleSaveQuota = async () => {
+    setFormLoading(true);
+    try {
+      await axios.put(`${API}/companies/${selectedCompany.id}/storage-quota?quota_mb=${storageQuotaInput}`, {}, { headers: getAuthHeaders() });
+      toast.success(`Quota storage diupdate ke ${storageQuotaInput}MB`);
+      setIsStorageOpen(false);
+      fetchStorageData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal update quota');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+
   const handleOpenForm = (company = null) => {
     if (company) {
       setSelectedCompany(company);
