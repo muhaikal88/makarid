@@ -21,24 +21,34 @@ export const UnifiedLogin = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API}/auth/unified-login`, { email, password });
+      const response = await axios.post(`${API}/auth/unified-login`, { 
+        email, password, 
+        totp_code: totpCode || null 
+      });
       const data = response.data;
+      
+      // Check if 2FA is required
+      if (data.requires_2fa) {
+        setRequires2FA(true);
+        setLoading(false);
+        return;
+      }
       
       // Store user info for selection page
       sessionStorage.setItem('login_data', JSON.stringify(data));
       
       // Check if needs selection
       if (data.needs_selection) {
-        // Multiple companies or roles - go to selector
         navigate('/select-company', { state: { loginData: data } });
       } else {
-        // Single access - auto select and create session
         const access = data.access_list[0];
         const sessionResp = await axios.post(`${API}/auth/select-company`, {
           company_id: access.company_id,
@@ -49,7 +59,6 @@ export const UnifiedLogin = () => {
           withCredentials: true
         });
         
-        // Redirect based on role
         if (access.role === 'admin') {
           navigate('/admin/dashboard');
         } else {
@@ -58,9 +67,12 @@ export const UnifiedLogin = () => {
       }
     } catch (err) {
       console.error('Login error:', err);
-      toast.error(language === 'id' 
-        ? 'Email atau password salah' 
-        : 'Invalid email or password');
+      const detail = err.response?.data?.detail;
+      if (detail?.includes('autentikasi')) {
+        toast.error(detail);
+      } else {
+        toast.error(language === 'id' ? 'Email atau password salah' : 'Invalid email or password');
+      }
     } finally {
       setLoading(false);
     }
