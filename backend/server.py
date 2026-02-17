@@ -1115,6 +1115,8 @@ async def unified_login(data: UnifiedLoginRequest):
     # Check company_admins table
     admin = await db.company_admins.find_one({"email": data.email}, {"_id": 0})
     if admin:
+        if not admin.get("is_active", True):
+            raise HTTPException(status_code=401, detail="Akun Anda telah dinonaktifkan. Hubungi administrator.")
         if admin.get("password") and verify_password(data.password, admin["password"]):
             user_name = admin["name"]
             user_picture = admin.get("picture")
