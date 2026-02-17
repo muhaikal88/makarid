@@ -442,6 +442,36 @@ export const Companies = () => {
   return (
     <DashboardLayout title={t('companyManagement')}>
       <div className="space-y-6" data-testid="companies-page">
+        {/* System Storage Overview */}
+        {storageData && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <p className="text-xs text-gray-500 mb-1">Disk Server</p>
+                <p className="text-lg font-bold text-gray-900">{storageData.disk.used_gb}GB <span className="text-sm font-normal text-gray-500">/ {storageData.disk.total_gb}GB</span></p>
+                <div className="w-full h-2 bg-slate-200 rounded-full mt-2">
+                  <div className={`h-full rounded-full ${storageData.disk.usage_percent > 90 ? 'bg-red-500' : storageData.disk.usage_percent > 70 ? 'bg-amber-500' : 'bg-[#2E4DA7]'}`} style={{width: `${storageData.disk.usage_percent}%`}} />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Sisa {storageData.disk.free_gb}GB ({(100 - storageData.disk.usage_percent).toFixed(1)}%)</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <p className="text-xs text-gray-500 mb-1">Total Upload Files</p>
+                <p className="text-lg font-bold text-gray-900">{storageData.uploads.total_mb}MB</p>
+                <p className="text-xs text-gray-500 mt-2">{storageData.companies.reduce((a, c) => a + c.file_count, 0)} file dari {storageData.companies.length} perusahaan</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <p className="text-xs text-gray-500 mb-1">Perusahaan Aktif</p>
+                <p className="text-lg font-bold text-gray-900">{companies.filter(c => c.is_active).length} <span className="text-sm font-normal text-gray-500">/ {companies.length}</span></p>
+                <p className="text-xs text-gray-500 mt-2">{storageData.companies.filter(c => c.usage_percent > 70).length} perusahaan storage &gt;70%</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="relative flex-1 max-w-md">
