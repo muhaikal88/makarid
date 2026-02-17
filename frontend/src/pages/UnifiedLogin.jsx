@@ -200,6 +200,32 @@ export const UnifiedLogin = () => {
                 </div>
               </div>
 
+              {/* 2FA / Google Authenticator */}
+              {requires2FA && (
+                <div className="space-y-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Label className="text-amber-800 flex items-center gap-2 font-medium">
+                    <Lock className="w-4 h-4" />
+                    {language === 'id' ? 'Kode Google Authenticator' : 'Google Authenticator Code'}
+                  </Label>
+                  <p className="text-xs text-amber-700">
+                    {language === 'id' 
+                      ? 'Masukkan 6 digit kode dari aplikasi Google Authenticator'
+                      : 'Enter the 6-digit code from your Google Authenticator app'}
+                  </p>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="000000"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    maxLength={6}
+                    className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
+                    autoFocus
+                    data-testid="totp-code-input"
+                  />
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full h-11 bg-[#2E4DA7] hover:bg-[#2E4DA7]/90 text-white font-medium"
