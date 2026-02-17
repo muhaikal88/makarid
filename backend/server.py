@@ -147,6 +147,7 @@ class Employee(EmployeeBase):
 class UnifiedLoginRequest(BaseModel):
     email: EmailStr
     password: str
+    totp_code: Optional[str] = None
 
 class UserAccess(BaseModel):
     company_id: str
