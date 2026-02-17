@@ -1332,6 +1332,67 @@ export const Companies = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Storage Quota Dialog */}
+      <Dialog open={isStorageOpen} onOpenChange={setIsStorageOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Storage - {selectedCompany?.name}
+            </DialogTitle>
+            <DialogDescription>Kelola kapasitas penyimpanan perusahaan</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {(() => {
+              const cs = storageData?.companies?.find(c => c.company_id === selectedCompany?.id);
+              if (!cs) return null;
+              const pct = cs.usage_percent;
+              return (
+                <>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900">{cs.used_mb}MB</p>
+                    <p className="text-sm text-gray-500">dari {cs.quota_mb}MB ({pct}%)</p>
+                    <div className="w-full h-3 bg-slate-200 rounded-full mt-3">
+                      <div className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{width: `${Math.min(pct, 100)}%`}} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-center text-sm">
+                    <div className="p-3 bg-slate-50 rounded-lg">
+                      <p className="text-gray-500">File</p>
+                      <p className="font-bold">{cs.file_count}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-lg">
+                      <p className="text-gray-500">Sisa</p>
+                      <p className="font-bold">{Math.max(0, cs.quota_mb - cs.used_mb)}MB</p>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+            <div className="grid gap-2">
+              <Label>Quota Storage (MB)</Label>
+              <div className="flex gap-2">
+                {[100, 250, 500, 1000, 2000, 5000].map(v => (
+                  <Button key={v} type="button" variant={storageQuotaInput === v ? 'default' : 'outline'} size="sm"
+                    className={storageQuotaInput === v ? 'bg-[#2E4DA7]' : ''}
+                    onClick={() => setStorageQuotaInput(v)}>
+                    {v >= 1000 ? `${v/1000}GB` : `${v}MB`}
+                  </Button>
+                ))}
+              </div>
+              <Input type="number" value={storageQuotaInput} onChange={(e) => setStorageQuotaInput(parseInt(e.target.value) || 0)}
+                className="mt-2" min={10} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsStorageOpen(false)}>Batal</Button>
+            <Button onClick={handleSaveQuota} disabled={formLoading} className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90">
+              {formLoading ? 'Menyimpan...' : 'Simpan Quota'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
     </DashboardLayout>
   );
 };
