@@ -74,9 +74,12 @@ export const Companies = () => {
   const [isDomainsOpen, setIsDomainsOpen] = useState(false);
   const [isLicenseOpen, setIsLicenseOpen] = useState(false);
   const [isSMTPOpen, setIsSMTPOpen] = useState(false);
+  const [isStorageOpen, setIsStorageOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [storageData, setStorageData] = useState(null);
+  const [storageQuotaInput, setStorageQuotaInput] = useState(500);
   
   // Domain form state
   const [domainData, setDomainData] = useState({
