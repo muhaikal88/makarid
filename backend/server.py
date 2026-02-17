@@ -3478,6 +3478,11 @@ async def submit_application(
         file_ext = resume.filename.split(".")[-1] if "." in resume.filename else "pdf"
         content = await resume.read()
         
+        # Check storage quota
+        ok, used, quota = await check_company_storage(job["company_id"], len(content))
+        if not ok:
+            raise HTTPException(status_code=400, detail="Maaf, kapasitas penyimpanan perusahaan sudah penuh. Silakan hubungi perusahaan.")
+        
         # Auto-compress images
         IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "bmp", "gif"}
         if file_ext.lower() in IMAGE_EXTS:
