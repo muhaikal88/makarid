@@ -123,6 +123,7 @@ export const Companies = () => {
 
   useEffect(() => {
     fetchCompanies();
+    fetchStorageData();
   }, []);
 
   const fetchCompanies = async () => {
