@@ -1100,7 +1100,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 # ============ UNIFIED AUTH (Email-based across tables) ============
 
-@api_router.post("/auth/unified-login", response_model=UnifiedLoginResponse)
+@api_router.post("/auth/unified-login")
 async def unified_login(data: UnifiedLoginRequest):
     """
     Unified login for company admins & employees.
@@ -1109,6 +1109,7 @@ async def unified_login(data: UnifiedLoginRequest):
     access_list = []
     user_name = None
     user_picture = None
+    requires_2fa = False
     
     # Check company_admins table
     admin = await db.company_admins.find_one({"email": data.email}, {"_id": 0})
@@ -1117,11 +1118,21 @@ async def unified_login(data: UnifiedLoginRequest):
             user_name = admin["name"]
             user_picture = admin.get("picture")
             
+            # Check if 2FA is enabled and no TOTP code provided
+            if admin.get("totp_enabled") and admin.get("totp_secret"):
+                totp_code = getattr(data, 'totp_code', None)
+                if not totp_code:
+                    return {"requires_2fa": True, "user_email": data.email, "user_name": user_name}
+                
+                # Verify TOTP code
+                totp = pyotp.TOTP(admin["totp_secret"])
+                if not totp.verify(totp_code, valid_window=1):
+                    raise HTTPException(status_code=401, detail="Kode autentikasi salah")
+            
             # Get all companies this admin has access to
             for company_id in admin.get("companies", []):
                 company = await db.companies.find_one({"id": company_id}, {"_id": 0})
                 if company and company.get("is_active"):
-                    # Check license
                     status, _ = get_license_status(company)
                     if status not in ["expired", "suspended"]:
                         access_list.append(UserAccess(
