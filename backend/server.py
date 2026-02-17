@@ -4274,6 +4274,108 @@ async def delete_user(user_id: str, current_user: dict = Depends(require_super_a
     
     raise HTTPException(status_code=404, detail="User not found")
 
+
+# ============ STORAGE MANAGEMENT ============
+
+import shutil
+
+@api_router.get("/system/storage")
+async def get_system_storage(current_user: dict = Depends(require_super_admin)):
+    """Get total disk usage and per-company storage breakdown"""
+    # Total disk info
+    total, used, free = shutil.disk_usage("/")
+    
+    # Uploads folder size
+    uploads_total = 0
+    for f in UPLOAD_DIR.iterdir():
+        if f.is_file():
+            uploads_total += f.stat().st_size
+    
+    # Per-company storage: count from applications resume_url
+    companies = await db.companies.find({}, {"_id": 0, "id": 1, "name": 1, "storage_quota": 1}).to_list(1000)
+    company_storage = []
+    
+    for comp in companies:
+        cid = comp["id"]
+        # Get all resume files for this company
+        apps = await db.applications.find({"company_id": cid, "resume_url": {"$ne": None}}, {"_id": 0, "resume_url": 1}).to_list(10000)
+        
+        size = 0
+        file_count = 0
+        for app in apps:
+            url = app.get("resume_url", "")
+            if url:
+                fname = url.split("/")[-1]
+                fpath = UPLOAD_DIR / fname
+                if fpath.exists():
+                    size += fpath.stat().st_size
+                    file_count += 1
+        
+        # Also count company logo and gallery images from profile
+        company_full = await db.companies.find_one({"id": cid}, {"_id": 0})
+        if company_full:
+            logo = company_full.get("logo_url", "")
+            if logo and logo.startswith("/api/uploads/"):
+                fname = logo.split("/")[-1]
+                fpath = UPLOAD_DIR / fname
+                if fpath.exists():
+                    size += fpath.stat().st_size
+                    file_count += 1
+            
+            gallery = company_full.get("profile", {}).get("gallery_images", [])
+            for img in gallery:
+                if img and img.startswith("/api/uploads/"):
+                    fname = img.split("/")[-1]
+                    fpath = UPLOAD_DIR / fname
+                    if fpath.exists():
+                        size += fpath.stat().st_size
+                        file_count += 1
+        
+        quota = comp.get("storage_quota", 500 * 1024 * 1024)  # Default 500MB
+        company_storage.append({
+            "company_id": cid,
+            "company_name": comp["name"],
+            "used_bytes": size,
+            "used_mb": round(size / (1024 * 1024), 2),
+            "quota_bytes": quota,
+            "quota_mb": round(quota / (1024 * 1024), 0),
+            "file_count": file_count,
+            "usage_percent": round((size / quota) * 100, 1) if quota > 0 else 0
+        })
+    
+    return {
+        "disk": {
+            "total_bytes": total,
+            "used_bytes": used,
+            "free_bytes": free,
+            "total_gb": round(total / (1024**3), 2),
+            "used_gb": round(used / (1024**3), 2),
+            "free_gb": round(free / (1024**3), 2),
+            "usage_percent": round((used / total) * 100, 1)
+        },
+        "uploads": {
+            "total_bytes": uploads_total,
+            "total_mb": round(uploads_total / (1024 * 1024), 2)
+        },
+        "companies": company_storage
+    }
+
+@api_router.put("/companies/{company_id}/storage-quota")
+async def update_storage_quota(company_id: str, quota_mb: int, current_user: dict = Depends(require_super_admin)):
+    """Update storage quota for a company (in MB)"""
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    quota_bytes = quota_mb * 1024 * 1024
+    await db.companies.update_one({"id": company_id}, {"$set": {
+        "storage_quota": quota_bytes,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }})
+    
+    return {"message": f"Storage quota updated to {quota_mb}MB", "quota_mb": quota_mb}
+
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
