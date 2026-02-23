@@ -2457,6 +2457,7 @@ async def lookup_domain(hostname: str):
             {"custom_domains.main": hostname},
             {"custom_domains.careers": hostname},
             {"custom_domains.hr": hostname},
+            {"custom_domains.team": hostname},
             {"domain": hostname}
         ],
         "is_active": True
@@ -2474,6 +2475,8 @@ async def lookup_domain(hostname: str):
             page_type = "careers"
         elif custom_domains.get("hr") == hostname:
             page_type = "hr"
+        elif custom_domains.get("team") == hostname:
+            page_type = "team"
         elif custom_domains.get("main") == hostname:
             page_type = "main"
     
