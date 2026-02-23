@@ -2516,6 +2516,7 @@ async def update_company_domains(
                     {"custom_domains.main": domain_value},
                     {"custom_domains.careers": domain_value},
                     {"custom_domains.hr": domain_value},
+                    {"custom_domains.team": domain_value},
                     {"domain": domain_value}
                 ],
                 "id": {"$ne": company_id}
