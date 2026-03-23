@@ -139,8 +139,26 @@ export const EmployeesTab = ({ language }) => {
   };
 
   const downloadTemplate = () => {
-    const csv = 'Nama,Email,Telepon,Posisi,Departemen,Tanggal Masuk\nJohn Doe,john@company.com,08123456789,Staff IT,IT,2026-01-15\n';
-    const blob = new Blob([csv], { type: 'text/csv' });
+    // Create proper Excel template with all fields using a simple CSV with BOM for Excel compatibility
+    const headers = [
+      'Nama', 'Email', 'Telepon', 'No KTP/NIK', 'Jenis Kelamin', 'Tempat Lahir', 'Tanggal Lahir',
+      'Agama', 'Status Pernikahan', 'Pendidikan', 'Jurusan',
+      'Provinsi', 'Kota/Kabupaten', 'Kecamatan', 'Kelurahan', 'Alamat Lengkap',
+      'Posisi', 'Departemen', 'Tanggal Masuk', 'Status Kerja', 'Gaji',
+      'Nama Bank', 'No Rekening', 'Atas Nama Rekening',
+      'Kontak Darurat', 'Telepon Darurat'
+    ];
+    const example = [
+      'John Doe', 'john@company.com', '08123456789', '3201010101010001', 'Laki-laki', 'Jakarta', '1995-05-15',
+      'Islam', 'Menikah', 'S1', 'Teknik Informatika',
+      'DKI Jakarta', 'Jakarta Selatan', 'Kebayoran', 'Senayan', 'Jl. Sudirman No. 1 RT 001/RW 002',
+      'Staff IT', 'IT', '2026-01-15', 'Tetap', '5000000',
+      'BCA', '1234567890', 'John Doe',
+      'Jane Doe', '08198765432'
+    ];
+    const bom = '\uFEFF';
+    const csv = bom + headers.join(',') + '\n' + example.join(',') + '\n';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = 'template_karyawan.csv'; a.click();

@@ -2999,40 +2999,81 @@ async def delete_employee_session(employee_id: str, request: Request):
 
 @api_router.post("/employees-session/import")
 async def import_employees_excel(request: Request, file: UploadFile = File(...)):
-    """Import employees from Excel file"""
+    """Import employees from Excel or CSV file"""
     session = await require_session_admin(request)
     
-    if not file.filename.endswith(('.xlsx', '.xls')):
-        raise HTTPException(status_code=400, detail="File harus format Excel (.xlsx)")
+    if not file.filename.endswith(('.xlsx', '.xls', '.csv')):
+        raise HTTPException(status_code=400, detail="File harus format Excel (.xlsx) atau CSV (.csv)")
     
     content = await file.read()
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Ukuran file maksimal 5MB")
     
     import openpyxl
-    wb = openpyxl.load_workbook(io.BytesIO(content))
-    ws = wb.active
+    
+    if file.filename.endswith('.csv'):
+        # Convert CSV to workbook
+        import csv as csv_mod
+        text = content.decode('utf-8-sig')
+        reader = csv_mod.reader(text.splitlines())
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        for row in reader:
+            ws.append(row)
+    else:
+        wb = openpyxl.load_workbook(io.BytesIO(content))
+        ws = wb.active
     
     headers = [cell.value.lower().strip() if cell.value else '' for cell in ws[1]]
     
     # Map column names
     col_map = {}
+    field_aliases = {
+        'name': ['nama', 'name', 'nama lengkap', 'nama karyawan'],
+        'email': ['email', 'e-mail', 'email address'],
+        'phone': ['telepon', 'phone', 'hp', 'no hp', 'no telepon', 'no. hp', 'no. telepon'],
+        'id_number': ['no ktp/nik', 'nik', 'ktp', 'no ktp', 'no. ktp', 'no nik', 'no. nik'],
+        'gender': ['jenis kelamin', 'gender'],
+        'birth_place': ['tempat lahir', 'birth place'],
+        'birth_date': ['tanggal lahir', 'birth date', 'tgl lahir'],
+        'religion': ['agama', 'religion'],
+        'marital_status': ['status pernikahan', 'marital status', 'status nikah'],
+        'education': ['pendidikan', 'education', 'pendidikan terakhir'],
+        'major': ['jurusan', 'major', 'program studi'],
+        'province': ['provinsi', 'province'],
+        'city': ['kota/kabupaten', 'kota', 'kabupaten', 'city'],
+        'district': ['kecamatan', 'district'],
+        'village': ['kelurahan', 'kelurahan/desa', 'desa', 'village'],
+        'full_address': ['alamat lengkap', 'alamat', 'address', 'full address'],
+        'position': ['posisi', 'position', 'jabatan'],
+        'department': ['departemen', 'department', 'divisi', 'bagian'],
+        'join_date': ['tanggal masuk', 'join date', 'tgl masuk', 'tanggal bergabung'],
+        'employment_type': ['status kerja', 'tipe kerja', 'employment type'],
+        'salary': ['gaji', 'salary'],
+        'bank_name': ['nama bank', 'bank'],
+        'bank_account': ['no rekening', 'nomor rekening', 'bank account'],
+        'bank_holder': ['atas nama rekening', 'atas nama', 'bank holder'],
+        'emergency_contact': ['kontak darurat', 'emergency contact'],
+        'emergency_phone': ['telepon darurat', 'emergency phone'],
+    }
+    
     for i, h in enumerate(headers):
-        if h in ('nama', 'name', 'nama lengkap', 'nama karyawan'):
-            col_map['name'] = i
-        elif h in ('email', 'e-mail', 'email address'):
-            col_map['email'] = i
-        elif h in ('telepon', 'phone', 'hp', 'no hp', 'no telepon', 'no. hp', 'no. telepon'):
-            col_map['phone'] = i
-        elif h in ('posisi', 'position', 'jabatan'):
-            col_map['position'] = i
-        elif h in ('departemen', 'department', 'divisi', 'bagian'):
-            col_map['department'] = i
-        elif h in ('tanggal masuk', 'join date', 'tgl masuk', 'tanggal bergabung'):
-            col_map['join_date'] = i
+        for field, aliases in field_aliases.items():
+            if h in aliases:
+                col_map[field] = i
+                break
     
     if 'name' not in col_map or 'email' not in col_map:
-        raise HTTPException(status_code=400, detail="Excel harus memiliki kolom 'Nama' dan 'Email'. Kolom opsional: Telepon, Posisi, Departemen, Tanggal Masuk")
+        raise HTTPException(status_code=400, detail="Excel harus memiliki kolom 'Nama' dan 'Email'")
+    
+    def get_cell(row, field):
+        idx = col_map.get(field)
+        if idx is not None and idx < len(row) and row[idx] is not None:
+            val = row[idx]
+            if hasattr(val, 'isoformat'):
+                return val.isoformat()[:10]
+            return str(val).strip()
+        return ''
     
     now = datetime.now(timezone.utc).isoformat()
     imported = 0
@@ -3041,8 +3082,8 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
     
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         try:
-            name = str(row[col_map['name']] or '').strip()
-            email = str(row[col_map['email']] or '').strip().lower()
+            name = get_cell(row, 'name')
+            email = get_cell(row, 'email').lower()
             
             if not name or not email:
                 continue
@@ -3053,17 +3094,11 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
                 skipped += 1
                 continue
             
-            phone = str(row[col_map.get('phone', -1)] or '').strip() if col_map.get('phone') is not None and col_map['phone'] < len(row) else ''
-            position = str(row[col_map.get('position', -1)] or '').strip() if col_map.get('position') is not None and col_map['position'] < len(row) else ''
-            department = str(row[col_map.get('department', -1)] or '').strip() if col_map.get('department') is not None and col_map['department'] < len(row) else ''
-            join_date = ''
-            if col_map.get('join_date') is not None and col_map['join_date'] < len(row):
-                jd = row[col_map['join_date']]
-                if jd:
-                    if hasattr(jd, 'isoformat'):
-                        join_date = jd.isoformat()[:10]
-                    else:
-                        join_date = str(jd).strip()
+            salary_str = get_cell(row, 'salary')
+            salary_val = None
+            if salary_str:
+                try: salary_val = int(float(salary_str))
+                except: pass
             
             # Check if employee exists in other companies
             existing_emp = await db.employees.find_one({"email": email})
@@ -3076,8 +3111,31 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
                 emp_doc = {
                     "id": f"emp_{uuid.uuid4().hex[:12]}",
                     "email": email, "name": name, "password": hash_password("Welcome123!"),
-                    "phone": phone, "position": position, "department": department,
-                    "join_date": join_date, "picture": None,
+                    "phone": get_cell(row, 'phone'),
+                    "id_number": get_cell(row, 'id_number'),
+                    "gender": get_cell(row, 'gender'),
+                    "birth_place": get_cell(row, 'birth_place'),
+                    "birth_date": get_cell(row, 'birth_date'),
+                    "religion": get_cell(row, 'religion'),
+                    "marital_status": get_cell(row, 'marital_status'),
+                    "education": get_cell(row, 'education'),
+                    "major": get_cell(row, 'major'),
+                    "province": get_cell(row, 'province'),
+                    "city": get_cell(row, 'city'),
+                    "district": get_cell(row, 'district'),
+                    "village": get_cell(row, 'village'),
+                    "full_address": get_cell(row, 'full_address'),
+                    "position": get_cell(row, 'position'),
+                    "department": get_cell(row, 'department'),
+                    "join_date": get_cell(row, 'join_date'),
+                    "employment_type": get_cell(row, 'employment_type'),
+                    "salary": salary_val,
+                    "bank_name": get_cell(row, 'bank_name'),
+                    "bank_account": get_cell(row, 'bank_account'),
+                    "bank_holder": get_cell(row, 'bank_holder'),
+                    "emergency_contact": get_cell(row, 'emergency_contact'),
+                    "emergency_phone": get_cell(row, 'emergency_phone'),
+                    "picture": None,
                     "companies": [session["company_id"]],
                     "is_active": True, "auth_provider": "email",
                     "created_at": now, "updated_at": now
