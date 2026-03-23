@@ -2841,6 +2841,27 @@ class EmployeeCreateSession(BaseModel):
     department: Optional[str] = None
     join_date: Optional[str] = None
     password: Optional[str] = None
+    # Extended fields
+    birth_place: Optional[str] = None
+    birth_date: Optional[str] = None
+    gender: Optional[str] = None
+    marital_status: Optional[str] = None
+    religion: Optional[str] = None
+    id_number: Optional[str] = None  # NIK/KTP
+    education: Optional[str] = None
+    major: Optional[str] = None
+    province: Optional[str] = None
+    city: Optional[str] = None
+    district: Optional[str] = None
+    village: Optional[str] = None
+    full_address: Optional[str] = None
+    bank_name: Optional[str] = None
+    bank_account: Optional[str] = None
+    bank_holder: Optional[str] = None
+    emergency_contact: Optional[str] = None
+    emergency_phone: Optional[str] = None
+    salary: Optional[int] = None
+    employment_type: Optional[str] = None  # tetap, kontrak, magang
 
 class EmployeeUpdateSession(BaseModel):
     name: Optional[str] = None
@@ -2850,6 +2871,26 @@ class EmployeeUpdateSession(BaseModel):
     department: Optional[str] = None
     join_date: Optional[str] = None
     is_active: Optional[bool] = None
+    birth_place: Optional[str] = None
+    birth_date: Optional[str] = None
+    gender: Optional[str] = None
+    marital_status: Optional[str] = None
+    religion: Optional[str] = None
+    id_number: Optional[str] = None
+    education: Optional[str] = None
+    major: Optional[str] = None
+    province: Optional[str] = None
+    city: Optional[str] = None
+    district: Optional[str] = None
+    village: Optional[str] = None
+    full_address: Optional[str] = None
+    bank_name: Optional[str] = None
+    bank_account: Optional[str] = None
+    bank_holder: Optional[str] = None
+    emergency_contact: Optional[str] = None
+    emergency_phone: Optional[str] = None
+    salary: Optional[int] = None
+    employment_type: Optional[str] = None
 
 @api_router.get("/employees-session")
 async def get_employees_session(request: Request):
@@ -2889,16 +2930,22 @@ async def create_employee_session(data: EmployeeCreateSession, request: Request)
             "email": data.email,
             "name": data.name,
             "password": hash_password(pwd),
-            "phone": data.phone,
-            "position": data.position,
-            "department": data.department,
-            "join_date": data.join_date,
-            "picture": None,
+            "phone": data.phone, "position": data.position, "department": data.department,
+            "join_date": data.join_date, "picture": None,
+            "birth_place": data.birth_place, "birth_date": data.birth_date,
+            "gender": data.gender, "marital_status": data.marital_status,
+            "religion": data.religion, "id_number": data.id_number,
+            "education": data.education, "major": data.major,
+            "province": data.province, "city": data.city,
+            "district": data.district, "village": data.village,
+            "full_address": data.full_address,
+            "bank_name": data.bank_name, "bank_account": data.bank_account,
+            "bank_holder": data.bank_holder,
+            "emergency_contact": data.emergency_contact, "emergency_phone": data.emergency_phone,
+            "salary": data.salary, "employment_type": data.employment_type,
             "companies": [session["company_id"]],
-            "is_active": True,
-            "auth_provider": "email",
-            "created_at": now,
-            "updated_at": now
+            "is_active": True, "auth_provider": "email",
+            "created_at": now, "updated_at": now
         }
         await db.employees.insert_one(emp_doc)
         emp_id = emp_doc["id"]
@@ -3858,6 +3905,65 @@ async def update_application_status_session(app_id: str, status: str, notes: Opt
             await send_status_update_email(application, job, company, old_status, status)
     except Exception as e:
         logging.error(f"Failed to send status update email: {e}")
+    
+    # Auto-convert to employee when hired
+    if status == "hired" and old_status != "hired":
+        try:
+            fd = form_data
+            emp_email = fd.get("email", "").strip().lower()
+            if emp_email:
+                existing = await db.employees.find_one({"email": emp_email, "companies": session["company_id"]})
+                if not existing:
+                    job = job or await db.jobs.find_one({"id": application["job_id"]}, {"_id": 0})
+                    now_str = datetime.now(timezone.utc).isoformat()
+                    
+                    # Check if employee exists in other companies
+                    existing_other = await db.employees.find_one({"email": emp_email})
+                    if existing_other:
+                        # Add company to existing employee + update data
+                        update_fields = {"updated_at": now_str}
+                        if fd.get("phone"): update_fields["phone"] = fd["phone"]
+                        if job: update_fields["position"] = job.get("title", "")
+                        if job: update_fields["department"] = job.get("department", "")
+                        await db.employees.update_one(
+                            {"email": emp_email},
+                            {"$addToSet": {"companies": session["company_id"]}, "$set": update_fields}
+                        )
+                    else:
+                        emp_doc = {
+                            "id": f"emp_{uuid.uuid4().hex[:12]}",
+                            "email": emp_email,
+                            "name": fd.get("full_name", fd.get("name", "")),
+                            "password": hash_password("Welcome123!"),
+                            "phone": fd.get("phone", ""),
+                            "position": job.get("title", "") if job else "",
+                            "department": job.get("department", "") if job else "",
+                            "join_date": now_str[:10],
+                            "birth_place": fd.get("birth_place", ""),
+                            "birth_date": fd.get("birth_date", ""),
+                            "gender": fd.get("gender", ""),
+                            "marital_status": fd.get("marital_status", ""),
+                            "religion": fd.get("religion", ""),
+                            "id_number": fd.get("id_number", ""),
+                            "education": fd.get("education", ""),
+                            "major": fd.get("major", ""),
+                            "province": fd.get("province", ""),
+                            "city": fd.get("city", ""),
+                            "district": fd.get("district", ""),
+                            "village": fd.get("village", ""),
+                            "full_address": fd.get("full_address", ""),
+                            "expected_salary": fd.get("expected_salary"),
+                            "resume_url": application.get("resume_url"),
+                            "picture": None,
+                            "companies": [session["company_id"]],
+                            "is_active": True, "auth_provider": "email",
+                            "created_at": now_str, "updated_at": now_str
+                        }
+                        await db.employees.insert_one(emp_doc)
+                    
+                    logging.info(f"Auto-created employee from hired applicant: {emp_email}")
+        except Exception as e:
+            logging.error(f"Failed to auto-create employee from hired applicant: {e}")
     
     return {"message": "Status updated successfully"}
 

@@ -29,7 +29,11 @@ export const EmployeesTab = ({ language }) => {
   const fileRef = useRef(null);
 
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', position: '', department: '', join_date: '', password: ''
+    name: '', email: '', phone: '', position: '', department: '', join_date: '', password: '',
+    birth_place: '', birth_date: '', gender: '', marital_status: '', religion: '',
+    id_number: '', education: '', major: '', province: '', city: '', district: '',
+    village: '', full_address: '', bank_name: '', bank_account: '', bank_holder: '',
+    emergency_contact: '', emergency_phone: '', salary: '', employment_type: ''
   });
 
   useEffect(() => { fetchEmployees(); }, []);
@@ -47,13 +51,30 @@ export const EmployeesTab = ({ language }) => {
     if (emp) {
       setSelectedEmp(emp);
       setForm({
-        name: emp.name, email: emp.email, phone: emp.phone || '',
+        name: emp.name || '', email: emp.email || '', phone: emp.phone || '',
         position: emp.position || '', department: emp.department || '',
-        join_date: emp.join_date || '', password: ''
+        join_date: emp.join_date || '', password: '',
+        birth_place: emp.birth_place || '', birth_date: emp.birth_date || '',
+        gender: emp.gender || '', marital_status: emp.marital_status || '',
+        religion: emp.religion || '', id_number: emp.id_number || '',
+        education: emp.education || '', major: emp.major || '',
+        province: emp.province || '', city: emp.city || '',
+        district: emp.district || '', village: emp.village || '',
+        full_address: emp.full_address || '',
+        bank_name: emp.bank_name || '', bank_account: emp.bank_account || '',
+        bank_holder: emp.bank_holder || '',
+        emergency_contact: emp.emergency_contact || '', emergency_phone: emp.emergency_phone || '',
+        salary: emp.salary || '', employment_type: emp.employment_type || ''
       });
     } else {
       setSelectedEmp(null);
-      setForm({ name: '', email: '', phone: '', position: '', department: '', join_date: '', password: '' });
+      setForm({
+        name: '', email: '', phone: '', position: '', department: '', join_date: '', password: '',
+        birth_place: '', birth_date: '', gender: '', marital_status: '', religion: '',
+        id_number: '', education: '', major: '', province: '', city: '', district: '',
+        village: '', full_address: '', bank_name: '', bank_account: '', bank_holder: '',
+        emergency_contact: '', emergency_phone: '', salary: '', employment_type: ''
+      });
     }
     setIsFormOpen(true);
   };
@@ -62,11 +83,12 @@ export const EmployeesTab = ({ language }) => {
     if (!form.name || !form.email) { toast.error('Nama dan email wajib diisi'); return; }
     setSaving(true);
     try {
+      const cleanData = { ...form, salary: form.salary ? parseInt(form.salary) : null };
       if (selectedEmp) {
-        await axios.put(`${API}/employees-session/${selectedEmp.id}`, form, { withCredentials: true });
+        await axios.put(`${API}/employees-session/${selectedEmp.id}`, cleanData, { withCredentials: true });
         toast.success('Data karyawan berhasil diupdate');
       } else {
-        await axios.post(`${API}/employees-session`, form, { withCredentials: true });
+        await axios.post(`${API}/employees-session`, cleanData, { withCredentials: true });
         toast.success('Karyawan berhasil ditambahkan');
       }
       setIsFormOpen(false);
@@ -253,44 +275,161 @@ export const EmployeesTab = ({ language }) => {
 
       {/* Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedEmp ? 'Edit Karyawan' : 'Tambah Karyawan Baru'}</DialogTitle>
             <DialogDescription>{selectedEmp ? 'Update data karyawan' : 'Isi data karyawan baru. Password default: Welcome123!'}</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Nama Lengkap *</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama lengkap" data-testid="emp-name" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Email *</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@company.com" data-testid="emp-email" />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label>Telepon</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08xxxxxxxxxx" />
+          <div className="space-y-5 py-4">
+            {/* Data Utama */}
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Data Utama</p>
+              <div className="grid gap-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Nama Lengkap *</Label>
+                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="emp-name" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Email *</Label>
+                    <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} data-testid="emp-email" />
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">No. Telepon</Label>
+                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">No. KTP/NIK</Label>
+                    <Input value={form.id_number} onChange={(e) => setForm({ ...form, id_number: e.target.value })} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Jenis Kelamin</Label>
+                    <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">-</option>
+                      <option value="Laki-laki">Laki-laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Tempat Lahir</Label>
+                    <Input value={form.birth_place} onChange={(e) => setForm({ ...form, birth_place: e.target.value })} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Tanggal Lahir</Label>
+                    <Input type="date" value={form.birth_date} onChange={(e) => setForm({ ...form, birth_date: e.target.value })} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Agama</Label>
+                    <select value={form.religion} onChange={(e) => setForm({ ...form, religion: e.target.value })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">-</option>
+                      <option value="Islam">Islam</option>
+                      <option value="Kristen">Kristen</option>
+                      <option value="Katolik">Katolik</option>
+                      <option value="Hindu">Hindu</option>
+                      <option value="Buddha">Buddha</option>
+                      <option value="Konghucu">Konghucu</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Status Pernikahan</Label>
+                    <select value={form.marital_status} onChange={(e) => setForm({ ...form, marital_status: e.target.value })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">-</option>
+                      <option value="Belum Menikah">Belum Menikah</option>
+                      <option value="Menikah">Menikah</option>
+                      <option value="Cerai">Cerai</option>
+                    </select>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Pendidikan Terakhir</Label>
+                    <select value={form.education} onChange={(e) => setForm({ ...form, education: e.target.value })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">-</option>
+                      <option value="SD">SD</option><option value="SMP">SMP</option>
+                      <option value="SMA/SMK">SMA/SMK</option><option value="D3">D3</option>
+                      <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Jurusan</Label>
+                  <Input value={form.major} onChange={(e) => setForm({ ...form, major: e.target.value })} />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label>Tanggal Masuk</Label>
-                <Input type="date" value={form.join_date} onChange={(e) => setForm({ ...form, join_date: e.target.value })} />
+            </div>
+
+            {/* Alamat */}
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Alamat</p>
+              <div className="grid gap-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label className="text-xs">Provinsi</Label><Input value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} /></div>
+                  <div className="grid gap-1.5"><Label className="text-xs">Kota/Kabupaten</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label className="text-xs">Kecamatan</Label><Input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} /></div>
+                  <div className="grid gap-1.5"><Label className="text-xs">Kelurahan/Desa</Label><Input value={form.village} onChange={(e) => setForm({ ...form, village: e.target.value })} /></div>
+                </div>
+                <div className="grid gap-1.5"><Label className="text-xs">Alamat Lengkap (RT/RW)</Label><Input value={form.full_address} onChange={(e) => setForm({ ...form, full_address: e.target.value })} /></div>
               </div>
             </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label>Posisi / Jabatan</Label>
-                <Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="Staff IT" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Departemen</Label>
-                <Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="IT" />
+
+            {/* Data Kepegawaian */}
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Kepegawaian</p>
+              <div className="grid gap-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label className="text-xs">Posisi/Jabatan</Label><Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} /></div>
+                  <div className="grid gap-1.5"><Label className="text-xs">Departemen</Label><Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} /></div>
+                </div>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="grid gap-1.5"><Label className="text-xs">Tanggal Masuk</Label><Input type="date" value={form.join_date} onChange={(e) => setForm({ ...form, join_date: e.target.value })} /></div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Status Kerja</Label>
+                    <select value={form.employment_type} onChange={(e) => setForm({ ...form, employment_type: e.target.value })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">-</option>
+                      <option value="Tetap">Tetap</option>
+                      <option value="Kontrak">Kontrak</option>
+                      <option value="Magang">Magang</option>
+                      <option value="Paruh Waktu">Paruh Waktu</option>
+                    </select>
+                  </div>
+                  <div className="grid gap-1.5"><Label className="text-xs">Gaji (Rp)</Label><Input type="number" value={form.salary} onChange={(e) => setForm({ ...form, salary: e.target.value })} /></div>
+                </div>
               </div>
             </div>
+
+            {/* Rekening Bank */}
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Rekening Bank</p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="grid gap-1.5"><Label className="text-xs">Nama Bank</Label><Input value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} placeholder="BCA, BRI, dll" /></div>
+                <div className="grid gap-1.5"><Label className="text-xs">No. Rekening</Label><Input value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} /></div>
+                <div className="grid gap-1.5"><Label className="text-xs">Atas Nama</Label><Input value={form.bank_holder} onChange={(e) => setForm({ ...form, bank_holder: e.target.value })} /></div>
+              </div>
+            </div>
+
+            {/* Kontak Darurat */}
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Kontak Darurat</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid gap-1.5"><Label className="text-xs">Nama</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
+                <div className="grid gap-1.5"><Label className="text-xs">No. Telepon</Label><Input value={form.emergency_phone} onChange={(e) => setForm({ ...form, emergency_phone: e.target.value })} /></div>
+              </div>
+            </div>
+
+            {/* Password (only for new) */}
             {!selectedEmp && (
-              <div className="grid gap-2">
-                <Label>Password</Label>
-                <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Default: Welcome123!" />
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Akun Login</p>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Password</Label>
+                  <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Default: Welcome123!" />
+                </div>
               </div>
             )}
           </div>
