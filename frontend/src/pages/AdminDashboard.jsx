@@ -22,6 +22,7 @@ import { AppDetailDialog } from '../components/admin/AppDetailDialog';
 import { CompareDialog } from '../components/admin/CompareDialog';
 import { TrashTab } from '../components/admin/TrashTab';
 import { ActivityLogTab } from '../components/admin/ActivityLogTab';
+import { EmployeesTab } from '../components/admin/EmployeesTab';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -41,7 +42,7 @@ const sidebarMenu = [
     { id: 'logs', label: 'Log Aktivitas', icon: ClipboardList },
   ]},
   { section: 'KARYAWAN', items: [
-    { id: 'employees', label: 'Data Karyawan', icon: Users, soon: true },
+    { id: 'employees', label: 'Data Karyawan', icon: Users },
     { id: 'attendance', label: 'Absensi', icon: CalendarClock, soon: true },
     { id: 'leave', label: 'Cuti & Izin', icon: CalendarOff, soon: true },
     { id: 'holidays', label: 'Hari Libur', icon: Calendar, soon: true },
@@ -387,7 +388,8 @@ export const AdminDashboard = () => {
               handlePermanentDeleteApp={handlePermanentDeleteApp} getInitials={getInitials} formatDate={formatDate} />
           )}
           {activeTab === 'logs' && <ActivityLogTab language={language} />}
-          {['employees','attendance','leave','holidays','payroll'].includes(activeTab) && (
+          {activeTab === 'employees' && <EmployeesTab language={language} />}
+          {['attendance','leave','holidays','payroll'].includes(activeTab) && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 {activeTab === 'employees' && <Users className="w-8 h-8 text-slate-400" />}

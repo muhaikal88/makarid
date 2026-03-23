@@ -2830,6 +2830,231 @@ async def update_company_info_session_json(data: CompanyInfoUpdate, request: Req
     return {"message": "Company info updated"}
 
 
+
+# ============ EMPLOYEE MANAGEMENT (Session-based for Company Admin) ============
+
+class EmployeeCreateSession(BaseModel):
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    position: Optional[str] = None
+    department: Optional[str] = None
+    join_date: Optional[str] = None
+    password: Optional[str] = None
+
+class EmployeeUpdateSession(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    position: Optional[str] = None
+    department: Optional[str] = None
+    join_date: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@api_router.get("/employees-session")
+async def get_employees_session(request: Request):
+    """Get all employees for current company"""
+    session = await require_session_admin(request)
+    employees = await db.employees.find(
+        {"companies": session["company_id"]},
+        {"_id": 0, "password": 0}
+    ).sort("name", 1).to_list(1000)
+    return employees
+
+@api_router.post("/employees-session")
+async def create_employee_session(data: EmployeeCreateSession, request: Request):
+    """Create new employee for current company"""
+    session = await require_session_admin(request)
+    
+    # Check if email already exists in this company
+    existing = await db.employees.find_one({"email": data.email, "companies": session["company_id"]})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email sudah terdaftar di perusahaan ini")
+    
+    # Check if employee exists in other companies (add to companies list)
+    existing_emp = await db.employees.find_one({"email": data.email}, {"_id": 0})
+    
+    now = datetime.now(timezone.utc).isoformat()
+    if existing_emp:
+        await db.employees.update_one(
+            {"email": data.email},
+            {"$addToSet": {"companies": session["company_id"]},
+             "$set": {"updated_at": now}}
+        )
+        emp_id = existing_emp["id"]
+    else:
+        pwd = data.password or "Welcome123!"
+        emp_doc = {
+            "id": f"emp_{uuid.uuid4().hex[:12]}",
+            "email": data.email,
+            "name": data.name,
+            "password": hash_password(pwd),
+            "phone": data.phone,
+            "position": data.position,
+            "department": data.department,
+            "join_date": data.join_date,
+            "picture": None,
+            "companies": [session["company_id"]],
+            "is_active": True,
+            "auth_provider": "email",
+            "created_at": now,
+            "updated_at": now
+        }
+        await db.employees.insert_one(emp_doc)
+        emp_id = emp_doc["id"]
+    
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="create", resource_type="employee",
+        description=f"Menambahkan karyawan: {data.name} ({data.email})",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=emp_id
+    )
+    
+    return {"message": "Karyawan berhasil ditambahkan", "id": emp_id}
+
+@api_router.put("/employees-session/{employee_id}")
+async def update_employee_session(employee_id: str, data: EmployeeUpdateSession, request: Request):
+    """Update employee data"""
+    session = await require_session_admin(request)
+    
+    emp = await db.employees.find_one({"id": employee_id, "companies": session["company_id"]}, {"_id": 0})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if "email" in update_data:
+        existing = await db.employees.find_one({"email": update_data["email"], "id": {"$ne": employee_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email sudah digunakan")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.employees.update_one({"id": employee_id}, {"$set": update_data})
+    
+    return {"message": "Data karyawan berhasil diupdate"}
+
+@api_router.delete("/employees-session/{employee_id}")
+async def delete_employee_session(employee_id: str, request: Request):
+    """Remove employee from company"""
+    session = await require_session_admin(request)
+    
+    emp = await db.employees.find_one({"id": employee_id, "companies": session["company_id"]})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
+    
+    # Remove company from employee's list
+    await db.employees.update_one(
+        {"id": employee_id},
+        {"$pull": {"companies": session["company_id"]}}
+    )
+    
+    return {"message": "Karyawan berhasil dihapus dari perusahaan"}
+
+@api_router.post("/employees-session/import")
+async def import_employees_excel(request: Request, file: UploadFile = File(...)):
+    """Import employees from Excel file"""
+    session = await require_session_admin(request)
+    
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="File harus format Excel (.xlsx)")
+    
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Ukuran file maksimal 5MB")
+    
+    import openpyxl
+    wb = openpyxl.load_workbook(io.BytesIO(content))
+    ws = wb.active
+    
+    headers = [cell.value.lower().strip() if cell.value else '' for cell in ws[1]]
+    
+    # Map column names
+    col_map = {}
+    for i, h in enumerate(headers):
+        if h in ('nama', 'name', 'nama lengkap', 'nama karyawan'):
+            col_map['name'] = i
+        elif h in ('email', 'e-mail', 'email address'):
+            col_map['email'] = i
+        elif h in ('telepon', 'phone', 'hp', 'no hp', 'no telepon', 'no. hp', 'no. telepon'):
+            col_map['phone'] = i
+        elif h in ('posisi', 'position', 'jabatan'):
+            col_map['position'] = i
+        elif h in ('departemen', 'department', 'divisi', 'bagian'):
+            col_map['department'] = i
+        elif h in ('tanggal masuk', 'join date', 'tgl masuk', 'tanggal bergabung'):
+            col_map['join_date'] = i
+    
+    if 'name' not in col_map or 'email' not in col_map:
+        raise HTTPException(status_code=400, detail="Excel harus memiliki kolom 'Nama' dan 'Email'. Kolom opsional: Telepon, Posisi, Departemen, Tanggal Masuk")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    imported = 0
+    skipped = 0
+    errors = []
+    
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+        try:
+            name = str(row[col_map['name']] or '').strip()
+            email = str(row[col_map['email']] or '').strip().lower()
+            
+            if not name or not email:
+                continue
+            
+            # Check existing
+            existing = await db.employees.find_one({"email": email, "companies": session["company_id"]})
+            if existing:
+                skipped += 1
+                continue
+            
+            phone = str(row[col_map.get('phone', -1)] or '').strip() if col_map.get('phone') is not None and col_map['phone'] < len(row) else ''
+            position = str(row[col_map.get('position', -1)] or '').strip() if col_map.get('position') is not None and col_map['position'] < len(row) else ''
+            department = str(row[col_map.get('department', -1)] or '').strip() if col_map.get('department') is not None and col_map['department'] < len(row) else ''
+            join_date = ''
+            if col_map.get('join_date') is not None and col_map['join_date'] < len(row):
+                jd = row[col_map['join_date']]
+                if jd:
+                    if hasattr(jd, 'isoformat'):
+                        join_date = jd.isoformat()[:10]
+                    else:
+                        join_date = str(jd).strip()
+            
+            # Check if employee exists in other companies
+            existing_emp = await db.employees.find_one({"email": email})
+            if existing_emp:
+                await db.employees.update_one(
+                    {"email": email},
+                    {"$addToSet": {"companies": session["company_id"]}, "$set": {"updated_at": now}}
+                )
+            else:
+                emp_doc = {
+                    "id": f"emp_{uuid.uuid4().hex[:12]}",
+                    "email": email, "name": name, "password": hash_password("Welcome123!"),
+                    "phone": phone, "position": position, "department": department,
+                    "join_date": join_date, "picture": None,
+                    "companies": [session["company_id"]],
+                    "is_active": True, "auth_provider": "email",
+                    "created_at": now, "updated_at": now
+                }
+                await db.employees.insert_one(emp_doc)
+            
+            imported += 1
+        except Exception as e:
+            errors.append(f"Baris {row_idx}: {str(e)}")
+    
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="create", resource_type="employee",
+        description=f"Import {imported} karyawan dari Excel",
+        company_id=session["company_id"], company_name=session.get("company_name")
+    )
+    
+    return {
+        "message": f"Import selesai: {imported} ditambahkan, {skipped} dilewati (sudah ada)",
+        "imported": imported, "skipped": skipped,
+        "errors": errors[:10]
+    }
+
+
 # ============ COMPANY SETTINGS ROUTES (For Company Admin) ============
 
 class CompanySettingsUpdate(BaseModel):
