@@ -83,6 +83,7 @@ export const Companies = () => {
     main: '',
     careers: '',
     hr: '',
+    team: '',
     page_title: ''
   });
 
@@ -234,6 +235,7 @@ export const Companies = () => {
       main: company.custom_domains?.main || company.domain || '',
       careers: company.custom_domains?.careers || '',
       hr: company.custom_domains?.hr || '',
+      team: company.custom_domains?.team || '',
       page_title: company.page_title || ''
     });
     setIsDomainsOpen(true);
@@ -797,15 +799,15 @@ export const Companies = () => {
               </div>
 
               {/* HR Domain */}
-              <div className="p-4">
+              <div className="p-4 border-b">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-amber-600" />
-                    <Label className="font-semibold text-sm">HR Domain (Login Karyawan)</Label>
+                    <Label className="font-semibold text-sm">HR Domain (Login Admin/HRD)</Label>
                   </div>
                   {domainData.hr && (
                     <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                      → /company-login
+                      Admin Only
                     </Badge>
                   )}
                 </div>
@@ -817,7 +819,33 @@ export const Companies = () => {
                 />
                 {domainData.hr && (
                   <p className="text-xs text-gray-400 mt-1.5">
-                    <span className="font-medium">{domainData.hr}</span> → akan menampilkan halaman login Admin & Karyawan
+                    <span className="font-medium">{domainData.hr}</span> → login khusus Admin / HRD
+                  </p>
+                )}
+              </div>
+
+              {/* Team Domain */}
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-purple-600" />
+                    <Label className="font-semibold text-sm">Team Domain (Login Karyawan)</Label>
+                  </div>
+                  {domainData.team && (
+                    <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                      Karyawan Only
+                    </Badge>
+                  )}
+                </div>
+                <Input
+                  value={domainData.team || ''}
+                  onChange={(e) => setDomainData({ ...domainData, team: e.target.value })}
+                  placeholder="team.luckycell.co.id"
+                  data-testid="domain-team-input"
+                />
+                {domainData.team && (
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    <span className="font-medium">{domainData.team}</span> → login khusus Karyawan (absensi, cuti, dll)
                   </p>
                 )}
               </div>
@@ -888,7 +916,14 @@ export const Companies = () => {
                         <span className="font-semibold">makar.id</span>
                       </div>
                     )}
-                    {!domainData.main && !domainData.careers && !domainData.hr && (
+                    {domainData.team && (
+                      <div className="flex gap-2">
+                        <span className="text-gray-500 w-36 shrink-0">{domainData.team}</span>
+                        <span className="text-gray-400">CNAME →</span>
+                        <span className="font-semibold">makar.id</span>
+                      </div>
+                    )}
+                    {!domainData.main && !domainData.careers && !domainData.hr && !domainData.team && (
                       <span className="text-gray-400">Isi domain di atas untuk melihat instruksi DNS</span>
                     )}
                   </div>

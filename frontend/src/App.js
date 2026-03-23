@@ -71,13 +71,24 @@ function CustomDomainRouter() {
   if (pageType === 'hr') {
     return (
       <Routes>
-        <Route path="/" element={<UnifiedLogin />} />
+        <Route path="/" element={<UnifiedLogin loginMode="admin" />} />
         <Route path="/select-company" element={<CompanySelector />} />
         <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/settings" element={<CompanySettings />} />
         <Route path="/admin/profile" element={<UserProfile />} />
         <Route path="/admin/company-profile" element={<CompanyProfileEdit />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  if (pageType === 'team') {
+    return (
+      <Routes>
+        <Route path="/" element={<UnifiedLogin loginMode="employee" />} />
+        <Route path="/select-company" element={<CompanySelector />} />
+        <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
         <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
         <Route path="/employee/profile" element={<UserProfile />} />
         <Route path="*" element={<Navigate to="/" replace />} />

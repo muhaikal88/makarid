@@ -12,10 +12,13 @@ import { useDomain } from '../contexts/DomainContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
-export const UnifiedLogin = () => {
+export const UnifiedLogin = ({ loginMode }) => {
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const { isCustomDomain, companyName, companyLogo } = useDomain();
+  const { isCustomDomain, companyName, companyLogo, pageType } = useDomain();
+  
+  // Determine effective mode: from prop, or from domain pageType
+  const mode = loginMode || (pageType === 'team' ? 'employee' : pageType === 'hr' ? 'admin' : null);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,23 +36,36 @@ export const UnifiedLogin = () => {
       // Store user info for selection page
       sessionStorage.setItem('login_data', JSON.stringify(data));
       
+      // Filter access list based on login mode
+      let accessList = data.access_list || [];
+      if (mode === 'admin') {
+        accessList = accessList.filter(a => a.role === 'admin');
+      } else if (mode === 'employee') {
+        accessList = accessList.filter(a => a.role === 'employee');
+      }
+      
+      if (accessList.length === 0) {
+        toast.error(mode === 'employee' 
+          ? (language === 'id' ? 'Akun ini bukan akun karyawan' : 'This is not an employee account')
+          : mode === 'admin'
+          ? (language === 'id' ? 'Akun ini bukan akun admin/HR' : 'This is not an admin account')
+          : (language === 'id' ? 'Tidak ada akses' : 'No access'));
+        setLoading(false);
+        return;
+      }
+      
       // Check if needs selection
-      if (data.needs_selection) {
-        // Multiple companies or roles - go to selector
-        navigate('/select-company', { state: { loginData: data } });
+      if (accessList.length > 1) {
+        navigate('/select-company', { state: { loginData: { ...data, access_list: accessList } } });
       } else {
-        // Single access - auto select and create session
-        const access = data.access_list[0];
-        const sessionResp = await axios.post(`${API}/auth/select-company`, {
+        const access = accessList[0];
+        await axios.post(`${API}/auth/select-company`, {
           company_id: access.company_id,
           role: access.role,
           user_table: access.user_table,
           user_id: access.user_id
-        }, {
-          withCredentials: true
-        });
+        }, { withCredentials: true });
         
-        // Redirect based on role
         if (access.role === 'admin') {
           navigate('/admin/dashboard');
         } else {
@@ -85,9 +101,17 @@ export const UnifiedLogin = () => {
             )}
           </div>
           <h1 className="text-2xl font-bold text-white">
-            {isCustomDomain && companyName ? companyName : (language === 'id' ? 'Login Karyawan' : 'Employee Login')}
+            {isCustomDomain && companyName ? companyName : (language === 'id' ? 'Login' : 'Login')}
           </h1>
-          <p className="text-white/60 mt-2">{isCustomDomain ? (language === 'id' ? 'Portal Karyawan' : 'Employee Portal') : 'Makar.id - Manajemen Karyawan'}</p>
+          <p className="text-white/60 mt-2">
+            {mode === 'employee' 
+              ? (language === 'id' ? 'Portal Karyawan' : 'Employee Portal')
+              : mode === 'admin'
+              ? (language === 'id' ? 'Portal HRD / Admin' : 'HRD / Admin Portal')
+              : isCustomDomain 
+              ? (language === 'id' ? 'Portal Karyawan' : 'Employee Portal') 
+              : 'Makar.id - Manajemen Karyawan'}
+          </p>
         </div>
 
         {/* Login Card */}
