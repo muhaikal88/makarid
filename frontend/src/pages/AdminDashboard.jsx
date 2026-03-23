@@ -23,6 +23,7 @@ import { CompareDialog } from '../components/admin/CompareDialog';
 import { TrashTab } from '../components/admin/TrashTab';
 import { ActivityLogTab } from '../components/admin/ActivityLogTab';
 import { EmployeesTab } from '../components/admin/EmployeesTab';
+import { AttendanceTab } from '../components/admin/AttendanceTab';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -43,7 +44,7 @@ const sidebarMenu = [
   ]},
   { section: 'KARYAWAN', items: [
     { id: 'employees', label: 'Data Karyawan', icon: Users },
-    { id: 'attendance', label: 'Absensi', icon: CalendarClock, soon: true },
+    { id: 'attendance', label: 'Absensi', icon: CalendarClock },
     { id: 'leave', label: 'Cuti & Izin', icon: CalendarOff, soon: true },
     { id: 'holidays', label: 'Hari Libur', icon: Calendar, soon: true },
     { id: 'payroll', label: 'Penggajian', icon: Wallet, soon: true },
@@ -389,7 +390,8 @@ export const AdminDashboard = () => {
           )}
           {activeTab === 'logs' && <ActivityLogTab language={language} />}
           {activeTab === 'employees' && <EmployeesTab language={language} />}
-          {['attendance','leave','holidays','payroll'].includes(activeTab) && (
+          {activeTab === 'attendance' && <AttendanceTab language={language} />}
+          {['leave','holidays','payroll'].includes(activeTab) && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 {activeTab === 'employees' && <Users className="w-8 h-8 text-slate-400" />}

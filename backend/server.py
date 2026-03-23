@@ -4637,6 +4637,273 @@ async def delete_user(user_id: str, current_user: dict = Depends(require_super_a
     
     raise HTTPException(status_code=404, detail="User not found")
 
+
+# ============ ATTENDANCE MANAGEMENT ============
+
+class AttendanceSettings(BaseModel):
+    face_threshold: int = 70  # % similarity required
+    office_ips: List[str] = []  # Allowed IP addresses
+    allow_outside_network: bool = False  # Global default
+    work_start: str = "08:00"
+    work_end: str = "17:00"
+    break_start: str = "12:00"
+    break_end: str = "13:00"
+    allow_backdate: bool = False  # Global setting
+
+@api_router.get("/attendance/settings")
+async def get_attendance_settings(request: Request):
+    """Get attendance settings for company"""
+    session = await require_session_admin(request)
+    settings = await db.attendance_settings.find_one({"company_id": session["company_id"]}, {"_id": 0})
+    if not settings:
+        settings = {
+            "company_id": session["company_id"],
+            "face_threshold": 70,
+            "office_ips": [],
+            "allow_outside_network": False,
+            "work_start": "08:00",
+            "work_end": "17:00",
+            "break_start": "12:00",
+            "break_end": "13:00",
+            "allow_backdate": False
+        }
+    return settings
+
+@api_router.put("/attendance/settings")
+async def update_attendance_settings(data: Dict[str, Any], request: Request):
+    """Update attendance settings"""
+    session = await require_session_admin(request)
+    data["company_id"] = session["company_id"]
+    data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.attendance_settings.update_one(
+        {"company_id": session["company_id"]},
+        {"$set": data},
+        upsert=True
+    )
+    return {"message": "Pengaturan absensi berhasil disimpan"}
+
+@api_router.post("/attendance/clock")
+async def clock_attendance(request: Request):
+    """Clock in/out/break - for employees"""
+    session = await get_session_user(request)
+    
+    body = await request.json()
+    action = body.get("action")  # clock_in, clock_out, break_start, break_end
+    photo_url = body.get("photo_url")
+    face_score = body.get("face_score", 0)
+    client_ip = request.headers.get("x-real-ip", request.headers.get("x-forwarded-for", request.client.host))
+    backdate = body.get("date")  # Optional: YYYY-MM-DD for backdate
+    backtime = body.get("time")  # Optional: HH:MM for back clock
+    
+    if action not in ("clock_in", "clock_out", "break_start", "break_end"):
+        raise HTTPException(status_code=400, detail="Action tidak valid")
+    
+    company_id = session["company_id"]
+    employee_id = session["user_id"]
+    
+    # Get attendance settings
+    settings = await db.attendance_settings.find_one({"company_id": company_id}, {"_id": 0})
+    if not settings:
+        settings = {"face_threshold": 70, "office_ips": [], "allow_outside_network": False, "allow_backdate": False}
+    
+    # Check employee-specific settings
+    emp = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    emp_allow_outside = emp.get("allow_outside_network", settings.get("allow_outside_network", False))
+    
+    # Check IP if office IPs are configured
+    ip_valid = True
+    office_ips = settings.get("office_ips", [])
+    if office_ips and not emp_allow_outside:
+        ip_valid = any(client_ip.startswith(ip) for ip in office_ips)
+        if not ip_valid:
+            raise HTTPException(status_code=403, detail=f"Absen hanya bisa dilakukan dari jaringan kantor. IP Anda: {client_ip}")
+    
+    # Determine date/time
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M:%S")
+    
+    is_backdate = False
+    if backdate and backdate != today:
+        # Check if backdate is allowed
+        backdate_token = emp.get("backdate_token")
+        if not backdate_token or backdate_token.get("used"):
+            if not settings.get("allow_backdate"):
+                raise HTTPException(status_code=403, detail="Absen mundur tanggal tidak diizinkan. Hubungi HRD untuk akses.")
+        else:
+            # Mark token as used
+            await db.employees.update_one({"id": employee_id}, {"$set": {"backdate_token.used": True}})
+        
+        today = backdate
+        is_backdate = True
+    
+    if backtime:
+        current_time = backtime + ":00"
+    
+    # Check face threshold
+    threshold = settings.get("face_threshold", 70)
+    needs_approval = face_score < threshold
+    status = "pending_approval" if needs_approval else "approved"
+    
+    # Get or create today's attendance record
+    record = await db.attendance.find_one({
+        "employee_id": employee_id,
+        "company_id": company_id,
+        "date": today
+    }, {"_id": 0})
+    
+    if not record:
+        record = {
+            "id": str(uuid.uuid4()),
+            "employee_id": employee_id,
+            "employee_name": session.get("name", emp.get("name", "")),
+            "employee_email": session.get("email", emp.get("email", "")),
+            "company_id": company_id,
+            "date": today,
+            "clock_in": None, "clock_out": None,
+            "break_start": None, "break_end": None,
+            "clock_in_photo": None, "clock_out_photo": None,
+            "clock_in_score": None, "clock_out_score": None,
+            "clock_in_ip": None, "clock_out_ip": None,
+            "status": status,
+            "is_backdate": is_backdate,
+            "notes": None,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.attendance.insert_one(record)
+    
+    # Update based on action
+    update_fields = {}
+    if action == "clock_in":
+        if record.get("clock_in"):
+            raise HTTPException(status_code=400, detail="Anda sudah absen masuk hari ini")
+        update_fields = {
+            "clock_in": current_time, "clock_in_photo": photo_url,
+            "clock_in_score": face_score, "clock_in_ip": client_ip,
+            "status": status
+        }
+    elif action == "clock_out":
+        if not record.get("clock_in"):
+            raise HTTPException(status_code=400, detail="Anda belum absen masuk")
+        if record.get("clock_out"):
+            raise HTTPException(status_code=400, detail="Anda sudah absen pulang hari ini")
+        update_fields = {
+            "clock_out": current_time, "clock_out_photo": photo_url,
+            "clock_out_score": face_score, "clock_out_ip": client_ip
+        }
+    elif action == "break_start":
+        update_fields = {"break_start": current_time}
+    elif action == "break_end":
+        update_fields = {"break_end": current_time}
+    
+    await db.attendance.update_one(
+        {"employee_id": employee_id, "company_id": company_id, "date": today},
+        {"$set": update_fields}
+    )
+    
+    return {
+        "message": f"{'Absen masuk' if action == 'clock_in' else 'Absen pulang' if action == 'clock_out' else 'Break mulai' if action == 'break_start' else 'Break selesai'} berhasil" + (" (menunggu approval)" if needs_approval else ""),
+        "status": status,
+        "needs_approval": needs_approval,
+        "face_score": face_score
+    }
+
+@api_router.get("/attendance/my")
+async def get_my_attendance(request: Request, month: Optional[str] = None):
+    """Get employee's own attendance records"""
+    session = await get_session_user(request)
+    
+    query = {"employee_id": session["user_id"], "company_id": session["company_id"]}
+    if month:  # Format: 2026-03
+        query["date"] = {"$regex": f"^{month}"}
+    
+    records = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(100)
+    
+    # Check if employee has backdate token
+    emp = await db.employees.find_one({"id": session["user_id"]}, {"_id": 0})
+    has_backdate = bool(emp.get("backdate_token") and not emp["backdate_token"].get("used"))
+    
+    return {"records": records, "has_backdate_token": has_backdate}
+
+@api_router.get("/attendance/today")
+async def get_today_attendance(request: Request):
+    """Get employee's today attendance status"""
+    session = await get_session_user(request)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    record = await db.attendance.find_one({
+        "employee_id": session["user_id"],
+        "company_id": session["company_id"],
+        "date": today
+    }, {"_id": 0})
+    
+    return record or {"date": today, "clock_in": None, "clock_out": None, "break_start": None, "break_end": None}
+
+@api_router.get("/attendance/company")
+async def get_company_attendance(request: Request, date: Optional[str] = None, month: Optional[str] = None):
+    """Get all attendance records for company (admin)"""
+    session = await require_session_admin(request)
+    
+    query = {"company_id": session["company_id"]}
+    if date:
+        query["date"] = date
+    elif month:
+        query["date"] = {"$regex": f"^{month}"}
+    else:
+        query["date"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    records = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    return records
+
+@api_router.get("/attendance/pending")
+async def get_pending_attendance(request: Request):
+    """Get attendance records pending approval"""
+    session = await require_session_admin(request)
+    records = await db.attendance.find({
+        "company_id": session["company_id"],
+        "status": "pending_approval"
+    }, {"_id": 0}).sort("date", -1).to_list(100)
+    return records
+
+@api_router.put("/attendance/{record_id}/approve")
+async def approve_attendance(record_id: str, approve: bool, request: Request):
+    """Approve or reject attendance (admin)"""
+    session = await require_session_admin(request)
+    
+    record = await db.attendance.find_one({"id": record_id, "company_id": session["company_id"]})
+    if not record:
+        raise HTTPException(status_code=404, detail="Record tidak ditemukan")
+    
+    new_status = "approved" if approve else "rejected"
+    await db.attendance.update_one({"id": record_id}, {"$set": {
+        "status": new_status,
+        "approved_by": session["user_id"],
+        "approved_at": datetime.now(timezone.utc).isoformat()
+    }})
+    
+    return {"message": f"Absen {'disetujui' if approve else 'ditolak'}"}
+
+@api_router.post("/attendance/grant-backdate/{employee_id}")
+async def grant_backdate_access(employee_id: str, request: Request):
+    """Grant one-time backdate access to employee"""
+    session = await require_session_admin(request)
+    
+    emp = await db.employees.find_one({"id": employee_id, "companies": session["company_id"]})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
+    
+    await db.employees.update_one({"id": employee_id}, {"$set": {
+        "backdate_token": {
+            "granted_by": session["user_id"],
+            "granted_at": datetime.now(timezone.utc).isoformat(),
+            "used": False
+        }
+    }})
+    
+    return {"message": f"Akses absen mundur diberikan ke {emp.get('name')}"}
+
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
