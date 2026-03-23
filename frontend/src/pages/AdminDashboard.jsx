@@ -3,15 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import {
-  Building2, Briefcase, FileText, Globe, Bell, User, Settings, LogOut, LayoutDashboard, Trash2, ClipboardList
+  Building2, Briefcase, FileText, Globe, Bell, User, Settings, LogOut,
+  LayoutDashboard, Trash2, ClipboardList, Users, CalendarClock, CalendarOff,
+  Calendar, Wallet, ChevronLeft, Menu, X
 } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Toaster, toast } from 'sonner';
@@ -28,19 +26,28 @@ import { ActivityLogTab } from '../components/admin/ActivityLogTab';
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 const defaultJobForm = {
-  title: '',
-  department: '',
-  location: '',
-  job_type: 'full_time',
-  description: '',
-  requirements: [],
-  responsibilities: [],
-  salary_min: '',
-  salary_max: '',
-  show_salary: false,
-  status: 'draft',
+  title: '', department: '', location: '', job_type: 'full_time',
+  description: '', requirements: [], responsibilities: [],
+  salary_min: '', salary_max: '', show_salary: false, status: 'draft',
   allow_existing_applicant: true
 };
+
+const sidebarMenu = [
+  { section: 'REKRUTMEN', items: [
+    { id: 'overview', label: 'Ringkasan', icon: LayoutDashboard },
+    { id: 'jobs', label: 'Lowongan Kerja', icon: Briefcase },
+    { id: 'applications', label: 'Lamaran Masuk', icon: FileText },
+    { id: 'trash', label: 'Tempat Sampah', icon: Trash2, badge: 'trash' },
+    { id: 'logs', label: 'Log Aktivitas', icon: ClipboardList },
+  ]},
+  { section: 'KARYAWAN', items: [
+    { id: 'employees', label: 'Data Karyawan', icon: Users, soon: true },
+    { id: 'attendance', label: 'Absensi', icon: CalendarClock, soon: true },
+    { id: 'leave', label: 'Cuti & Izin', icon: CalendarOff, soon: true },
+    { id: 'holidays', label: 'Hari Libur', icon: Calendar, soon: true },
+    { id: 'payroll', label: 'Penggajian', icon: Wallet, soon: true },
+  ]},
+];
 
 export const AdminDashboard = () => {
   const { language, setLanguage } = useLanguage();
@@ -52,10 +59,9 @@ export const AdminDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Application management
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [isAppDetailOpen, setIsAppDetailOpen] = useState(false);
+  // Filters
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterJob, setFilterJob] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
@@ -66,6 +72,10 @@ export const AdminDashboard = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobFormData, setJobFormData] = useState({ ...defaultJobForm });
 
+  // App detail
+  const [isAppDetailOpen, setIsAppDetailOpen] = useState(false);
+  const [selectedApp, setSelectedApp] = useState(null);
+
   // Compare
   const [compareApps, setCompareApps] = useState([]);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
@@ -73,23 +83,16 @@ export const AdminDashboard = () => {
   // Trash
   const [trashApps, setTrashApps] = useState([]);
 
-  useEffect(() => {
-    checkSession();
-  }, []);
+  useEffect(() => { checkSession(); }, []);
 
   const checkSession = async () => {
     try {
       const response = await axios.get(`${API}/auth/me-session`, { withCredentials: true });
-      if (response.data.role !== 'admin') {
-        navigate('/company-login');
-        return;
-      }
+      if (response.data.role !== 'admin') { navigate('/company-login'); return; }
       setSession(response.data);
       setAuthLoading(false);
       fetchData();
-    } catch (error) {
-      navigate('/company-login');
-    }
+    } catch { navigate('/company-login'); }
   };
 
   const fetchData = async () => {
@@ -104,34 +107,23 @@ export const AdminDashboard = () => {
       setTrashApps(trashRes.data);
     } catch (error) {
       console.error('Failed to fetch data:', error);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleLogout = async () => {
-    try {
-      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
-    } finally {
-      navigate('/company-login');
-    }
+    try { await axios.post(`${API}/auth/logout`, {}, { withCredentials: true }); }
+    finally { navigate('/company-login'); }
   };
 
   const handleOpenJobForm = (job = null) => {
     if (job) {
       setSelectedJob(job);
       setJobFormData({
-        title: job.title,
-        department: job.department || '',
-        location: job.location || '',
-        job_type: job.job_type,
-        description: job.description,
-        requirements: job.requirements || [],
-        responsibilities: job.responsibilities || [],
-        salary_min: job.salary_min || '',
-        salary_max: job.salary_max || '',
-        show_salary: job.show_salary || false,
-        status: job.status,
+        title: job.title, department: job.department || '', location: job.location || '',
+        job_type: job.job_type, description: job.description,
+        requirements: job.requirements || [], responsibilities: job.responsibilities || [],
+        salary_min: job.salary_min || '', salary_max: job.salary_max || '',
+        show_salary: job.show_salary || false, status: job.status,
         allow_existing_applicant: job.allow_existing_applicant !== false
       });
     } else {
@@ -144,13 +136,11 @@ export const AdminDashboard = () => {
   const handleSubmitJob = async (e) => {
     e.preventDefault();
     try {
-      // Clean form data - convert empty strings to null for optional integer fields
       const cleanData = {
         ...jobFormData,
         salary_min: jobFormData.salary_min ? parseInt(jobFormData.salary_min) : null,
         salary_max: jobFormData.salary_max ? parseInt(jobFormData.salary_max) : null,
       };
-      
       if (selectedJob) {
         await axios.put(`${API}/jobs-session/${selectedJob.id}`, cleanData, { withCredentials: true });
         toast.success('Lowongan berhasil diupdate');
@@ -161,10 +151,8 @@ export const AdminDashboard = () => {
       setIsJobFormOpen(false);
       fetchData();
     } catch (error) {
-      console.error('Failed to save job:', error);
       const detail = error.response?.data?.detail;
-      const msg = Array.isArray(detail) ? detail.map(d => d.msg).join(', ') : (detail || 'Gagal menyimpan lowongan');
-      toast.error(msg);
+      toast.error(Array.isArray(detail) ? detail.map(d => d.msg).join(', ') : (detail || 'Gagal menyimpan lowongan'));
     }
   };
 
@@ -174,68 +162,33 @@ export const AdminDashboard = () => {
       await axios.delete(`${API}/jobs-session/${job.id}`, { withCredentials: true });
       toast.success('Lowongan berhasil dihapus');
       fetchData();
-    } catch (error) {
-      console.error('Failed to delete job:', error);
-      toast.error(error.response?.data?.detail || 'Gagal menghapus lowongan');
-    }
+    } catch (error) { toast.error(error.response?.data?.detail || 'Gagal menghapus lowongan'); }
   };
 
-  const handleOpenAppDetail = async (app) => {
-    try {
-      const response = await axios.get(`${API}/applications-session/${app.id}`, { withCredentials: true });
-      setSelectedApp(response.data);
-      setIsAppDetailOpen(true);
-    } catch (error) {
-      console.error('Failed to fetch application detail:', error);
-      toast.error('Gagal memuat detail lamaran');
-    }
-  };
+  const handleOpenAppDetail = (app) => { setSelectedApp(app); setIsAppDetailOpen(true); };
 
   const handleUpdateStatus = async (appId, newStatus) => {
     try {
-      await axios.put(`${API}/applications-session/${appId}/status?status=${newStatus}`, {}, { withCredentials: true });
+      await axios.put(`${API}/applications-session/${appId}/status`, { status: newStatus }, { withCredentials: true });
       toast.success('Status berhasil diupdate');
       fetchData();
-    } catch (error) {
-      console.error('Failed to update status:', error);
-      toast.error('Gagal update status');
-    }
+      if (selectedApp?.id === appId) setSelectedApp({ ...selectedApp, status: newStatus });
+    } catch (error) { toast.error(error.response?.data?.detail || 'Gagal update status'); }
   };
 
-  const handleCompare = async (ids) => {
-    try {
-      const details = await Promise.all(
-        ids.map(id => axios.get(`${API}/applications-session/${id}`, { withCredentials: true }).then(r => r.data))
-      );
-      setCompareApps(details);
-      setIsCompareOpen(true);
-    } catch (error) {
-      console.error('Failed to fetch for compare:', error);
-      toast.error('Gagal memuat data perbandingan');
-    }
-  };
-
+  const handleCompare = (apps) => { setCompareApps(apps); setIsCompareOpen(true); };
   const handleCompareUpdateStatus = async (appId, newStatus) => {
-    try {
-      await axios.put(`${API}/applications-session/${appId}/status?status=${newStatus}`, {}, { withCredentials: true });
-      toast.success('Status berhasil diupdate');
-      // Refresh compare data in-place
-      setCompareApps(prev => prev.map(a => a.id === appId ? { ...a, status: newStatus } : a));
-      fetchData();
-    } catch (error) {
-      console.error('Failed to update status:', error);
-      toast.error('Gagal update status');
-    }
+    await handleUpdateStatus(appId, newStatus);
+    setCompareApps(prev => prev.map(a => a.id === appId ? { ...a, status: newStatus } : a));
   };
 
   const handleDeleteApp = async (appId) => {
+    if (!window.confirm('Pindahkan lamaran ini ke tempat sampah?')) return;
     try {
       await axios.delete(`${API}/applications-session/${appId}`, { withCredentials: true });
       toast.success('Lamaran dipindahkan ke tempat sampah');
       fetchData();
-    } catch (error) {
-      toast.error('Gagal menghapus lamaran');
-    }
+    } catch (error) { toast.error(error.response?.data?.detail || 'Gagal menghapus'); }
   };
 
   const handleRestoreApp = async (appId) => {
@@ -243,9 +196,7 @@ export const AdminDashboard = () => {
       await axios.post(`${API}/applications-session/${appId}/restore`, {}, { withCredentials: true });
       toast.success('Lamaran berhasil dipulihkan');
       fetchData();
-    } catch (error) {
-      toast.error('Gagal memulihkan lamaran');
-    }
+    } catch (error) { toast.error('Gagal memulihkan'); }
   };
 
   const handlePermanentDeleteApp = async (appId) => {
@@ -254,36 +205,34 @@ export const AdminDashboard = () => {
       await axios.delete(`${API}/applications-session/${appId}/permanent`, { withCredentials: true });
       toast.success('Lamaran dihapus permanen');
       fetchData();
-    } catch (error) {
-      toast.error('Gagal menghapus permanen');
-    }
+    } catch (error) { toast.error('Gagal menghapus'); }
   };
 
-  const filteredApplications = applications.filter(app => {
-    const matchesStatus = filterStatus === 'all' || app.status === filterStatus;
-    const matchesJob = filterJob === 'all' || app.job_id === filterJob;
-    const matchesDept = filterDepartment === 'all' || app.job_department === filterDepartment;
-    const matchesSearch = !searchApp ||
-      app.applicant_name?.toLowerCase().includes(searchApp.toLowerCase()) ||
-      app.applicant_email?.toLowerCase().includes(searchApp.toLowerCase());
-    return matchesStatus && matchesJob && matchesDept && matchesSearch;
-  });
-
-  const getInitials = (name) => {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'AD';
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const stats = {
     totalJobs: jobs.length,
     publishedJobs: jobs.filter(j => j.status === 'published').length,
     totalApplications: applications.length,
-    pendingApplications: applications.filter(a => a.status === 'pending').length
+    pendingApplications: applications.filter(a => a.status === 'pending').length,
   };
+
+  const filteredApplications = applications.filter(app => {
+    if (filterStatus !== 'all' && app.status !== filterStatus) return false;
+    if (filterJob !== 'all' && app.job_id !== filterJob) return false;
+    if (filterDepartment !== 'all' && app.job_department !== filterDepartment) return false;
+    if (searchApp) {
+      const s = searchApp.toLowerCase();
+      const name = (app.form_data?.full_name || app.form_data?.name || '').toLowerCase();
+      const email = (app.form_data?.email || '').toLowerCase();
+      if (!name.includes(s) && !email.includes(s)) return false;
+    }
+    return true;
+  });
 
   if (authLoading || loading) {
     return (
@@ -294,27 +243,111 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50" data-testid="admin-dashboard">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#2E4DA7] rounded-lg flex items-center justify-center shrink-0">
-                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="font-bold text-gray-900 text-sm sm:text-base truncate">Admin Dashboard</h1>
-                <p className="text-xs text-gray-500 truncate">{session?.name}</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-slate-50 flex" data-testid="admin-dashboard">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
 
-            <div className="flex items-center gap-1 sm:gap-4">
+      {/* Sidebar */}
+      <aside className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white border-r z-50 flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 bg-[#2E4DA7] rounded-lg flex items-center justify-center shrink-0">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-sm text-gray-900 truncate">{session?.company_name}</p>
+              <p className="text-[11px] text-gray-500 truncate">{session?.name}</p>
+            </div>
+          </div>
+          <button className="lg:hidden p-1 hover:bg-slate-100 rounded" onClick={() => setSidebarOpen(false)}>
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Menu */}
+        <nav className="flex-1 overflow-y-auto py-2">
+          {sidebarMenu.map((group) => (
+            <div key={group.section} className="mb-2">
+              <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{group.section}</p>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                const badgeCount = item.badge === 'trash' ? trashApps.length : 0;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      if (!item.soon) { setActiveTab(item.id); setSidebarOpen(false); }
+                    }}
+                    disabled={item.soon}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                      isActive ? 'bg-[#2E4DA7]/10 text-[#2E4DA7] font-medium border-r-2 border-[#2E4DA7]' :
+                      item.soon ? 'text-gray-300 cursor-not-allowed' :
+                      'text-gray-600 hover:bg-slate-50 hover:text-gray-900'
+                    }`}
+                    data-testid={`sidebar-${item.id}`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {badgeCount > 0 && (
+                      <span className="px-1.5 py-0.5 text-[10px] bg-red-100 text-red-600 rounded-full">{badgeCount}</span>
+                    )}
+                    {item.soon && (
+                      <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-400 rounded-full">Segera</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="border-t p-3 space-y-1">
+          <button onClick={() => navigate('/admin/company-profile')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-slate-50 rounded-lg">
+            <Building2 className="w-4 h-4" /> Profil Perusahaan
+          </button>
+          <button onClick={() => navigate('/admin/profile')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-slate-50 rounded-lg">
+            <User className="w-4 h-4" /> Profil Saya
+          </button>
+          <button onClick={() => navigate('/admin/settings')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-slate-50 rounded-lg">
+            <Settings className="w-4 h-4" /> Pengaturan
+          </button>
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg" data-testid="logout-btn">
+            <LogOut className="w-4 h-4" /> Keluar
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        {/* Top bar */}
+        <header className="bg-white border-b sticky top-0 z-30">
+          <div className="flex items-center justify-between h-14 px-4">
+            <div className="flex items-center gap-3">
+              <button className="lg:hidden p-1.5 hover:bg-slate-100 rounded-lg" onClick={() => setSidebarOpen(true)}>
+                <Menu className="w-5 h-5 text-gray-600" />
+              </button>
+              <h2 className="font-semibold text-gray-900 text-sm sm:text-base">
+                {sidebarMenu.flatMap(g => g.items).find(i => i.id === activeTab)?.label || 'Dashboard'}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="relative h-8 w-8" data-testid="notifications-btn">
+                <Bell className="w-4 h-4" />
+                {stats.pendingApplications > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#E31E24] text-white text-[10px] rounded-full flex items-center justify-center">
+                    {stats.pendingApplications}
+                  </span>
+                )}
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2" data-testid="language-toggle">
-                    <Globe className="w-4 h-4" />
-                    <span>{language.toUpperCase()}</span>
+                  <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2">
+                    <Globe className="w-4 h-4" />{language.toUpperCase()}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -322,166 +355,63 @@ export const AdminDashboard = () => {
                   <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9" data-testid="notifications-btn">
-                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-                {stats.pendingApplications > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#E31E24] text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center">
-                    {stats.pendingApplications}
-                  </span>
-                )}
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2" data-testid="profile-menu-btn">
-                    <Avatar className="w-7 h-7 sm:w-8 sm:h-8 bg-[#2E4DA7]">
-                      <AvatarFallback className="bg-[#2E4DA7] text-white text-xs sm:text-sm">
-                        {getInitials(session?.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setLanguage(language === 'id' ? 'en' : 'id')} className="sm:hidden">
-                    <Globe className="w-4 h-4 mr-2" /> {language === 'id' ? 'English' : 'Indonesia'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
-                    <User className="w-4 h-4 mr-2" /> Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/admin/company-profile')}>
-                    <Building2 className="w-4 h-4 mr-2" /> Profil Perusahaan
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
-                    <Settings className="w-4 h-4 mr-2" /> Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600" data-testid="logout-btn">
-                    <LogOut className="w-4 h-4 mr-2" /> Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Avatar className="w-8 h-8 bg-[#2E4DA7] cursor-pointer" onClick={() => navigate('/admin/profile')}>
+                <AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(session?.name)}</AvatarFallback>
+              </Avatar>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="bg-white border w-full overflow-x-auto flex justify-start sm:justify-start">
-            <TabsTrigger value="overview" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0" data-testid="tab-overview">
-              <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">{language === 'id' ? 'Ringkasan' : 'Overview'}</span>
-              <span className="xs:hidden">Home</span>
-            </TabsTrigger>
-            <TabsTrigger value="jobs" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0" data-testid="tab-jobs">
-              <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              {language === 'id' ? 'Lowongan' : 'Jobs'}
-            </TabsTrigger>
-            <TabsTrigger value="applications" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0" data-testid="tab-applications">
-              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              {language === 'id' ? 'Lamaran' : 'Apps'}
-            </TabsTrigger>
-            <TabsTrigger value="trash" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0 relative" data-testid="tab-trash">
-              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{language === 'id' ? 'Tempat Sampah' : 'Trash'}</span>
-              <span className="sm:hidden">Trash</span>
-              {trashApps.length > 0 && (
-                <span className="ml-1 px-1 py-0.5 text-[10px] bg-red-100 text-red-600 rounded-full">{trashApps.length}</span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shrink-0" data-testid="tab-logs">
-              <ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{language === 'id' ? 'Log Aktivitas' : 'Activity Logs'}</span>
-              <span className="sm:hidden">Log</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <OverviewTab
-              stats={stats}
-              applications={applications}
-              session={session}
-              language={language}
-              formatDate={formatDate}
-              getInitials={getInitials}
-            />
-          </TabsContent>
-
-          <TabsContent value="jobs">
-            <JobsTab
-              jobs={jobs}
-              language={language}
-              handleOpenJobForm={handleOpenJobForm}
-              handleDeleteJob={handleDeleteJob}
-            />
-          </TabsContent>
-
-          <TabsContent value="applications">
+        {/* Page Content */}
+        <main className="p-4 sm:p-6">
+          {activeTab === 'overview' && (
+            <OverviewTab stats={stats} applications={applications} session={session} language={language} formatDate={formatDate} getInitials={getInitials} />
+          )}
+          {activeTab === 'jobs' && (
+            <JobsTab jobs={jobs} language={language} handleOpenJobForm={handleOpenJobForm} handleDeleteJob={handleDeleteJob} />
+          )}
+          {activeTab === 'applications' && (
             <ApplicationsTab
-              filteredApplications={filteredApplications}
-              applications={applications}
-              jobs={jobs}
-              filterStatus={filterStatus}
-              setFilterStatus={setFilterStatus}
-              filterJob={filterJob}
-              setFilterJob={setFilterJob}
-              filterDepartment={filterDepartment}
-              setFilterDepartment={setFilterDepartment}
-              searchApp={searchApp}
-              setSearchApp={setSearchApp}
-              language={language}
-              handleOpenAppDetail={handleOpenAppDetail}
-              handleCompare={handleCompare}
-              handleDeleteApp={handleDeleteApp}
-              getInitials={getInitials}
-              formatDate={formatDate}
+              filteredApplications={filteredApplications} applications={applications} jobs={jobs}
+              filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+              filterJob={filterJob} setFilterJob={setFilterJob}
+              filterDepartment={filterDepartment} setFilterDepartment={setFilterDepartment}
+              searchApp={searchApp} setSearchApp={setSearchApp}
+              language={language} handleOpenAppDetail={handleOpenAppDetail}
+              handleCompare={handleCompare} handleDeleteApp={handleDeleteApp}
+              getInitials={getInitials} formatDate={formatDate}
             />
-          </TabsContent>
-
-          <TabsContent value="trash">
-            <TrashTab
-              trashApps={trashApps}
-              language={language}
-              handleRestoreApp={handleRestoreApp}
-              handlePermanentDeleteApp={handlePermanentDeleteApp}
-              getInitials={getInitials}
-              formatDate={formatDate}
-            />
-          </TabsContent>
-
-          <TabsContent value="logs">
-            <ActivityLogTab language={language} />
-          </TabsContent>
-        </Tabs>
-      </main>
+          )}
+          {activeTab === 'trash' && (
+            <TrashTab trashApps={trashApps} language={language} handleRestoreApp={handleRestoreApp}
+              handlePermanentDeleteApp={handlePermanentDeleteApp} getInitials={getInitials} formatDate={formatDate} />
+          )}
+          {activeTab === 'logs' && <ActivityLogTab language={language} />}
+          {['employees','attendance','leave','holidays','payroll'].includes(activeTab) && (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                {activeTab === 'employees' && <Users className="w-8 h-8 text-slate-400" />}
+                {activeTab === 'attendance' && <CalendarClock className="w-8 h-8 text-slate-400" />}
+                {activeTab === 'leave' && <CalendarOff className="w-8 h-8 text-slate-400" />}
+                {activeTab === 'holidays' && <Calendar className="w-8 h-8 text-slate-400" />}
+                {activeTab === 'payroll' && <Wallet className="w-8 h-8 text-slate-400" />}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                {sidebarMenu.flatMap(g => g.items).find(i => i.id === activeTab)?.label}
+              </h3>
+              <p className="text-gray-500 text-sm">Fitur ini sedang dalam pengembangan dan akan segera tersedia.</p>
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* Dialogs */}
-      <JobFormDialog
-        isOpen={isJobFormOpen}
-        onClose={setIsJobFormOpen}
-        selectedJob={selectedJob}
-        jobFormData={jobFormData}
-        setJobFormData={setJobFormData}
-        handleSubmit={handleSubmitJob}
-        language={language}
-      />
-
-      <AppDetailDialog
-        isOpen={isAppDetailOpen}
-        onClose={setIsAppDetailOpen}
-        selectedApp={selectedApp}
-        handleUpdateStatus={handleUpdateStatus}
-        getInitials={getInitials}
-      />
-
-      <CompareDialog
-        isOpen={isCompareOpen}
-        onClose={setIsCompareOpen}
-        compareApps={compareApps}
-        handleUpdateStatus={handleCompareUpdateStatus}
-      />
-
+      <JobFormDialog isOpen={isJobFormOpen} onClose={setIsJobFormOpen} selectedJob={selectedJob}
+        jobFormData={jobFormData} setJobFormData={setJobFormData} handleSubmit={handleSubmitJob} language={language} />
+      <AppDetailDialog isOpen={isAppDetailOpen} onClose={setIsAppDetailOpen} selectedApp={selectedApp}
+        handleUpdateStatus={handleUpdateStatus} getInitials={getInitials} />
+      <CompareDialog isOpen={isCompareOpen} onClose={setIsCompareOpen} compareApps={compareApps}
+        handleUpdateStatus={handleCompareUpdateStatus} />
       <Toaster position="top-right" richColors />
     </div>
   );
