@@ -79,8 +79,11 @@ export const AttendancePage = () => {
   const compareFaces = (desc1, desc2) => {
     if (!desc1 || !desc2 || desc1.length !== desc2.length) return 0;
     const distance = faceapi.euclideanDistance(desc1, desc2);
-    // Convert distance to percentage (0 distance = 100%, 1.0+ distance = 0%)
-    const score = Math.max(0, Math.min(100, Math.round((1 - distance) * 100)));
+    // face-api.js euclidean distance:
+    // Same person: typically 0.0 - 0.4
+    // Different person: typically 0.5 - 1.0+
+    // Map: distance 0.0 = 100%, distance 0.6 = 0%
+    const score = Math.max(0, Math.min(100, Math.round((1 - (distance / 0.6)) * 100)));
     return score;
   };
 

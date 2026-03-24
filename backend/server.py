@@ -4947,6 +4947,8 @@ async def clock_attendance(request: Request):
             "clock_out": current_time, "clock_out_photo": photo_url,
             "clock_out_score": face_score, "clock_out_ip": client_ip
         }
+        if needs_approval:
+            update_fields["status"] = "pending_approval"
     elif action == "break_start":
         update_fields = {"break_start": current_time}
     elif action == "break_end":
