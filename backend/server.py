@@ -5131,17 +5131,44 @@ async def bulk_approve_attendance(request: Request):
     if not record_ids:
         raise HTTPException(status_code=400, detail="Pilih minimal 1 record")
     
-    new_status = "approved" if approve else "rejected"
-    result = await db.attendance.update_many(
-        {"id": {"$in": record_ids}, "company_id": session["company_id"]},
-        {"$set": {
-            "status": new_status,
-            "approved_by": session["user_id"],
-            "approved_at": datetime.now(timezone.utc).isoformat()
-        }}
-    )
+    now_str = datetime.now(timezone.utc).isoformat()
+    count = 0
     
-    return {"message": f"{result.modified_count} absen {'disetujui' if approve else 'ditolak'}"}
+    for rid in record_ids:
+        record = await db.attendance.find_one({"id": rid, "company_id": session["company_id"]})
+        if not record:
+            continue
+        
+        if approve:
+            update_data = {"status": "approved", "approved_by": session["user_id"], "approved_at": now_str}
+            pending = record.get("pending_change")
+            if pending:
+                action = pending["action"]
+                if action == "clock_in":
+                    update_data.update({"clock_in": pending["time"], "clock_in_photo": pending["photo_url"], "clock_in_score": pending["face_score"], "clock_in_ip": pending["ip"]})
+                elif action == "clock_out":
+                    update_data.update({"clock_out": pending["time"], "clock_out_photo": pending["photo_url"], "clock_out_score": pending["face_score"], "clock_out_ip": pending["ip"]})
+                elif action == "break_start":
+                    update_data.update({"break_start": pending["time"], "break_start_photo": pending["photo_url"], "break_start_score": pending["face_score"]})
+                elif action == "break_end":
+                    update_data.update({"break_end": pending["time"], "break_end_photo": pending["photo_url"], "break_end_score": pending["face_score"]})
+                update_data["pending_change"] = None
+            await db.attendance.update_one({"id": rid}, {"$set": update_data})
+        else:
+            update_data = {
+                "approved_by": session["user_id"], "approved_at": now_str, "pending_change": None,
+                "status": "approved" if record.get("clock_in") else "rejected"
+            }
+            if record.get("pending_change"):
+                update_data["last_rejection"] = {
+                    "action": record["pending_change"].get("action", "unknown"),
+                    "time": record["pending_change"].get("time"),
+                    "rejected_at": now_str, "rejected_by": session["user_id"]
+                }
+            await db.attendance.update_one({"id": rid}, {"$set": update_data})
+        count += 1
+    
+    return {"message": f"{count} absen {'disetujui' if approve else 'ditolak'}"}
 
 
 
