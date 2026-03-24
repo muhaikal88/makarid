@@ -25,7 +25,24 @@ export const AttendanceTab = ({ language }) => {
   const [saving, setSaving] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [monthRecords, setMonthRecords] = useState([]);
+  const [selectedPending, setSelectedPending] = useState([]);
   const [newIp, setNewIp] = useState('');
+
+  const toggleSelectPending = (id) => {
+    setSelectedPending(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+  const toggleSelectAll = () => {
+    setSelectedPending(prev => prev.length === pendingRecords.length ? [] : pendingRecords.map(r => r.id));
+  };
+  const handleBulkApprove = async (approve) => {
+    if (selectedPending.length === 0) { toast.error('Pilih minimal 1 absen'); return; }
+    try {
+      const res = await axios.post(`${API}/attendance/bulk-approve`, { record_ids: selectedPending, approve }, { withCredentials: true });
+      toast.success(res.data.message);
+      setSelectedPending([]);
+      fetchAll();
+    } catch (e) { toast.error(e.response?.data?.detail || 'Gagal'); }
+  };
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -156,28 +173,49 @@ export const AttendanceTab = ({ language }) => {
       {/* Pending Approval */}
       {tab === 'pending' && (
         <Card className="border-0 shadow-sm">
-          <CardHeader><CardTitle className="text-base">Menunggu Approval ({pendingRecords.length})</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Menunggu Approval ({pendingRecords.length})</CardTitle>
+              {pendingRecords.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">{selectedPending.length} dipilih</span>
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={selectedPending.length === 0} onClick={() => handleBulkApprove(true)}>
+                    <Check className="w-3.5 h-3.5 mr-1" />Setujui
+                  </Button>
+                  <Button size="sm" variant="destructive" disabled={selectedPending.length === 0} onClick={() => handleBulkApprove(false)}>
+                    <X className="w-3.5 h-3.5 mr-1" />Tolak
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardHeader>
           <CardContent>
             {pendingRecords.length === 0 ? (
               <p className="text-center text-gray-500 py-8">Tidak ada absen yang perlu disetujui</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
+                {/* Select All */}
+                <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
+                  <input type="checkbox" checked={selectedPending.length === pendingRecords.length && pendingRecords.length > 0}
+                    onChange={toggleSelectAll} className="rounded" />
+                  <span className="text-xs font-medium text-gray-600">Pilih Semua</span>
+                </div>
+                
                 {pendingRecords.map(r => (
-                  <div key={r.id} className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {r.clock_in_photo && <img src={r.clock_in_photo} alt="" className="w-12 h-12 rounded-lg object-cover border" />}
-                      <div>
-                        <p className="font-medium text-sm">{r.employee_name}</p>
-                        <p className="text-xs text-gray-500">{r.date} - Masuk: {r.clock_in}</p>
-                        <p className="text-xs text-amber-700">Skor wajah: {r.clock_in_score}% (min: {settings?.face_threshold||70}%)</p>
-                      </div>
+                  <div key={r.id} className={`flex items-center gap-3 p-4 rounded-lg border transition-colors ${selectedPending.includes(r.id) ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
+                    <input type="checkbox" checked={selectedPending.includes(r.id)} onChange={() => toggleSelectPending(r.id)} className="rounded shrink-0" />
+                    {r.clock_in_photo && <img src={r.clock_in_photo} alt="" className="w-12 h-12 rounded-lg object-cover border shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{r.employee_name}</p>
+                      <p className="text-xs text-gray-500">{r.date} — Masuk: {r.clock_in || '-'} | Pulang: {r.clock_out || '-'}</p>
+                      <p className="text-xs text-amber-700">Skor: {r.clock_in_score || 0}% (min: {settings?.face_threshold||70}%)</p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleApprove(r.id, true)}>
-                        <Check className="w-4 h-4 mr-1" />Setuju
+                    <div className="flex gap-1.5 shrink-0">
+                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 h-8" onClick={() => handleApprove(r.id, true)}>
+                        <Check className="w-3.5 h-3.5" />
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleApprove(r.id, false)}>
-                        <X className="w-4 h-4 mr-1" />Tolak
+                      <Button size="sm" variant="destructive" className="h-8" onClick={() => handleApprove(r.id, false)}>
+                        <X className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   </div>

@@ -5055,6 +5055,31 @@ async def approve_attendance(record_id: str, approve: bool, request: Request):
     
     return {"message": f"Absen {'disetujui' if approve else 'ditolak'}"}
 
+@api_router.post("/attendance/bulk-approve")
+async def bulk_approve_attendance(request: Request):
+    """Bulk approve or reject attendance records"""
+    session = await require_session_admin(request)
+    body = await request.json()
+    record_ids = body.get("record_ids", [])
+    approve = body.get("approve", True)
+    
+    if not record_ids:
+        raise HTTPException(status_code=400, detail="Pilih minimal 1 record")
+    
+    new_status = "approved" if approve else "rejected"
+    result = await db.attendance.update_many(
+        {"id": {"$in": record_ids}, "company_id": session["company_id"]},
+        {"$set": {
+            "status": new_status,
+            "approved_by": session["user_id"],
+            "approved_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": f"{result.modified_count} absen {'disetujui' if approve else 'ditolak'}"}
+
+
+
 @api_router.post("/attendance/grant-backdate/{employee_id}")
 async def grant_backdate_access(employee_id: str, request: Request):
     """Grant one-time backdate access to employee"""
