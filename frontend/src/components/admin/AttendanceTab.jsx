@@ -10,7 +10,8 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../ui/table';
-import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2, Camera, Search } from 'lucide-react';
+import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2, Camera, Search, Eye, MapPin } from 'lucide-react';
+import { Dialog, DialogContent } from '../ui/dialog';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
@@ -29,6 +30,7 @@ export const AttendanceTab = ({ language }) => {
   const [newIp, setNewIp] = useState('');
   const [searchAttendance, setSearchAttendance] = useState('');
   const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
+  const [previewPhoto, setPreviewPhoto] = useState(null);
 
   const calcDuration = (start, end) => {
     if (!start || !end) return null;
@@ -267,24 +269,49 @@ export const AttendanceTab = ({ language }) => {
                   <span className="text-xs font-medium text-gray-600">Pilih Semua</span>
                 </div>
                 
-                {pendingRecords.map(r => (
+                {pendingRecords.map(r => {
+                  const photo = r.pending_change?.photo_url || r.clock_in_photo || r.clock_out_photo;
+                  const geoAddr = r.pending_change?.geo_location?.address || r.clock_in_geo?.address || '';
+                  return (
                   <div key={r.id} className={`p-4 rounded-lg border transition-colors ${selectedPending.includes(r.id) ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
-                    <div className="flex items-center gap-3">
-                      <input type="checkbox" checked={selectedPending.includes(r.id)} onChange={() => toggleSelectPending(r.id)} className="rounded shrink-0" />
-                      {(r.clock_in_photo || r.pending_change?.photo_url) && (
-                        <img src={r.pending_change?.photo_url || r.clock_in_photo} alt="" className="w-12 h-12 rounded-lg object-cover border shrink-0" />
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" checked={selectedPending.includes(r.id)} onChange={() => toggleSelectPending(r.id)} className="rounded shrink-0 mt-1" />
+                      
+                      {/* Photo preview */}
+                      {photo && (
+                        <div className="shrink-0 cursor-pointer" onClick={() => setPreviewPhoto(photo)}>
+                          <img src={photo} alt="" className="w-20 h-20 rounded-lg object-cover border-2 border-amber-300 hover:border-blue-400 transition-colors" />
+                          <p className="text-[10px] text-center text-gray-500 mt-0.5">Klik untuk zoom</p>
+                        </div>
                       )}
+                      
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{r.employee_name}</p>
-                        <p className="text-xs text-gray-500">{r.date}</p>
-                      </div>
-                      <div className="flex gap-1.5 shrink-0">
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 h-8" onClick={() => handleApprove(r.id, true)}>
-                          <Check className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button size="sm" variant="destructive" className="h-8" onClick={() => handleApprove(r.id, false)}>
-                          <X className="w-3.5 h-3.5" />
-                        </Button>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{r.employee_name}</p>
+                            <p className="text-xs text-gray-500">{r.date} | {r.employee_email}</p>
+                          </div>
+                          <div className="flex gap-1.5 shrink-0">
+                            {photo && (
+                              <Button size="sm" variant="outline" className="h-8" onClick={() => setPreviewPhoto(photo)}>
+                                <Eye className="w-3.5 h-3.5 mr-1" />Foto
+                              </Button>
+                            )}
+                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 h-8" onClick={() => handleApprove(r.id, true)}>
+                              <Check className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button size="sm" variant="destructive" className="h-8" onClick={() => handleApprove(r.id, false)}>
+                              <X className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Location */}
+                        {geoAddr && (
+                          <p className="text-xs text-gray-500 mt-1 flex items-start gap-1">
+                            <MapPin className="w-3 h-3 shrink-0 mt-0.5" />{geoAddr}
+                          </p>
+                        )}
                       </div>
                     </div>
                     
@@ -314,12 +341,22 @@ export const AttendanceTab = ({ language }) => {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
       )}
+
+      {/* Photo Preview Dialog */}
+      <Dialog open={!!previewPhoto} onOpenChange={() => setPreviewPhoto(null)}>
+        <DialogContent className="sm:max-w-[600px] p-2">
+          {previewPhoto && (
+            <img src={previewPhoto} alt="Foto Absen" className="w-full rounded-lg" />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* History */}
       {tab === 'history' && (
