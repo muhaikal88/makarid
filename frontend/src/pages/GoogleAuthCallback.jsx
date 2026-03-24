@@ -23,7 +23,9 @@ export const GoogleAuthCallback = () => {
 
         if (!sessionId) {
           console.error('No session_id found');
-          navigate('/company-login');
+          const loginPath = window.location.hostname.includes('makar.id') || window.location.hostname === 'localhost'
+            ? '/company-login' : '/';
+          navigate(`${loginPath}?error=auth_failed`);
           return;
         }
 
@@ -48,7 +50,12 @@ export const GoogleAuthCallback = () => {
         }
       } catch (error) {
         console.error('Google auth error:', error);
-        navigate('/company-login?error=auth_failed');
+        const errMsg = error.response?.data?.detail || 'auth_failed';
+        const errParam = errMsg.includes('No company access') ? 'no_access' : 'auth_failed';
+        // On custom domains, login is at /, on makar.id it's at /company-login
+        const loginPath = window.location.hostname.includes('makar.id') || window.location.hostname === 'localhost' 
+          ? '/company-login' : '/';
+        navigate(`${loginPath}?error=${errParam}`);
       }
     };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -24,6 +24,24 @@ export const UnifiedLogin = ({ loginMode }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  // Check URL for error params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    if (error === 'auth_failed') {
+      setAuthError(language === 'id' ? 'Login gagal. Akun Google Anda tidak terdaftar di sistem ini.' : 'Login failed. Your Google account is not registered.');
+    } else if (error === 'no_access') {
+      setAuthError(language === 'id' ? 'Akun Anda tidak memiliki akses ke perusahaan ini.' : 'Your account does not have access.');
+    } else if (error) {
+      setAuthError(language === 'id' ? 'Terjadi kesalahan saat login. Silakan coba lagi.' : 'An error occurred. Please try again.');
+    }
+    // Clean URL
+    if (error) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [language]);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
@@ -127,6 +145,17 @@ export const UnifiedLogin = ({ loginMode }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Auth Error Banner */}
+            {authError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2" data-testid="auth-error">
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-red-700 font-medium">{authError}</p>
+                  <button onClick={() => setAuthError('')} className="text-xs text-red-500 underline mt-1">Tutup</button>
+                </div>
+              </div>
+            )}
+
             {/* Google Login Button */}
             <Button
               type="button"
