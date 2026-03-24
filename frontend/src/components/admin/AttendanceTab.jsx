@@ -202,21 +202,50 @@ export const AttendanceTab = ({ language }) => {
                 </div>
                 
                 {pendingRecords.map(r => (
-                  <div key={r.id} className={`flex items-center gap-3 p-4 rounded-lg border transition-colors ${selectedPending.includes(r.id) ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
-                    <input type="checkbox" checked={selectedPending.includes(r.id)} onChange={() => toggleSelectPending(r.id)} className="rounded shrink-0" />
-                    {r.clock_in_photo && <img src={r.clock_in_photo} alt="" className="w-12 h-12 rounded-lg object-cover border shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{r.employee_name}</p>
-                      <p className="text-xs text-gray-500">{r.date} — Masuk: {r.clock_in || '-'} | Pulang: {r.clock_out || '-'}</p>
-                      <p className="text-xs text-amber-700">Skor: {r.clock_in_score || 0}% (min: {settings?.face_threshold||70}%)</p>
+                  <div key={r.id} className={`p-4 rounded-lg border transition-colors ${selectedPending.includes(r.id) ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" checked={selectedPending.includes(r.id)} onChange={() => toggleSelectPending(r.id)} className="rounded shrink-0" />
+                      {(r.clock_in_photo || r.pending_change?.photo_url) && (
+                        <img src={r.pending_change?.photo_url || r.clock_in_photo} alt="" className="w-12 h-12 rounded-lg object-cover border shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{r.employee_name}</p>
+                        <p className="text-xs text-gray-500">{r.date}</p>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 h-8" onClick={() => handleApprove(r.id, true)}>
+                          <Check className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="sm" variant="destructive" className="h-8" onClick={() => handleApprove(r.id, false)}>
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-1.5 shrink-0">
-                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 h-8" onClick={() => handleApprove(r.id, true)}>
-                        <Check className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button size="sm" variant="destructive" className="h-8" onClick={() => handleApprove(r.id, false)}>
-                        <X className="w-3.5 h-3.5" />
-                      </Button>
+                    
+                    {/* Detail: data saat ini vs pengajuan */}
+                    <div className="mt-3 grid sm:grid-cols-2 gap-2 text-xs">
+                      <div className="p-2 bg-white rounded border">
+                        <p className="font-semibold text-gray-600 mb-1">Data Saat Ini:</p>
+                        <p>Masuk: <span className="font-medium">{r.clock_in || '--:--'}</span></p>
+                        <p>Pulang: <span className="font-medium">{r.clock_out || '--:--'}</span></p>
+                        {(r.break_start || r.break_end) && <p>Break: <span className="font-medium">{r.break_start || '--:--'} - {r.break_end || '--:--'}</span></p>}
+                        <p>Skor masuk: <span className="font-medium">{r.clock_in_score || 0}%</span></p>
+                      </div>
+                      {r.pending_change ? (
+                        <div className="p-2 bg-amber-100 rounded border border-amber-300">
+                          <p className="font-semibold text-amber-800 mb-1">Pengajuan Perubahan:</p>
+                          <p className="text-amber-700">Aksi: <span className="font-medium">
+                            {r.pending_change.action === 'clock_in' ? 'Absen Masuk' : r.pending_change.action === 'clock_out' ? 'Absen Pulang' : r.pending_change.action === 'break_start' ? 'Mulai Break' : 'Selesai Break'}
+                          </span></p>
+                          <p className="text-amber-700">Jam: <span className="font-medium">{r.pending_change.time}</span></p>
+                          <p className="text-amber-700">Skor wajah: <span className="font-medium">{r.pending_change.face_score}%</span> (min: {settings?.face_threshold||70}%)</p>
+                        </div>
+                      ) : (
+                        <div className="p-2 bg-amber-100 rounded border border-amber-300">
+                          <p className="font-semibold text-amber-800 mb-1">Skor Rendah:</p>
+                          <p className="text-amber-700">Skor: <span className="font-medium">{r.clock_in_score || r.clock_out_score || 0}%</span> (min: {settings?.face_threshold||70}%)</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

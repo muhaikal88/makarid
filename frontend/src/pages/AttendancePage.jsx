@@ -459,20 +459,30 @@ export const AttendancePage = () => {
           ) : (
             <div className="space-y-2">
               {records.slice(0, 7).map(r => (
-                <div key={r.id || r.date} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <div>
+                <div key={r.id || r.date} className={`p-3 rounded-lg ${r.pending_change ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}>
+                  <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">{new Date(r.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-                    <p className="text-xs text-gray-500">{r.clock_in || '--:--'} → {r.clock_out || '--:--'}</p>
-                    {r.last_rejection && (
-                      <p className="text-xs text-red-500 mt-0.5">Perubahan {r.last_rejection.action === 'clock_in' ? 'masuk' : r.last_rejection.action === 'clock_out' ? 'pulang' : 'break'} ditolak HRD</p>
-                    )}
-                    {r.pending_change && (
-                      <p className="text-xs text-amber-600 mt-0.5">Perubahan {r.pending_change.action === 'clock_in' ? 'masuk' : r.pending_change.action === 'clock_out' ? 'pulang' : 'break'} menunggu approval</p>
-                    )}
+                    <Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
+                      {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Menunggu Approval'}
+                    </Badge>
                   </div>
-                  <Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
-                    {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Pending'}
-                  </Badge>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Masuk: {r.clock_in || '--:--'} | Pulang: {r.clock_out || '--:--'}
+                    {(r.break_start || r.break_end) && ` | Break: ${r.break_start || '--:--'} - ${r.break_end || '--:--'}`}
+                  </p>
+                  {r.pending_change && (
+                    <div className="mt-2 p-2 bg-amber-100 rounded text-xs">
+                      <p className="font-medium text-amber-800">Pengajuan perubahan (menunggu approval):</p>
+                      <p className="text-amber-700">
+                        {r.pending_change.action === 'clock_in' ? 'Masuk' : r.pending_change.action === 'clock_out' ? 'Pulang' : r.pending_change.action === 'break_start' ? 'Mulai Break' : 'Selesai Break'}: {r.pending_change.time} | Skor: {r.pending_change.face_score}%
+                      </p>
+                    </div>
+                  )}
+                  {r.last_rejection && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Pengajuan {r.last_rejection.action === 'clock_in' ? 'masuk' : r.last_rejection.action === 'clock_out' ? 'pulang' : 'break'} jam {r.last_rejection.time || '-'} ditolak HRD
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
