@@ -49,6 +49,7 @@ export const AttendancePage = () => {
   const [storedDescriptor, setStoredDescriptor] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [canUpdateFace, setCanUpdateFace] = useState(false);
+  const [geoLocation, setGeoLocation] = useState(null);
 
   useEffect(() => {
     loadFaceModels();
@@ -124,6 +125,15 @@ export const AttendancePage = () => {
     setCameraOpen(true);
     setCameraReady(false);
     
+    // Request GPS location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setGeoLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }),
+        () => setGeoLocation(null),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: 640, height: 480 }
@@ -153,7 +163,36 @@ export const AttendancePage = () => {
     const video = videoRef.current;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    
+    // --- Stamp timestamp & geo on photo ---
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const geoStr = geoLocation ? `${geoLocation.lat.toFixed(6)}, ${geoLocation.lng.toFixed(6)}` : 'Lokasi tidak tersedia';
+    
+    const lines = [
+      `${dateStr}`,
+      `${timeStr} WIB`,
+      `Loc: ${geoStr}`,
+    ];
+    
+    // Draw semi-transparent background at bottom
+    const lineH = Math.max(16, canvas.height * 0.028);
+    const padding = 8;
+    const blockH = lines.length * (lineH + 2) + padding * 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, canvas.height - blockH, canvas.width, blockH);
+    
+    // Draw text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${lineH}px Arial, sans-serif`;
+    ctx.textBaseline = 'top';
+    lines.forEach((line, i) => {
+      ctx.fillText(line, padding + 2, canvas.height - blockH + padding + i * (lineH + 2));
+    });
+    // ---
     
     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     setCapturedPhoto(dataUrl);
@@ -206,6 +245,7 @@ export const AttendancePage = () => {
         action: currentAction,
         photo_url: uploadRes.data.url,
         face_score: faceScore || 0,
+        geo_location: geoLocation || null,
       };
       
       if (backdateMode && backdateDate) {

@@ -4852,8 +4852,9 @@ async def clock_attendance(request: Request):
     photo_url = body.get("photo_url")
     face_score = body.get("face_score", 0)
     client_ip = request.headers.get("x-real-ip", request.headers.get("x-forwarded-for", request.client.host))
-    backdate = body.get("date")  # Optional: YYYY-MM-DD for backdate
-    backtime = body.get("time")  # Optional: HH:MM for back clock
+    geo_location = body.get("geo_location")  # {lat, lng, acc}
+    backdate = body.get("date")
+    backtime = body.get("time")
     
     if action not in ("clock_in", "clock_out", "break_start", "break_end"):
         raise HTTPException(status_code=400, detail="Action tidak valid")
@@ -4948,7 +4949,8 @@ async def clock_attendance(request: Request):
     if is_backdate and needs_approval:
         pending_change = {
             "action": action, "time": current_time, "photo_url": photo_url,
-            "face_score": face_score, "ip": client_ip, "date": today
+            "face_score": face_score, "ip": client_ip, "date": today,
+            "geo_location": geo_location
         }
         update_fields = {
             "status": "pending_approval",
@@ -4961,6 +4963,7 @@ async def clock_attendance(request: Request):
             update_fields = {
                 "clock_in": current_time, "clock_in_photo": photo_url,
                 "clock_in_score": face_score, "clock_in_ip": client_ip,
+                "clock_in_geo": geo_location,
                 "status": status
             }
         elif action == "clock_out":
@@ -4970,7 +4973,8 @@ async def clock_attendance(request: Request):
                 raise HTTPException(status_code=400, detail="Anda sudah absen pulang hari ini")
             update_fields = {
                 "clock_out": current_time, "clock_out_photo": photo_url,
-                "clock_out_score": face_score, "clock_out_ip": client_ip
+                "clock_out_score": face_score, "clock_out_ip": client_ip,
+                "clock_out_geo": geo_location
             }
             if needs_approval:
                 update_fields["status"] = "pending_approval"
@@ -4978,7 +4982,8 @@ async def clock_attendance(request: Request):
             update_fields = {
                 "break_start": current_time,
                 "break_start_photo": photo_url,
-                "break_start_score": face_score
+                "break_start_score": face_score,
+                "break_start_geo": geo_location
             }
             if needs_approval:
                 update_fields["status"] = "pending_approval"
@@ -4986,7 +4991,8 @@ async def clock_attendance(request: Request):
             update_fields = {
                 "break_end": current_time,
                 "break_end_photo": photo_url,
-                "break_end_score": face_score
+                "break_end_score": face_score,
+                "break_end_geo": geo_location
             }
             if needs_approval:
                 update_fields["status"] = "pending_approval"
