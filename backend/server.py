@@ -4932,41 +4932,53 @@ async def clock_attendance(request: Request):
     
     # Update based on action
     update_fields = {}
-    if action == "clock_in":
-        if record.get("clock_in") and not is_backdate:
-            raise HTTPException(status_code=400, detail="Anda sudah absen masuk hari ini")
-        update_fields = {
-            "clock_in": current_time, "clock_in_photo": photo_url,
-            "clock_in_score": face_score, "clock_in_ip": client_ip,
-            "status": status
+    
+    # If backdate needs approval, store as pending changes (don't overwrite current data)
+    if is_backdate and needs_approval:
+        pending_change = {
+            "action": action, "time": current_time, "photo_url": photo_url,
+            "face_score": face_score, "ip": client_ip, "date": today
         }
-    elif action == "clock_out":
-        if not record.get("clock_in") and not is_backdate:
-            raise HTTPException(status_code=400, detail="Anda belum absen masuk")
-        if record.get("clock_out") and not is_backdate:
-            raise HTTPException(status_code=400, detail="Anda sudah absen pulang hari ini")
         update_fields = {
-            "clock_out": current_time, "clock_out_photo": photo_url,
-            "clock_out_score": face_score, "clock_out_ip": client_ip
+            "status": "pending_approval",
+            "pending_change": pending_change
         }
-        if needs_approval:
-            update_fields["status"] = "pending_approval"
-    elif action == "break_start":
-        update_fields = {
-            "break_start": current_time,
-            "break_start_photo": photo_url,
-            "break_start_score": face_score
-        }
-        if needs_approval:
-            update_fields["status"] = "pending_approval"
-    elif action == "break_end":
-        update_fields = {
-            "break_end": current_time,
-            "break_end_photo": photo_url,
-            "break_end_score": face_score
-        }
-        if needs_approval:
-            update_fields["status"] = "pending_approval"
+    else:
+        if action == "clock_in":
+            if record.get("clock_in") and not is_backdate:
+                raise HTTPException(status_code=400, detail="Anda sudah absen masuk hari ini")
+            update_fields = {
+                "clock_in": current_time, "clock_in_photo": photo_url,
+                "clock_in_score": face_score, "clock_in_ip": client_ip,
+                "status": status
+            }
+        elif action == "clock_out":
+            if not record.get("clock_in") and not is_backdate:
+                raise HTTPException(status_code=400, detail="Anda belum absen masuk")
+            if record.get("clock_out") and not is_backdate:
+                raise HTTPException(status_code=400, detail="Anda sudah absen pulang hari ini")
+            update_fields = {
+                "clock_out": current_time, "clock_out_photo": photo_url,
+                "clock_out_score": face_score, "clock_out_ip": client_ip
+            }
+            if needs_approval:
+                update_fields["status"] = "pending_approval"
+        elif action == "break_start":
+            update_fields = {
+                "break_start": current_time,
+                "break_start_photo": photo_url,
+                "break_start_score": face_score
+            }
+            if needs_approval:
+                update_fields["status"] = "pending_approval"
+        elif action == "break_end":
+            update_fields = {
+                "break_end": current_time,
+                "break_end_photo": photo_url,
+                "break_end_score": face_score
+            }
+            if needs_approval:
+                update_fields["status"] = "pending_approval"
     
     await db.attendance.update_one(
         {"employee_id": employee_id, "company_id": company_id, "date": today},
@@ -5046,12 +5058,35 @@ async def approve_attendance(record_id: str, approve: bool, request: Request):
     if not record:
         raise HTTPException(status_code=404, detail="Record tidak ditemukan")
     
-    new_status = "approved" if approve else "rejected"
-    await db.attendance.update_one({"id": record_id}, {"$set": {
-        "status": new_status,
-        "approved_by": session["user_id"],
-        "approved_at": datetime.now(timezone.utc).isoformat()
-    }})
+    now_str = datetime.now(timezone.utc).isoformat()
+    
+    if approve:
+        update_data = {"status": "approved", "approved_by": session["user_id"], "approved_at": now_str}
+        
+        # Apply pending change if exists (from backdate with low score)
+        pending = record.get("pending_change")
+        if pending:
+            action = pending["action"]
+            if action == "clock_in":
+                update_data.update({"clock_in": pending["time"], "clock_in_photo": pending["photo_url"], "clock_in_score": pending["face_score"], "clock_in_ip": pending["ip"]})
+            elif action == "clock_out":
+                update_data.update({"clock_out": pending["time"], "clock_out_photo": pending["photo_url"], "clock_out_score": pending["face_score"], "clock_out_ip": pending["ip"]})
+            elif action == "break_start":
+                update_data.update({"break_start": pending["time"], "break_start_photo": pending["photo_url"], "break_start_score": pending["face_score"]})
+            elif action == "break_end":
+                update_data.update({"break_end": pending["time"], "break_end_photo": pending["photo_url"], "break_end_score": pending["face_score"]})
+            update_data["pending_change"] = None
+        
+        await db.attendance.update_one({"id": record_id}, {"$set": update_data})
+    else:
+        # Rejected — discard pending change, restore previous status
+        update_data = {
+            "status": "approved" if record.get("clock_in") else "rejected",
+            "approved_by": session["user_id"],
+            "approved_at": now_str,
+            "pending_change": None
+        }
+        await db.attendance.update_one({"id": record_id}, {"$set": update_data})
     
     return {"message": f"Absen {'disetujui' if approve else 'ditolak'}"}
 
