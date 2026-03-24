@@ -4874,8 +4874,10 @@ async def clock_attendance(request: Request):
         if not ip_valid:
             raise HTTPException(status_code=403, detail=f"Absen hanya bisa dilakukan dari jaringan kantor. IP Anda: {client_ip}")
     
-    # Determine date/time
-    now = datetime.now(timezone.utc)
+    # Use Asia/Jakarta timezone for attendance time
+    from zoneinfo import ZoneInfo
+    jakarta_tz = ZoneInfo("Asia/Jakarta")
+    now = datetime.now(jakarta_tz)
     today = now.strftime("%Y-%m-%d")
     current_time = now.strftime("%H:%M:%S")
     
@@ -5013,7 +5015,8 @@ async def get_my_attendance(request: Request, month: Optional[str] = None):
 async def get_today_attendance(request: Request):
     """Get employee's today attendance status"""
     session = await get_session_user(request)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    from zoneinfo import ZoneInfo
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d")
     
     record = await db.attendance.find_one({
         "employee_id": session["user_id"],
@@ -5034,7 +5037,8 @@ async def get_company_attendance(request: Request, date: Optional[str] = None, m
     elif month:
         query["date"] = {"$regex": f"^{month}"}
     else:
-        query["date"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        from zoneinfo import ZoneInfo
+        query["date"] = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d")
     
     records = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
     return records
