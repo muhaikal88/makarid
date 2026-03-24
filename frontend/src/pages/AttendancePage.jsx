@@ -533,34 +533,39 @@ export const AttendancePage = () => {
       </Card>
 
       {/* Riwayat Pengajuan / Approval */}
-      {records.filter(r => r.pending_change || r.last_rejection || r.approved_by || r.status === 'pending_approval' || r.status === 'rejected').length > 0 && (
+      {(() => {
+        const pengajuanRecords = records.filter(r => 
+          r.pending_change || r.last_rejection || r.approved_by || r.approved_at ||
+          r.status === 'pending_approval' || r.status === 'rejected' || r.is_backdate
+        );
+        return pengajuanRecords.length > 0 && (
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2"><AlertCircle className="w-5 h-5 text-amber-500" />Riwayat Pengajuan</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {records.filter(r => r.pending_change || r.last_rejection || r.approved_by || r.status === 'pending_approval' || r.status === 'rejected').map(r => (
+              {pengajuanRecords.map(r => {
+                const isPending = r.status === 'pending_approval';
+                const isRejected = r.status === 'rejected' || r.last_rejection;
+                const isApproved = !isPending && !isRejected && (r.approved_by || r.approved_at);
+                return (
                 <div key={`req-${r.id || r.date}`} className={`p-3 rounded-lg border ${
-                  r.status === 'pending_approval' ? 'bg-amber-50 border-amber-200' : 
-                  r.status === 'rejected' ? 'bg-red-50 border-red-200' : 
-                  r.last_rejection ? 'bg-red-50 border-red-200' :
+                  isPending ? 'bg-amber-50 border-amber-200' : 
+                  isRejected ? 'bg-red-50 border-red-200' : 
                   'bg-emerald-50 border-emerald-200'
                 }`}>
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-sm font-medium">
                       {new Date(r.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {r.is_backdate && <Badge className="ml-1.5 bg-purple-100 text-purple-700 text-[10px]">mundur</Badge>}
                     </p>
                     <Badge className={
-                      r.status === 'pending_approval' ? 'bg-amber-100 text-amber-700' : 
-                      r.status === 'rejected' ? 'bg-red-100 text-red-700' : 
-                      r.last_rejection ? 'bg-red-100 text-red-700' :
+                      isPending ? 'bg-amber-100 text-amber-700' : 
+                      isRejected ? 'bg-red-100 text-red-700' : 
                       'bg-emerald-100 text-emerald-700'
                     }>
-                      {r.status === 'pending_approval' ? 'Menunggu Approval' : 
-                       r.status === 'rejected' ? 'Ditolak' : 
-                       r.last_rejection ? 'Ditolak' :
-                       'Disetujui'}
+                      {isPending ? 'Menunggu Approval' : isRejected ? 'Ditolak' : 'Disetujui'}
                     </Badge>
                   </div>
                   {r.pending_change && (
@@ -578,15 +583,20 @@ export const AttendancePage = () => {
                       </p>
                     </div>
                   )}
+                  {isApproved && !r.pending_change && !r.last_rejection && (
+                    <p className="text-xs text-emerald-600 mt-1">Disetujui oleh HRD</p>
+                  )}
                   {r.status === 'rejected' && !r.pending_change && !r.last_rejection && (
                     <p className="text-xs text-red-600">Absen ditolak oleh HRD</p>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
-      )}
+        );
+      })()}
 
       {/* Camera Dialog - for both registration and attendance */}
       <Dialog open={cameraOpen || !!capturedPhoto || !!registerPhoto} onOpenChange={(v) => { 
