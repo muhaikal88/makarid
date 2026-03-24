@@ -125,10 +125,31 @@ export const AttendancePage = () => {
     setCameraOpen(true);
     setCameraReady(false);
     
-    // Request GPS location
+    // Request GPS location + reverse geocode
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => setGeoLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }),
+        async (pos) => {
+          const geo = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy, address: '' };
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${geo.lat}&lon=${geo.lng}&format=json&addressdetails=1&accept-language=id`);
+            const data = await res.json();
+            if (data.address) {
+              const a = data.address;
+              const parts = [
+                a.road || a.pedestrian || a.hamlet || '',
+                a.village || a.suburb || a.neighbourhood || '',
+                a.municipality || a.city_district || '',
+                a.city || a.town || a.county || '',
+                a.state || '',
+                a.country || '',
+                a.postcode || ''
+              ].filter(Boolean);
+              geo.address = parts.join(', ');
+              geo.address_detail = a;
+            }
+          } catch {}
+          setGeoLocation(geo);
+        },
         () => setGeoLocation(null),
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -170,13 +191,14 @@ export const AttendancePage = () => {
     const now = new Date();
     const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const geoStr = geoLocation ? `${geoLocation.lat.toFixed(6)}, ${geoLocation.lng.toFixed(6)}` : 'Lokasi tidak tersedia';
+    const coordStr = geoLocation ? `${geoLocation.lat.toFixed(6)}, ${geoLocation.lng.toFixed(6)}` : '';
+    const addressStr = geoLocation?.address || 'Lokasi tidak tersedia';
     
     const lines = [
-      `${dateStr}`,
-      `${timeStr} WIB`,
-      `Loc: ${geoStr}`,
-    ];
+      `${dateStr} - ${timeStr} WIB`,
+      addressStr.length > 60 ? addressStr.slice(0, 60) + '...' : addressStr,
+      coordStr,
+    ].filter(Boolean);
     
     // Draw semi-transparent background at bottom
     const lineH = Math.max(16, canvas.height * 0.028);
@@ -245,7 +267,7 @@ export const AttendancePage = () => {
         action: currentAction,
         photo_url: uploadRes.data.url,
         face_score: faceScore || 0,
-        geo_location: geoLocation || null,
+        geo_location: geoLocation ? { lat: geoLocation.lat, lng: geoLocation.lng, acc: geoLocation.acc, address: geoLocation.address } : null,
       };
       
       if (backdateMode && backdateDate) {
