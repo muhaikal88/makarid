@@ -1460,6 +1460,30 @@ async def get_session_user(request: Request):
         await db.user_sessions.delete_one({"session_token": session_token})
         raise HTTPException(status_code=401, detail="Session expired")
     
+    # Check if user still active and still belongs to company
+    user_id = session.get("user_id")
+    role = session.get("role")
+    company_id = session.get("company_id")
+    
+    if role == "admin":
+        user = await db.company_admins.find_one({"id": user_id}, {"_id": 0, "is_active": 1, "companies": 1})
+    elif role == "employee":
+        user = await db.employees.find_one({"id": user_id}, {"_id": 0, "is_active": 1, "companies": 1})
+    else:
+        user = None
+    
+    if not user:
+        await db.user_sessions.delete_one({"session_token": session_token})
+        raise HTTPException(status_code=401, detail="Akun tidak ditemukan")
+    
+    if not user.get("is_active", True):
+        await db.user_sessions.delete_one({"session_token": session_token})
+        raise HTTPException(status_code=401, detail="Akun Anda telah dinonaktifkan")
+    
+    if company_id and company_id not in user.get("companies", []):
+        await db.user_sessions.delete_one({"session_token": session_token})
+        raise HTTPException(status_code=401, detail="Anda tidak lagi terdaftar di perusahaan ini")
+    
     return session
 
 @api_router.get("/auth/me-session")
