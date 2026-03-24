@@ -368,7 +368,7 @@ export const AttendancePage = () => {
       )}
 
       {/* Today Status */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         <Card className={`border-0 shadow-sm ${today?.clock_in ? 'bg-emerald-50' : 'bg-slate-50'}`}>
           <CardContent className="p-3 text-center">
             <LogIn className={`w-5 h-5 mx-auto mb-1 ${today?.clock_in ? 'text-emerald-600' : 'text-gray-400'}`} />
@@ -402,6 +402,13 @@ export const AttendancePage = () => {
             <Clock className={`w-5 h-5 mx-auto mb-1 ${today?.clock_in && today?.clock_out ? 'text-blue-600' : 'text-gray-400'}`} />
             <p className="text-[10px] text-gray-500">Durasi Kerja</p>
             <p className="font-bold text-sm">{calcDuration(today?.clock_in, today?.clock_out) || '--'}</p>
+          </CardContent>
+        </Card>
+        <Card className={`border-0 shadow-sm ${today?.break_start && today?.break_end ? 'bg-amber-50' : 'bg-slate-50'}`}>
+          <CardContent className="p-3 text-center">
+            <Clock className={`w-5 h-5 mx-auto mb-1 ${today?.break_start && today?.break_end ? 'text-amber-600' : 'text-gray-400'}`} />
+            <p className="text-[10px] text-gray-500">Durasi Break</p>
+            <p className="font-bold text-sm">{calcDuration(today?.break_start, today?.break_end) || '--'}</p>
           </CardContent>
         </Card>
         <Card className={`border-0 shadow-sm ${today?.status === 'approved' ? 'bg-emerald-50' : today?.status === 'pending_approval' ? 'bg-amber-50' : 'bg-slate-50'}`}>
