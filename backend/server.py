@@ -4931,7 +4931,7 @@ async def clock_attendance(request: Request):
     # Update based on action
     update_fields = {}
     if action == "clock_in":
-        if record.get("clock_in"):
+        if record.get("clock_in") and not is_backdate:
             raise HTTPException(status_code=400, detail="Anda sudah absen masuk hari ini")
         update_fields = {
             "clock_in": current_time, "clock_in_photo": photo_url,
@@ -4939,9 +4939,9 @@ async def clock_attendance(request: Request):
             "status": status
         }
     elif action == "clock_out":
-        if not record.get("clock_in"):
+        if not record.get("clock_in") and not is_backdate:
             raise HTTPException(status_code=400, detail="Anda belum absen masuk")
-        if record.get("clock_out"):
+        if record.get("clock_out") and not is_backdate:
             raise HTTPException(status_code=400, detail="Anda sudah absen pulang hari ini")
         update_fields = {
             "clock_out": current_time, "clock_out_photo": photo_url,
