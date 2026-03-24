@@ -1914,6 +1914,48 @@ async def update_my_profile(data: ProfileUpdate, request: Request):
     updated = await table.find_one({"id": session["user_id"]}, {"_id": 0, "password": 0})
     return updated
 
+@api_router.put("/profile/me/fill-data")
+async def fill_my_profile_data(request: Request):
+    """Employee self-service: fill only empty fields. Cannot overwrite existing data."""
+    session = await get_session_user(request)
+    if session["role"] != "employee":
+        raise HTTPException(status_code=403, detail="Hanya karyawan yang bisa mengisi data mandiri")
+    
+    body = await request.json()
+    emp = await db.employees.find_one({"id": session["user_id"]}, {"_id": 0, "password": 0})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+    
+    # Only allow filling empty fields
+    allowed_fields = [
+        "phone", "id_number", "gender", "birth_place", "birth_date", "religion",
+        "marital_status", "education", "major", "province", "city", "district",
+        "village", "full_address", "bank_name", "bank_account", "bank_holder",
+        "emergency_contact", "emergency_phone"
+    ]
+    
+    update_data = {}
+    skipped = []
+    for field in allowed_fields:
+        if field in body and body[field]:
+            current_val = emp.get(field)
+            if not current_val or str(current_val).strip() == "":
+                update_data[field] = body[field]
+            else:
+                skipped.append(field)
+    
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.employees.update_one({"id": session["user_id"]}, {"$set": update_data})
+    
+    return {
+        "message": f"{len(update_data)} field berhasil diisi" + (f", {len(skipped)} field dilewati (sudah terisi)" if skipped else ""),
+        "updated": list(update_data.keys()),
+        "skipped": skipped
+    }
+
+
+
 
 # ============ 2FA / TOTP ENDPOINTS ============
 

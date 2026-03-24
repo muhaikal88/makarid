@@ -24,6 +24,8 @@ export const UserProfile = () => {
   
   const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', picture: '' });
+  const [empData, setEmpData] = useState({});
+  const [savingEmp, setSavingEmp] = useState(false);
 
   // 2FA states
   const [twoFASetup, setTwoFASetup] = useState(null);
@@ -42,6 +44,17 @@ export const UserProfile = () => {
         email: response.data.email,
         password: '',
         picture: response.data.picture || ''
+      });
+      // Set employee data fields
+      const d = response.data;
+      setEmpData({
+        phone: d.phone || '', id_number: d.id_number || '', gender: d.gender || '',
+        birth_place: d.birth_place || '', birth_date: d.birth_date || '', religion: d.religion || '',
+        marital_status: d.marital_status || '', education: d.education || '', major: d.major || '',
+        province: d.province || '', city: d.city || '', district: d.district || '',
+        village: d.village || '', full_address: d.full_address || '',
+        bank_name: d.bank_name || '', bank_account: d.bank_account || '', bank_holder: d.bank_holder || '',
+        emergency_contact: d.emergency_contact || '', emergency_phone: d.emergency_phone || ''
       });
     } catch (error) {
       toast.error('Gagal memuat profil');
@@ -65,6 +78,22 @@ export const UserProfile = () => {
       toast.error(error.response?.data?.detail || 'Gagal update profil');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveEmpData = async () => {
+    setSavingEmp(true);
+    try {
+      const res = await axios.put(`${API}/profile/me/fill-data`, empData, { withCredentials: true });
+      toast.success(res.data.message);
+      if (res.data.skipped?.length > 0) {
+        toast.info(`Field yang sudah terisi tidak bisa diubah: ${res.data.skipped.join(', ')}`);
+      }
+      fetchProfile();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal menyimpan');
+    } finally {
+      setSavingEmp(false);
     }
   };
 
@@ -300,6 +329,90 @@ export const UserProfile = () => {
             </form>
           </CardContent>
         </Card>
+
+
+        {/* Employee Data Card - only for employees */}
+        {profile?.current_role === 'employee' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Karyawan</CardTitle>
+              <CardDescription>Lengkapi data pribadi Anda. Field yang sudah diisi oleh HRD tidak bisa diubah.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {(() => {
+                const isEditable = (field) => !profile?.[field] || String(profile[field]).trim() === '';
+                const FieldInput = ({ label, field, type = 'text', options }) => (
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs flex items-center gap-1">
+                      {label}
+                      {!isEditable(field) && <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Terisi</span>}
+                    </Label>
+                    {options ? (
+                      <select value={empData[field] || ''} disabled={!isEditable(field)}
+                        onChange={(e) => setEmpData({ ...empData, [field]: e.target.value })}
+                        className={`h-10 rounded-md border border-input bg-background px-3 text-sm ${!isEditable(field) ? 'bg-slate-100 text-gray-500' : ''}`}>
+                        <option value="">-</option>
+                        {options.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    ) : (
+                      <Input type={type} value={empData[field] || ''} disabled={!isEditable(field)}
+                        onChange={(e) => setEmpData({ ...empData, [field]: e.target.value })}
+                        className={!isEditable(field) ? 'bg-slate-100 text-gray-500' : ''} />
+                    )}
+                  </div>
+                );
+                return (
+                  <>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Data Pribadi</p>
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      <FieldInput label="No. Telepon" field="phone" />
+                      <FieldInput label="No. KTP/NIK" field="id_number" />
+                      <FieldInput label="Jenis Kelamin" field="gender" options={['Laki-laki', 'Perempuan']} />
+                    </div>
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      <FieldInput label="Tempat Lahir" field="birth_place" />
+                      <FieldInput label="Tanggal Lahir" field="birth_date" type="date" />
+                      <FieldInput label="Agama" field="religion" options={['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu']} />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <FieldInput label="Status Pernikahan" field="marital_status" options={['Belum Menikah','Menikah','Cerai']} />
+                      <FieldInput label="Pendidikan" field="education" options={['SD','SMP','SMA/SMK','D3','S1','S2','S3']} />
+                    </div>
+                    <FieldInput label="Jurusan" field="major" />
+
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Alamat</p>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <FieldInput label="Provinsi" field="province" />
+                      <FieldInput label="Kota/Kabupaten" field="city" />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <FieldInput label="Kecamatan" field="district" />
+                      <FieldInput label="Kelurahan/Desa" field="village" />
+                    </div>
+                    <FieldInput label="Alamat Lengkap" field="full_address" />
+
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Rekening Bank</p>
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      <FieldInput label="Nama Bank" field="bank_name" />
+                      <FieldInput label="No. Rekening" field="bank_account" />
+                      <FieldInput label="Atas Nama" field="bank_holder" />
+                    </div>
+
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">Kontak Darurat</p>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <FieldInput label="Nama" field="emergency_contact" />
+                      <FieldInput label="No. Telepon" field="emergency_phone" />
+                    </div>
+
+                    <Button onClick={handleSaveEmpData} disabled={savingEmp} className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90">
+                      {savingEmp ? 'Menyimpan...' : 'Simpan Data'}
+                    </Button>
+                  </>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        )}
 
         {/* 2FA / Google Authenticator Card - only for admins */}
         {profile?.current_role === 'admin' && (
