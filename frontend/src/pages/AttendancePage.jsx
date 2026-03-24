@@ -495,7 +495,7 @@ export const AttendancePage = () => {
         </Card>
       )}
 
-      {/* History */}
+      {/* History - Clean attendance records */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -504,20 +504,18 @@ export const AttendancePage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {records.length === 0 ? (
+          {records.filter(r => r.status === 'approved').length === 0 ? (
             <p className="text-center text-gray-500 py-4">Belum ada riwayat absensi</p>
           ) : (
             <div className="space-y-2">
-              {records.map(r => (
-                <div key={r.id || r.date} className={`p-3 rounded-lg ${r.pending_change ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}>
+              {records.filter(r => r.status === 'approved').map(r => (
+                <div key={r.id || r.date} className="p-3 rounded-lg bg-slate-50">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-sm font-medium">
                       {new Date(r.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
                       {r.is_backdate && <Badge className="ml-1.5 bg-purple-100 text-purple-700 text-[10px]">mundur</Badge>}
                     </p>
-                    <Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
-                      {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
-                    </Badge>
+                    <Badge className="bg-emerald-100 text-emerald-700">OK</Badge>
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
                     <div><span className="text-gray-500">Masuk</span><p className="font-medium">{r.clock_in?.slice(0,5) || '--:--'}</p></div>
@@ -527,20 +525,59 @@ export const AttendancePage = () => {
                     <div><span className="text-gray-500">Break Selesai</span><p className="font-medium">{r.break_end?.slice(0,5) || '--:--'}</p></div>
                     <div><span className="text-gray-500">Durasi Break</span><p className="font-medium text-amber-700">{calcDuration(r.break_start, r.break_end) || '--'}</p></div>
                   </div>
-                  {r.pending_change && (
-                    <div className="mt-2 p-2 bg-amber-100 rounded text-xs">
-                      <p className="font-medium text-amber-800">Pengajuan: {r.pending_change.action === 'clock_in' ? 'Masuk' : r.pending_change.action === 'clock_out' ? 'Pulang' : r.pending_change.action === 'break_start' ? 'Mulai Break' : 'Selesai Break'} jam {r.pending_change.time} (skor: {r.pending_change.face_score}%)</p>
-                    </div>
-                  )}
-                  {r.last_rejection && (
-                    <p className="text-xs text-red-500 mt-1">Pengajuan {r.last_rejection.action === 'clock_in' ? 'masuk' : r.last_rejection.action === 'clock_out' ? 'pulang' : 'break'} jam {r.last_rejection.time || '-'} ditolak</p>
-                  )}
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Riwayat Pengajuan / Approval */}
+      {records.filter(r => r.status !== 'approved' || r.pending_change || r.last_rejection).length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><AlertCircle className="w-5 h-5 text-amber-500" />Riwayat Pengajuan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {records.filter(r => r.status !== 'approved' || r.pending_change || r.last_rejection).map(r => (
+                <div key={`req-${r.id || r.date}`} className={`p-3 rounded-lg border ${
+                  r.status === 'pending_approval' ? 'bg-amber-50 border-amber-200' : 
+                  r.status === 'rejected' ? 'bg-red-50 border-red-200' : 
+                  'bg-slate-50 border-slate-200'
+                }`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-sm font-medium">
+                      {new Date(r.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    </p>
+                    <Badge className={r.status === 'pending_approval' ? 'bg-amber-100 text-amber-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}>
+                      {r.status === 'pending_approval' ? 'Menunggu Approval' : r.status === 'rejected' ? 'Ditolak' : 'Info'}
+                    </Badge>
+                  </div>
+                  {r.pending_change && (
+                    <div className="p-2 bg-amber-100 rounded text-xs">
+                      <p className="font-medium text-amber-800">
+                        Pengajuan {r.pending_change.action === 'clock_in' ? 'Absen Masuk' : r.pending_change.action === 'clock_out' ? 'Absen Pulang' : r.pending_change.action === 'break_start' ? 'Mulai Break' : 'Selesai Break'}
+                      </p>
+                      <p className="text-amber-700 mt-1">Jam: {r.pending_change.time} | Skor wajah: {r.pending_change.face_score}%</p>
+                    </div>
+                  )}
+                  {r.last_rejection && (
+                    <div className="p-2 bg-red-100 rounded text-xs mt-1">
+                      <p className="font-medium text-red-800">
+                        Ditolak: {r.last_rejection.action === 'clock_in' ? 'Absen Masuk' : r.last_rejection.action === 'clock_out' ? 'Absen Pulang' : 'Break'} jam {r.last_rejection.time || '-'}
+                      </p>
+                    </div>
+                  )}
+                  {r.status === 'rejected' && !r.pending_change && !r.last_rejection && (
+                    <p className="text-xs text-red-600">Absen ditolak oleh HRD</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Camera Dialog - for both registration and attendance */}
       <Dialog open={cameraOpen || !!capturedPhoto || !!registerPhoto} onOpenChange={(v) => { 
