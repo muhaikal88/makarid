@@ -4880,18 +4880,20 @@ async def clock_attendance(request: Request):
     current_time = now.strftime("%H:%M:%S")
     
     is_backdate = False
-    if backdate and backdate != today:
+    if backdate:
         # Check if backdate is allowed
         backdate_token = emp.get("backdate_token")
-        if not backdate_token or backdate_token.get("used"):
-            if not settings.get("allow_backdate"):
-                raise HTTPException(status_code=403, detail="Absen mundur tanggal tidak diizinkan. Hubungi HRD untuk akses.")
-        else:
+        has_valid_token = backdate_token and not backdate_token.get("used")
+        
+        if not has_valid_token and not settings.get("allow_backdate"):
+            raise HTTPException(status_code=403, detail="Absen mundur tanggal tidak diizinkan. Hubungi HRD untuk akses.")
+        
+        if has_valid_token:
             # Mark token as used
             await db.employees.update_one({"id": employee_id}, {"$set": {"backdate_token.used": True}})
         
         today = backdate
-        is_backdate = True
+        is_backdate = True  # Always treat as backdate when date is explicitly sent
     
     if backtime:
         current_time = backtime + ":00"
