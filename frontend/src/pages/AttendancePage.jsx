@@ -33,6 +33,7 @@ export const AttendancePage = () => {
   const [currentAction, setCurrentAction] = useState(null);
   const [records, setRecords] = useState([]);
   const [hasBackdate, setHasBackdate] = useState(false);
+  const [historyMonth, setHistoryMonth] = useState(new Date().toISOString().slice(0, 7));
   const [backdateMode, setBackdateMode] = useState(false);
   const [backdateDate, setBackdateDate] = useState('');
   const [backdateTime, setBackdateTime] = useState('');
@@ -294,12 +295,32 @@ export const AttendancePage = () => {
     finally { setRegistering(false); }
   };
 
+  const fetchHistoryMonth = async (month) => {
+    setHistoryMonth(month);
+    try {
+      const res = await axios.get(`${API}/attendance/my?month=${month}`, { withCredentials: true });
+      setRecords(res.data.records || []);
+    } catch {}
+  };
+
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#2E4DA7]"></div></div>;
   }
 
   const timeStr = currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateStr = currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const calcDuration = (start, end) => {
+    if (!start || !end) return null;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins < 0) mins += 24 * 60;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}j ${m}m`;
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -347,35 +368,49 @@ export const AttendancePage = () => {
       )}
 
       {/* Today Status */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card className={`border-0 shadow-sm ${today?.clock_in ? 'bg-emerald-50' : 'bg-slate-50'}`}>
-          <CardContent className="p-4 text-center">
-            <LogIn className={`w-6 h-6 mx-auto mb-1 ${today?.clock_in ? 'text-emerald-600' : 'text-gray-400'}`} />
-            <p className="text-xs text-gray-500">Masuk</p>
-            <p className="font-bold text-sm">{today?.clock_in || '--:--'}</p>
+          <CardContent className="p-3 text-center">
+            <LogIn className={`w-5 h-5 mx-auto mb-1 ${today?.clock_in ? 'text-emerald-600' : 'text-gray-400'}`} />
+            <p className="text-[10px] text-gray-500">Masuk</p>
+            <p className="font-bold text-sm">{today?.clock_in?.slice(0,5) || '--:--'}</p>
           </CardContent>
         </Card>
         <Card className={`border-0 shadow-sm ${today?.break_start ? 'bg-amber-50' : 'bg-slate-50'}`}>
-          <CardContent className="p-4 text-center">
-            <Coffee className={`w-6 h-6 mx-auto mb-1 ${today?.break_start ? 'text-amber-600' : 'text-gray-400'}`} />
-            <p className="text-xs text-gray-500">Break</p>
-            <p className="font-bold text-sm">{today?.break_start ? `${today.break_start}${today.break_end ? `-${today.break_end}` : '...'}` : '--:--'}</p>
+          <CardContent className="p-3 text-center">
+            <Coffee className={`w-5 h-5 mx-auto mb-1 ${today?.break_start ? 'text-amber-600' : 'text-gray-400'}`} />
+            <p className="text-[10px] text-gray-500">Break Mulai</p>
+            <p className="font-bold text-sm">{today?.break_start?.slice(0,5) || '--:--'}</p>
+          </CardContent>
+        </Card>
+        <Card className={`border-0 shadow-sm ${today?.break_end ? 'bg-amber-50' : 'bg-slate-50'}`}>
+          <CardContent className="p-3 text-center">
+            <Coffee className={`w-5 h-5 mx-auto mb-1 ${today?.break_end ? 'text-amber-700' : 'text-gray-400'}`} />
+            <p className="text-[10px] text-gray-500">Break Selesai</p>
+            <p className="font-bold text-sm">{today?.break_end?.slice(0,5) || '--:--'}</p>
           </CardContent>
         </Card>
         <Card className={`border-0 shadow-sm ${today?.clock_out ? 'bg-blue-50' : 'bg-slate-50'}`}>
-          <CardContent className="p-4 text-center">
-            <LogOut className={`w-6 h-6 mx-auto mb-1 ${today?.clock_out ? 'text-blue-600' : 'text-gray-400'}`} />
-            <p className="text-xs text-gray-500">Pulang</p>
-            <p className="font-bold text-sm">{today?.clock_out || '--:--'}</p>
+          <CardContent className="p-3 text-center">
+            <LogOut className={`w-5 h-5 mx-auto mb-1 ${today?.clock_out ? 'text-blue-600' : 'text-gray-400'}`} />
+            <p className="text-[10px] text-gray-500">Pulang</p>
+            <p className="font-bold text-sm">{today?.clock_out?.slice(0,5) || '--:--'}</p>
+          </CardContent>
+        </Card>
+        <Card className={`border-0 shadow-sm ${today?.clock_in && today?.clock_out ? 'bg-blue-50' : 'bg-slate-50'}`}>
+          <CardContent className="p-3 text-center">
+            <Clock className={`w-5 h-5 mx-auto mb-1 ${today?.clock_in && today?.clock_out ? 'text-blue-600' : 'text-gray-400'}`} />
+            <p className="text-[10px] text-gray-500">Durasi Kerja</p>
+            <p className="font-bold text-sm">{calcDuration(today?.clock_in, today?.clock_out) || '--'}</p>
           </CardContent>
         </Card>
         <Card className={`border-0 shadow-sm ${today?.status === 'approved' ? 'bg-emerald-50' : today?.status === 'pending_approval' ? 'bg-amber-50' : 'bg-slate-50'}`}>
-          <CardContent className="p-4 text-center">
-            {today?.status === 'approved' ? <CheckCircle className="w-6 h-6 mx-auto mb-1 text-emerald-600" /> :
-             today?.status === 'pending_approval' ? <AlertCircle className="w-6 h-6 mx-auto mb-1 text-amber-600" /> :
-             <Clock className="w-6 h-6 mx-auto mb-1 text-gray-400" />}
-            <p className="text-xs text-gray-500">Status</p>
-            <p className="font-bold text-sm">{today?.status === 'approved' ? 'OK' : today?.status === 'pending_approval' ? 'Pending' : today?.status === 'rejected' ? 'Ditolak' : 'Belum Absen'}</p>
+          <CardContent className="p-3 text-center">
+            {today?.status === 'approved' ? <CheckCircle className="w-5 h-5 mx-auto mb-1 text-emerald-600" /> :
+             today?.status === 'pending_approval' ? <AlertCircle className="w-5 h-5 mx-auto mb-1 text-amber-600" /> :
+             <Clock className="w-5 h-5 mx-auto mb-1 text-gray-400" />}
+            <p className="text-[10px] text-gray-500">Status</p>
+            <p className="font-bold text-sm">{today?.status === 'approved' ? 'OK' : today?.status === 'pending_approval' ? 'Pending' : today?.status === 'rejected' ? 'Ditolak' : 'Belum'}</p>
           </CardContent>
         </Card>
       </div>
@@ -453,38 +488,45 @@ export const AttendancePage = () => {
         </Card>
       )}
 
-      {/* Recent Records */}
+      {/* History */}
       <Card className="border-0 shadow-sm">
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-5 h-5" />Riwayat 7 Hari Terakhir</CardTitle></CardHeader>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2"><Calendar className="w-5 h-5" />Riwayat Absensi</CardTitle>
+            <Input type="month" value={historyMonth} onChange={(e) => fetchHistoryMonth(e.target.value)} className="w-40 h-9 text-sm" />
+          </div>
+        </CardHeader>
         <CardContent>
           {records.length === 0 ? (
             <p className="text-center text-gray-500 py-4">Belum ada riwayat absensi</p>
           ) : (
             <div className="space-y-2">
-              {records.slice(0, 7).map(r => (
+              {records.map(r => (
                 <div key={r.id || r.date} className={`p-3 rounded-lg ${r.pending_change ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{new Date(r.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-sm font-medium">
+                      {new Date(r.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {r.is_backdate && <Badge className="ml-1.5 bg-purple-100 text-purple-700 text-[10px]">mundur</Badge>}
+                    </p>
                     <Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
-                      {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Menunggu Approval'}
+                      {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
                     </Badge>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Masuk: {r.clock_in || '--:--'} | Pulang: {r.clock_out || '--:--'}
-                    {(r.break_start || r.break_end) && ` | Break: ${r.break_start || '--:--'} - ${r.break_end || '--:--'}`}
-                  </p>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
+                    <div><span className="text-gray-500">Masuk</span><p className="font-medium">{r.clock_in?.slice(0,5) || '--:--'}</p></div>
+                    <div><span className="text-gray-500">Pulang</span><p className="font-medium">{r.clock_out?.slice(0,5) || '--:--'}</p></div>
+                    <div><span className="text-gray-500">Durasi</span><p className="font-medium text-blue-700">{calcDuration(r.clock_in, r.clock_out) || '--'}</p></div>
+                    <div><span className="text-gray-500">Break Mulai</span><p className="font-medium">{r.break_start?.slice(0,5) || '--:--'}</p></div>
+                    <div><span className="text-gray-500">Break Selesai</span><p className="font-medium">{r.break_end?.slice(0,5) || '--:--'}</p></div>
+                    <div><span className="text-gray-500">Durasi Break</span><p className="font-medium text-amber-700">{calcDuration(r.break_start, r.break_end) || '--'}</p></div>
+                  </div>
                   {r.pending_change && (
                     <div className="mt-2 p-2 bg-amber-100 rounded text-xs">
-                      <p className="font-medium text-amber-800">Pengajuan perubahan (menunggu approval):</p>
-                      <p className="text-amber-700">
-                        {r.pending_change.action === 'clock_in' ? 'Masuk' : r.pending_change.action === 'clock_out' ? 'Pulang' : r.pending_change.action === 'break_start' ? 'Mulai Break' : 'Selesai Break'}: {r.pending_change.time} | Skor: {r.pending_change.face_score}%
-                      </p>
+                      <p className="font-medium text-amber-800">Pengajuan: {r.pending_change.action === 'clock_in' ? 'Masuk' : r.pending_change.action === 'clock_out' ? 'Pulang' : r.pending_change.action === 'break_start' ? 'Mulai Break' : 'Selesai Break'} jam {r.pending_change.time} (skor: {r.pending_change.face_score}%)</p>
                     </div>
                   )}
                   {r.last_rejection && (
-                    <p className="text-xs text-red-500 mt-1">
-                      Pengajuan {r.last_rejection.action === 'clock_in' ? 'masuk' : r.last_rejection.action === 'clock_out' ? 'pulang' : 'break'} jam {r.last_rejection.time || '-'} ditolak HRD
-                    </p>
+                    <p className="text-xs text-red-500 mt-1">Pengajuan {r.last_rejection.action === 'clock_in' ? 'masuk' : r.last_rejection.action === 'clock_out' ? 'pulang' : 'break'} jam {r.last_rejection.time || '-'} ditolak</p>
                   )}
                 </div>
               ))}
