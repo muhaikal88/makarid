@@ -4945,8 +4945,8 @@ async def clock_attendance(request: Request):
     # Update based on action
     update_fields = {}
     
-    # If backdate needs approval, store as pending changes (don't overwrite current data)
-    if is_backdate and needs_approval:
+    # If needs approval (low face score), store as pending changes - don't overwrite current data
+    if needs_approval:
         pending_change = {
             "action": action, "time": current_time, "photo_url": photo_url,
             "face_score": face_score, "ip": client_ip, "date": today,
@@ -4976,8 +4976,6 @@ async def clock_attendance(request: Request):
                 "clock_out_score": face_score, "clock_out_ip": client_ip,
                 "clock_out_geo": geo_location
             }
-            if needs_approval:
-                update_fields["status"] = "pending_approval"
         elif action == "break_start":
             update_fields = {
                 "break_start": current_time,
@@ -4985,8 +4983,6 @@ async def clock_attendance(request: Request):
                 "break_start_score": face_score,
                 "break_start_geo": geo_location
             }
-            if needs_approval:
-                update_fields["status"] = "pending_approval"
         elif action == "break_end":
             update_fields = {
                 "break_end": current_time,
@@ -4994,8 +4990,6 @@ async def clock_attendance(request: Request):
                 "break_end_score": face_score,
                 "break_end_geo": geo_location
             }
-            if needs_approval:
-                update_fields["status"] = "pending_approval"
     
     await db.attendance.update_one(
         {"employee_id": employee_id, "company_id": company_id, "date": today},
