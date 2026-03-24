@@ -3026,6 +3026,10 @@ async def update_employee_session(employee_id: str, data: EmployeeUpdateSession,
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.employees.update_one({"id": employee_id}, {"$set": update_data})
     
+    # If deactivated, kill all sessions
+    if update_data.get("is_active") == False:
+        await db.user_sessions.delete_many({"user_id": employee_id, "company_id": session["company_id"]})
+    
     return {"message": "Data karyawan berhasil diupdate"}
 
 @api_router.delete("/employees-session/{employee_id}")
@@ -3042,6 +3046,12 @@ async def delete_employee_session(employee_id: str, request: Request):
         {"id": employee_id},
         {"$pull": {"companies": session["company_id"]}}
     )
+    
+    # Delete all active sessions for this employee in this company
+    await db.user_sessions.delete_many({
+        "user_id": employee_id,
+        "company_id": session["company_id"]
+    })
     
     return {"message": "Karyawan berhasil dihapus dari perusahaan"}
 
