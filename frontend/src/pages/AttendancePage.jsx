@@ -533,25 +533,34 @@ export const AttendancePage = () => {
       </Card>
 
       {/* Riwayat Pengajuan / Approval */}
-      {records.filter(r => r.status !== 'approved' || r.pending_change || r.last_rejection).length > 0 && (
+      {records.filter(r => r.pending_change || r.last_rejection || r.approved_by || r.status === 'pending_approval' || r.status === 'rejected').length > 0 && (
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2"><AlertCircle className="w-5 h-5 text-amber-500" />Riwayat Pengajuan</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {records.filter(r => r.status !== 'approved' || r.pending_change || r.last_rejection).map(r => (
+              {records.filter(r => r.pending_change || r.last_rejection || r.approved_by || r.status === 'pending_approval' || r.status === 'rejected').map(r => (
                 <div key={`req-${r.id || r.date}`} className={`p-3 rounded-lg border ${
                   r.status === 'pending_approval' ? 'bg-amber-50 border-amber-200' : 
                   r.status === 'rejected' ? 'bg-red-50 border-red-200' : 
-                  'bg-slate-50 border-slate-200'
+                  r.last_rejection ? 'bg-red-50 border-red-200' :
+                  'bg-emerald-50 border-emerald-200'
                 }`}>
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-sm font-medium">
                       {new Date(r.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
                     </p>
-                    <Badge className={r.status === 'pending_approval' ? 'bg-amber-100 text-amber-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}>
-                      {r.status === 'pending_approval' ? 'Menunggu Approval' : r.status === 'rejected' ? 'Ditolak' : 'Info'}
+                    <Badge className={
+                      r.status === 'pending_approval' ? 'bg-amber-100 text-amber-700' : 
+                      r.status === 'rejected' ? 'bg-red-100 text-red-700' : 
+                      r.last_rejection ? 'bg-red-100 text-red-700' :
+                      'bg-emerald-100 text-emerald-700'
+                    }>
+                      {r.status === 'pending_approval' ? 'Menunggu Approval' : 
+                       r.status === 'rejected' ? 'Ditolak' : 
+                       r.last_rejection ? 'Ditolak' :
+                       'Disetujui'}
                     </Badge>
                   </div>
                   {r.pending_change && (
