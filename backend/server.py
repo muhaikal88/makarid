@@ -5079,13 +5079,30 @@ async def approve_attendance(record_id: str, approve: bool, request: Request):
         
         await db.attendance.update_one({"id": record_id}, {"$set": update_data})
     else:
-        # Rejected — discard pending change, restore previous status
+        # Rejected — discard pending change, keep original data
+        # If there was existing approved data, keep it approved
+        # Add rejection note so employee can see it was rejected
+        prev_status = "approved" if record.get("clock_in") and not record.get("pending_change") else "rejected"
+        if record.get("pending_change"):
+            prev_status = "approved" if record.get("clock_in") else "rejected"
+        
         update_data = {
-            "status": "approved" if record.get("clock_in") else "rejected",
             "approved_by": session["user_id"],
             "approved_at": now_str,
-            "pending_change": None
+            "pending_change": None,
+            "last_rejection": {
+                "action": record.get("pending_change", {}).get("action", "unknown"),
+                "time": record.get("pending_change", {}).get("time"),
+                "rejected_at": now_str,
+                "rejected_by": session["user_id"]
+            }
         }
+        # Restore previous status (keep approved if was already approved before backdate attempt)
+        if record.get("clock_in"):
+            update_data["status"] = "approved"
+        else:
+            update_data["status"] = "rejected"
+        
         await db.attendance.update_one({"id": record_id}, {"$set": update_data})
     
     return {"message": f"Absen {'disetujui' if approve else 'ditolak'}"}

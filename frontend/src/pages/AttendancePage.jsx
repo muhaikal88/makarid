@@ -458,6 +458,12 @@ export const AttendancePage = () => {
                   <div>
                     <p className="text-sm font-medium">{new Date(r.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
                     <p className="text-xs text-gray-500">{r.clock_in || '--:--'} → {r.clock_out || '--:--'}</p>
+                    {r.last_rejection && (
+                      <p className="text-xs text-red-500 mt-0.5">Perubahan {r.last_rejection.action === 'clock_in' ? 'masuk' : r.last_rejection.action === 'clock_out' ? 'pulang' : 'break'} ditolak HRD</p>
+                    )}
+                    {r.pending_change && (
+                      <p className="text-xs text-amber-600 mt-0.5">Perubahan {r.pending_change.action === 'clock_in' ? 'masuk' : r.pending_change.action === 'clock_out' ? 'pulang' : 'break'} menunggu approval</p>
+                    )}
                   </div>
                   <Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
                     {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Pending'}
