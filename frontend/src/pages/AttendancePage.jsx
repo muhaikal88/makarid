@@ -206,8 +206,13 @@ export const AttendancePage = () => {
       };
       
       if (backdateMode && backdateDate) {
+        if (!backdateTime) {
+          toast.error('Jam harus diisi untuk absen mundur');
+          setSubmitting(false);
+          return;
+        }
         body.date = backdateDate;
-        if (backdateTime) body.time = backdateTime;
+        body.time = backdateTime;
       }
       
       const res = await axios.post(`${API}/attendance/clock`, body, { withCredentials: true });
@@ -215,7 +220,7 @@ export const AttendancePage = () => {
       toast.success(res.data.message);
       setCapturedPhoto(null);
       setFaceScore(null);
-      setBackdateMode(false);
+      // Don't reset backdate mode — user may need to do more actions (break, clock out)
       fetchData();
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Gagal absen');
