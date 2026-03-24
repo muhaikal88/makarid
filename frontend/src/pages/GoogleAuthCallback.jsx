@@ -36,6 +36,9 @@ export const GoogleAuthCallback = () => {
 
         const data = response.data;
 
+        // Clear hash fragment before navigating (prevents infinite loop)
+        window.history.replaceState(null, '', window.location.pathname);
+
         // Check if needs company/role selection
         if (data.needs_selection) {
           sessionStorage.setItem('login_data', JSON.stringify(data));
