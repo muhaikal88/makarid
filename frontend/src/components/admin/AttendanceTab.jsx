@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../ui/table';
-import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2 } from 'lucide-react';
+import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
@@ -93,6 +93,15 @@ export const AttendanceTab = ({ language }) => {
     try {
       await axios.post(`${API}/attendance/grant-backdate/${empId}`, {}, { withCredentials: true });
       toast.success(`Akses absen mundur diberikan ke ${empName}`);
+      fetchAll();
+    } catch (e) { toast.error(e.response?.data?.detail || 'Gagal'); }
+  };
+
+  const handleGrantFaceUpdate = async (empId, empName) => {
+    if (!window.confirm(`Berikan akses perbarui wajah ke ${empName}? (sekali pakai)`)) return;
+    try {
+      await axios.post(`${API}/attendance/grant-face-update/${empId}`, {}, { withCredentials: true });
+      toast.success(`Akses perbarui wajah diberikan ke ${empName}`);
       fetchAll();
     } catch (e) { toast.error(e.response?.data?.detail || 'Gagal'); }
   };
@@ -295,35 +304,68 @@ export const AttendanceTab = ({ language }) => {
         </Card>
       )}
 
-      {/* Backdate Access */}
+      {/* Backdate & Face Update Access */}
       {tab === 'backdate' && (
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">Berikan Akses Absen Mundur</CardTitle>
-            <CardDescription>Akses sekali pakai — setelah karyawan absen mundur, akses otomatis hangus</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {employees.filter(e => e.is_active).map(emp => (
-                <div key={emp.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-8 h-8"><AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(emp.name)}</AvatarFallback></Avatar>
-                    <div><p className="text-sm font-medium">{emp.name}</p><p className="text-xs text-gray-500">{emp.position || emp.email}</p></div>
+        <div className="space-y-4">
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Akses Absen Mundur</CardTitle>
+              <CardDescription>Sekali pakai — otomatis hangus setelah digunakan</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {employees.filter(e => e.is_active).map(emp => (
+                  <div key={emp.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-8 h-8"><AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(emp.name)}</AvatarFallback></Avatar>
+                      <div><p className="text-sm font-medium">{emp.name}</p><p className="text-xs text-gray-500">{emp.position || emp.email}</p></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {emp.backdate_token && !emp.backdate_token.used ? (
+                        <Badge className="bg-emerald-100 text-emerald-700">Aktif</Badge>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => handleGrantBackdate(emp.id, emp.name)}>
+                          <Undo2 className="w-3 h-3 mr-1.5" />Beri Akses
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {emp.backdate_token && !emp.backdate_token.used ? (
-                      <Badge className="bg-emerald-100 text-emerald-700">Akses Aktif</Badge>
-                    ) : (
-                      <Button size="sm" variant="outline" onClick={() => handleGrantBackdate(emp.id, emp.name)}>
-                        <Undo2 className="w-3 h-3 mr-1.5" />Beri Akses
-                      </Button>
-                    )}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Akses Perbarui Wajah</CardTitle>
+              <CardDescription>Sekali pakai — untuk karyawan yang perlu update foto wajah absensi</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {employees.filter(e => e.is_active).map(emp => (
+                  <div key={`face-${emp.id}`} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-8 h-8"><AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(emp.name)}</AvatarFallback></Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{emp.name}</p>
+                        <p className="text-xs text-gray-500">{emp.face_photo ? 'Wajah terdaftar' : 'Belum daftar wajah'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {emp.face_update_token && !emp.face_update_token.used ? (
+                        <Badge className="bg-emerald-100 text-emerald-700">Aktif</Badge>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => handleGrantFaceUpdate(emp.id, emp.name)}>
+                          <Camera className="w-3 h-3 mr-1.5" />Beri Akses
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Settings */}

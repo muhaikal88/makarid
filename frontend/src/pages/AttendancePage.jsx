@@ -47,6 +47,7 @@ export const AttendancePage = () => {
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [storedDescriptor, setStoredDescriptor] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [canUpdateFace, setCanUpdateFace] = useState(false);
 
   useEffect(() => {
     loadFaceModels();
@@ -101,6 +102,7 @@ export const AttendancePage = () => {
       setHasBackdate(recordsRes.data.has_backdate_token);
       setFaceRegistered(faceRes.data.registered);
       setFacePhoto(faceRes.data.face_photo);
+      setCanUpdateFace(faceRes.data.can_update_face || false);
       
       // Load stored face descriptor
       if (faceRes.data.registered) {
@@ -339,7 +341,8 @@ export const AttendancePage = () => {
             <p className="text-sm font-medium text-emerald-800">Wajah terdaftar</p>
             <p className="text-xs text-emerald-600">Siap untuk absensi</p>
           </div>
-          <Button variant="ghost" size="sm" className="text-emerald-700 text-xs" onClick={startRegisterCamera}>Perbarui</Button>
+          <Button variant="ghost" size="sm" className="text-emerald-700 text-xs" onClick={startRegisterCamera}
+            style={{ display: canUpdateFace ? 'inline-flex' : 'none' }}>Perbarui</Button>
         </div>
       )}
 

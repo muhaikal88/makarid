@@ -4760,9 +4760,13 @@ async def get_face_status(request: Request):
         raise HTTPException(status_code=404, detail="Employee not found")
     
     face_photo = emp.get("face_photo")
+    face_update_token = emp.get("face_update_token")
+    can_update = bool(face_update_token and not face_update_token.get("used"))
+    
     return {
         "registered": bool(face_photo),
-        "face_photo": face_photo
+        "face_photo": face_photo,
+        "can_update_face": can_update
     }
 
 @api_router.post("/attendance/register-face")
@@ -4783,6 +4787,11 @@ async def register_face(request: Request):
     }
     if face_descriptor:
         update_data["face_descriptor"] = face_descriptor
+    
+    # Mark face_update_token as used
+    emp = await db.employees.find_one({"id": session["user_id"]}, {"_id": 0})
+    if emp and emp.get("face_update_token") and not emp["face_update_token"].get("used"):
+        update_data["face_update_token.used"] = True
     
     await db.employees.update_one({"id": session["user_id"]}, {"$set": update_data})
     
@@ -5154,6 +5163,27 @@ async def grant_backdate_access(employee_id: str, request: Request):
     }})
     
     return {"message": f"Akses absen mundur diberikan ke {emp.get('name')}"}
+
+@api_router.post("/attendance/grant-face-update/{employee_id}")
+async def grant_face_update_access(employee_id: str, request: Request):
+    """Grant one-time face photo update access to employee"""
+    session = await require_session_admin(request)
+    
+    emp = await db.employees.find_one({"id": employee_id, "companies": session["company_id"]})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
+    
+    await db.employees.update_one({"id": employee_id}, {"$set": {
+        "face_update_token": {
+            "granted_by": session["user_id"],
+            "granted_at": datetime.now(timezone.utc).isoformat(),
+            "used": False
+        }
+    }})
+    
+    return {"message": f"Akses perbarui wajah diberikan ke {emp.get('name')}"}
+
+
 
 
 # ============ HEALTH CHECK ============
