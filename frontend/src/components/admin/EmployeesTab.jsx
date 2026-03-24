@@ -13,7 +13,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../ui/table';
 import { Switch } from '../ui/switch';
-import { Users, Plus, Search, Upload, Edit, Trash2, Download, Mail, Phone, Briefcase, Building2, Calendar } from 'lucide-react';
+import { Users, Plus, Search, Upload, Edit, Trash2, Download, Mail, Phone, Briefcase, Building2, Calendar, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
@@ -113,6 +113,14 @@ export const EmployeesTab = ({ language }) => {
       toast.success(emp.is_active ? 'Karyawan dinonaktifkan' : 'Karyawan diaktifkan');
       fetchEmployees();
     } catch (error) { toast.error('Gagal mengubah status'); }
+  };
+
+  const handleResetPassword = async (emp) => {
+    if (!window.confirm(`Reset password ${emp.name}? Password baru akan dikirim ke ${emp.email}`)) return;
+    try {
+      const res = await axios.post(`${API}/employees-session/${emp.id}/reset-password`, {}, { withCredentials: true });
+      toast.success(res.data.message);
+    } catch (error) { toast.error(error.response?.data?.detail || 'Gagal reset password'); }
   };
 
   const handleImport = async (e) => {
@@ -274,6 +282,9 @@ export const EmployeesTab = ({ language }) => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleResetPassword(emp)} title="Reset Password">
+                            <KeyRound className="w-4 h-4 text-amber-500" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpen(emp)}>
                             <Edit className="w-4 h-4 text-gray-500" />
                           </Button>
@@ -296,7 +307,7 @@ export const EmployeesTab = ({ language }) => {
         <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedEmp ? 'Edit Karyawan' : 'Tambah Karyawan Baru'}</DialogTitle>
-            <DialogDescription>{selectedEmp ? 'Update data karyawan' : 'Isi data karyawan baru. Password default: Welcome123!'}</DialogDescription>
+            <DialogDescription>{selectedEmp ? 'Update data karyawan' : 'Isi data karyawan baru. Password otomatis dikirim ke email.'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-4">
             {/* Data Utama */}
@@ -440,14 +451,10 @@ export const EmployeesTab = ({ language }) => {
               </div>
             </div>
 
-            {/* Password (only for new) */}
+            {/* Info for new employee */}
             {!selectedEmp && (
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Akun Login</p>
-                <div className="grid gap-1.5">
-                  <Label className="text-xs">Password</Label>
-                  <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Default: Welcome123!" />
-                </div>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-700">Password akan digenerate otomatis dan dikirim ke email karyawan.</p>
               </div>
             )}
           </div>

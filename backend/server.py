@@ -532,6 +532,46 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return hash_password(password) == hashed
 
+def generate_secure_password(length: int = 12) -> str:
+    """Generate ISO 27001 compliant random password"""
+    import random
+    import string
+    upper = random.choices(string.ascii_uppercase, k=2)
+    lower = random.choices(string.ascii_lowercase, k=4)
+    digits = random.choices(string.digits, k=3)
+    special = random.choices("!@#$%&*", k=2)
+    remaining = random.choices(string.ascii_letters + string.digits, k=length - 11)
+    pwd = upper + lower + digits + special + remaining
+    random.shuffle(pwd)
+    return ''.join(pwd)
+
+async def send_employee_password_email(email: str, name: str, password: str, company_name: str, company_id: str = None, is_reset: bool = False):
+    """Send password to employee via email"""
+    action = "direset" if is_reset else "dibuat"
+    subject = f"{'Reset Password' if is_reset else 'Akun Karyawan Baru'} - {company_name}"
+    
+    html_body = f'''<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        {build_email_header(company_name)}
+        <div style="background:#fff;padding:28px 24px;border:1px solid #e5e7eb;border-top:none;">
+            <h2 style="color:#1f2937;margin:0 0 12px;font-size:18px;">Halo {name},</h2>
+            <p style="color:#4b5563;line-height:1.7;margin:0 0 16px;">
+                {'Password akun Anda telah direset.' if is_reset else f'Akun karyawan Anda di <b>{company_name}</b> telah dibuat.'}
+                Berikut data login Anda:
+            </p>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:16px 0;">
+                <p style="color:#0369a1;margin:0 0 8px;font-size:14px;"><b>Data Login:</b></p>
+                <p style="color:#0369a1;margin:0;font-size:13px;">Email: <b>{email}</b></p>
+                <p style="color:#0369a1;margin:4px 0 0;font-size:13px;">Password: <b>{password}</b></p>
+            </div>
+            <p style="color:#dc2626;font-size:12px;margin:16px 0 0;">Segera ganti password Anda setelah login pertama kali demi keamanan akun.</p>
+        </div>
+        {build_email_footer(company_name)}
+    </div>'''
+    
+    text_body = f"Halo {name},\n\nPassword akun Anda telah {action}.\n\nEmail: {email}\nPassword: {password}\n\nSegera ganti password Anda setelah login."
+    
+    await send_notification_email(email, subject, html_body, text_body, company_id)
+
 def generate_slug(name: str) -> str:
     """Generate URL-friendly slug from company name"""
     import re
@@ -2924,7 +2964,7 @@ async def create_employee_session(data: EmployeeCreateSession, request: Request)
         )
         emp_id = existing_emp["id"]
     else:
-        pwd = data.password or "Welcome123!"
+        pwd = data.password or generate_secure_password()
         emp_doc = {
             "id": f"emp_{uuid.uuid4().hex[:12]}",
             "email": data.email,
@@ -2949,6 +2989,14 @@ async def create_employee_session(data: EmployeeCreateSession, request: Request)
         }
         await db.employees.insert_one(emp_doc)
         emp_id = emp_doc["id"]
+        
+        # Send password email
+        company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0})
+        company_name = company.get("name", "") if company else session.get("company_name", "")
+        try:
+            await send_employee_password_email(data.email, data.name, pwd, company_name, session["company_id"])
+        except Exception as e:
+            logging.error(f"Failed to send password email to {data.email}: {e}")
     
     await create_activity_log(
         user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
@@ -2996,6 +3044,41 @@ async def delete_employee_session(employee_id: str, request: Request):
     )
     
     return {"message": "Karyawan berhasil dihapus dari perusahaan"}
+
+@api_router.post("/employees-session/{employee_id}/reset-password")
+async def reset_employee_password(employee_id: str, request: Request):
+    """Reset employee password and send via email"""
+    session = await require_session_admin(request)
+    
+    emp = await db.employees.find_one({"id": employee_id, "companies": session["company_id"]}, {"_id": 0})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
+    
+    new_pwd = generate_secure_password()
+    await db.employees.update_one({"id": employee_id}, {"$set": {
+        "password": hash_password(new_pwd),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }})
+    
+    company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0, "name": 1})
+    company_name = company.get("name", "") if company else ""
+    
+    try:
+        await send_employee_password_email(emp["email"], emp["name"], new_pwd, company_name, session["company_id"], is_reset=True)
+    except Exception as e:
+        logging.error(f"Failed to send reset password email: {e}")
+    
+    await create_activity_log(
+        user_id=session["user_id"], user_name=session["name"], user_email=session["email"],
+        user_role="admin", action="update", resource_type="employee",
+        description=f"Reset password karyawan: {emp['name']} ({emp['email']})",
+        company_id=session["company_id"], company_name=session.get("company_name"),
+        resource_id=employee_id
+    )
+    
+    return {"message": f"Password baru berhasil dikirim ke {emp['email']}", "password": new_pwd}
+
+
 
 @api_router.post("/employees-session/import")
 async def import_employees_excel(request: Request, file: UploadFile = File(...)):
@@ -3080,6 +3163,10 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
     skipped = 0
     errors = []
     
+    # Get company name for emails
+    company_obj = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0, "name": 1})
+    company_name_for_email = company_obj.get("name", "") if company_obj else ""
+    
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         try:
             name = get_cell(row, 'name')
@@ -3108,9 +3195,10 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
                     {"$addToSet": {"companies": session["company_id"]}, "$set": {"updated_at": now}}
                 )
             else:
+                pwd = generate_secure_password()
                 emp_doc = {
                     "id": f"emp_{uuid.uuid4().hex[:12]}",
-                    "email": email, "name": name, "password": hash_password("Welcome123!"),
+                    "email": email, "name": name, "password": hash_password(pwd),
                     "phone": get_cell(row, 'phone'),
                     "id_number": get_cell(row, 'id_number'),
                     "gender": get_cell(row, 'gender'),
@@ -3141,6 +3229,12 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
                     "created_at": now, "updated_at": now
                 }
                 await db.employees.insert_one(emp_doc)
+                
+                # Send password email (non-blocking)
+                try:
+                    await send_employee_password_email(email, name, pwd, company_name_for_email, session["company_id"])
+                except:
+                    pass
             
             imported += 1
         except Exception as e:
@@ -3988,11 +4082,12 @@ async def update_application_status_session(app_id: str, status: str, notes: Opt
                             {"$addToSet": {"companies": session["company_id"]}, "$set": update_fields}
                         )
                     else:
+                        hire_pwd = generate_secure_password()
                         emp_doc = {
                             "id": f"emp_{uuid.uuid4().hex[:12]}",
                             "email": emp_email,
                             "name": fd.get("full_name", fd.get("name", "")),
-                            "password": hash_password("Welcome123!"),
+                            "password": hash_password(hire_pwd),
                             "phone": fd.get("phone", ""),
                             "position": job.get("title", "") if job else "",
                             "department": job.get("department", "") if job else "",
@@ -4018,6 +4113,12 @@ async def update_application_status_session(app_id: str, status: str, notes: Opt
                             "created_at": now_str, "updated_at": now_str
                         }
                         await db.employees.insert_one(emp_doc)
+                        
+                        # Send password email to hired employee
+                        try:
+                            await send_employee_password_email(emp_email, fd.get("full_name", fd.get("name", "")), hire_pwd, company.get("name", ""), session["company_id"])
+                        except:
+                            pass
                     
                     logging.info(f"Auto-created employee from hired applicant: {emp_email}")
         except Exception as e:
