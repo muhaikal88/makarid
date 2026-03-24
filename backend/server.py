@@ -4950,9 +4950,21 @@ async def clock_attendance(request: Request):
         if needs_approval:
             update_fields["status"] = "pending_approval"
     elif action == "break_start":
-        update_fields = {"break_start": current_time}
+        update_fields = {
+            "break_start": current_time,
+            "break_start_photo": photo_url,
+            "break_start_score": face_score
+        }
+        if needs_approval:
+            update_fields["status"] = "pending_approval"
     elif action == "break_end":
-        update_fields = {"break_end": current_time}
+        update_fields = {
+            "break_end": current_time,
+            "break_end_photo": photo_url,
+            "break_end_score": face_score
+        }
+        if needs_approval:
+            update_fields["status"] = "pending_approval"
     
     await db.attendance.update_one(
         {"employee_id": employee_id, "company_id": company_id, "date": today},

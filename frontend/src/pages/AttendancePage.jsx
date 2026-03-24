@@ -222,16 +222,6 @@ export const AttendancePage = () => {
     } finally { setSubmitting(false); }
   };
 
-  const handleBreak = async (action) => {
-    try {
-      const res = await axios.post(`${API}/attendance/clock`, {
-        action, photo_url: null, face_score: 100
-      }, { withCredentials: true });
-      toast.success(res.data.message);
-      fetchData();
-    } catch (e) { toast.error(e.response?.data?.detail || 'Gagal'); }
-  };
-
   const startRegisterCamera = () => {
     setRegisterMode(true);
     setRegisterPhoto(null);
@@ -385,18 +375,18 @@ export const AttendancePage = () => {
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3">
         {!today?.clock_in && (
-          <Button className="h-14 bg-emerald-600 hover:bg-emerald-700 text-base" onClick={() => startCamera('clock_in')} disabled={!faceRegistered} data-testid="btn-clock-in">
+          <Button className="h-14 bg-emerald-600 hover:bg-emerald-700 text-base col-span-2" onClick={() => startCamera('clock_in')} disabled={!faceRegistered} data-testid="btn-clock-in">
             <Camera className="w-5 h-5 mr-2" />Absen Masuk
           </Button>
         )}
         {today?.clock_in && !today?.clock_out && (
           <>
             {!today?.break_start ? (
-              <Button className="h-14 bg-amber-500 hover:bg-amber-600 text-base" onClick={() => handleBreak('break_start')}>
+              <Button className="h-14 bg-amber-500 hover:bg-amber-600 text-base" onClick={() => startCamera('break_start')} disabled={!faceRegistered}>
                 <Coffee className="w-5 h-5 mr-2" />Mulai Break
               </Button>
             ) : !today?.break_end ? (
-              <Button className="h-14 bg-amber-600 hover:bg-amber-700 text-base" onClick={() => handleBreak('break_end')}>
+              <Button className="h-14 bg-amber-600 hover:bg-amber-700 text-base" onClick={() => startCamera('break_end')} disabled={!faceRegistered}>
                 <Coffee className="w-5 h-5 mr-2" />Selesai Break
               </Button>
             ) : <div />}
@@ -416,21 +406,40 @@ export const AttendancePage = () => {
       {/* Backdate */}
       {hasBackdate && (
         <Card className="border-0 shadow-sm border-l-4 border-l-purple-500">
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-purple-800">Akses Absen Mundur Tersedia</p>
                 <p className="text-xs text-purple-600">Sekali pakai — dari HRD</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => setBackdateMode(!backdateMode)}>
-                <Undo2 className="w-4 h-4 mr-1" />{backdateMode ? 'Batal' : 'Gunakan'}
+              <Button size="sm" variant={backdateMode ? 'default' : 'outline'} onClick={() => setBackdateMode(!backdateMode)}
+                className={backdateMode ? 'bg-purple-600' : ''}>
+                <Undo2 className="w-4 h-4 mr-1" />{backdateMode ? 'Mode Mundur Aktif' : 'Gunakan'}
               </Button>
             </div>
             {backdateMode && (
-              <div className="grid sm:grid-cols-2 gap-3 mt-3">
-                <div className="grid gap-1"><Label className="text-xs">Tanggal</Label><Input type="date" value={backdateDate} onChange={(e) => setBackdateDate(e.target.value)} /></div>
-                <div className="grid gap-1"><Label className="text-xs">Jam</Label><Input type="time" value={backdateTime} onChange={(e) => setBackdateTime(e.target.value)} /></div>
-              </div>
+              <>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="grid gap-1"><Label className="text-xs">Tanggal</Label><Input type="date" value={backdateDate} onChange={(e) => setBackdateDate(e.target.value)} /></div>
+                  <div className="grid gap-1"><Label className="text-xs">Jam</Label><Input type="time" value={backdateTime} onChange={(e) => setBackdateTime(e.target.value)} /></div>
+                </div>
+                {backdateDate && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => startCamera('clock_in')} disabled={!faceRegistered}>
+                      <LogIn className="w-4 h-4 mr-1.5" />Absen Masuk
+                    </Button>
+                    <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => startCamera('break_start')} disabled={!faceRegistered}>
+                      <Coffee className="w-4 h-4 mr-1.5" />Mulai Break
+                    </Button>
+                    <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => startCamera('break_end')} disabled={!faceRegistered}>
+                      <Coffee className="w-4 h-4 mr-1.5" />Selesai Break
+                    </Button>
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => startCamera('clock_out')} disabled={!faceRegistered}>
+                      <LogOut className="w-4 h-4 mr-1.5" />Absen Pulang
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -467,7 +476,11 @@ export const AttendancePage = () => {
         <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
           <DialogHeader className="p-4 pb-0">
             <DialogTitle>
-              {registerMode ? 'Daftarkan Wajah Anda' : currentAction === 'clock_in' ? 'Absen Masuk' : 'Absen Pulang'} — Foto Wajah
+              {registerMode ? 'Daftarkan Wajah Anda' : 
+               currentAction === 'clock_in' ? 'Absen Masuk' : 
+               currentAction === 'clock_out' ? 'Absen Pulang' : 
+               currentAction === 'break_start' ? 'Mulai Break' : 
+               currentAction === 'break_end' ? 'Selesai Break' : 'Absen'} — Foto Wajah
             </DialogTitle>
           </DialogHeader>
           <div className="p-4 space-y-4">
