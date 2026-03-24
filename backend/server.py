@@ -4900,9 +4900,17 @@ async def get_attendance_settings(request: Request):
             "work_end": "17:00",
             "break_start": "12:00",
             "break_end": "13:00",
-            "allow_backdate": False
+            "allow_backdate": False,
+            "session_timeout": 30
         }
     return settings
+
+@api_router.get("/attendance/settings-public")
+async def get_attendance_settings_public(request: Request):
+    """Get session timeout setting for employees"""
+    session = await get_session_user(request)
+    settings = await db.attendance_settings.find_one({"company_id": session["company_id"]}, {"_id": 0})
+    return {"session_timeout": settings.get("session_timeout", 30) if settings else 30}
 
 @api_router.put("/attendance/settings")
 async def update_attendance_settings(data: Dict[str, Any], request: Request):

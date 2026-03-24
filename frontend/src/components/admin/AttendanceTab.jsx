@@ -526,6 +526,27 @@ export const AttendanceTab = ({ language }) => {
               </div>
             </div>
 
+            {/* Session Timeout */}
+            <div className="space-y-2">
+              <Label className="font-medium">Session Timeout (menit)</Label>
+              <div className="flex items-center gap-3">
+                <Input type="number" min="5" max="480" value={settings.session_timeout || 30}
+                  onChange={(e) => setSettings({ ...settings, session_timeout: parseInt(e.target.value) || 30 })}
+                  className="w-24" />
+                <span className="text-sm text-gray-500">menit tidak aktif → auto logout</span>
+              </div>
+              <div className="flex gap-2">
+                {[15, 30, 60, 120, 480].map(v => (
+                  <Button key={v} type="button" size="sm" variant={(settings.session_timeout || 30) === v ? 'default' : 'outline'}
+                    className={(settings.session_timeout || 30) === v ? 'bg-[#2E4DA7]' : ''}
+                    onClick={() => setSettings({ ...settings, session_timeout: v })}>
+                    {v >= 60 ? `${v/60}jam` : `${v}m`}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500">Karyawan otomatis logout jika tidak ada aktivitas selama waktu ini.</p>
+            </div>
+
             <Button onClick={handleSaveSettings} disabled={saving} className="w-full bg-[#2E4DA7] hover:bg-[#2E4DA7]/90">
               {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
             </Button>

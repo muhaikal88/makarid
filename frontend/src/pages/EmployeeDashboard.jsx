@@ -8,7 +8,7 @@ import {
   CalendarOff, Calendar, Wallet
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { AttendancePage } from './AttendancePage';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
@@ -26,13 +26,45 @@ export const EmployeeDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('attendance');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sessionTimeout, setSessionTimeout] = useState(30); // minutes
 
   useEffect(() => { fetchSession(); }, []);
+
+  // Auto-logout on idle
+  useEffect(() => {
+    if (!session || sessionTimeout <= 0) return;
+    
+    let timer;
+    const timeoutMs = sessionTimeout * 60 * 1000;
+    
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        toast.info('Sesi Anda berakhir karena tidak ada aktivitas');
+        handleLogout();
+      }, timeoutMs);
+    };
+    
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+    
+    return () => {
+      clearTimeout(timer);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [session, sessionTimeout]);
 
   const fetchSession = async () => {
     try {
       const response = await axios.get(`${API}/auth/me-session`, { withCredentials: true });
       setSession(response.data);
+      
+      // Fetch session timeout setting
+      try {
+        const settingsRes = await axios.get(`${API}/attendance/settings-public`, { withCredentials: true });
+        if (settingsRes.data.session_timeout) setSessionTimeout(settingsRes.data.session_timeout);
+      } catch {}
     } catch (error) {
       navigate('/company-login');
     } finally { setLoading(false); }
@@ -113,6 +145,9 @@ export const EmployeeDashboard = () => {
               </h2>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50 text-xs" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Keluar</span>
+              </Button>
               <Avatar className="w-8 h-8 bg-emerald-600 cursor-pointer" onClick={() => navigate('/employee/profile')}>
                 <AvatarFallback className="bg-emerald-600 text-white text-xs">{getInitials(session?.name)}</AvatarFallback>
               </Avatar>
