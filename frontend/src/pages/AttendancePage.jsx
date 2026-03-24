@@ -1,15 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import * as faceapi from 'face-api.js';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
-import { Camera, Clock, Coffee, LogOut, LogIn, CheckCircle, AlertCircle, Undo2, Calendar } from 'lucide-react';
+import { Camera, Clock, Coffee, LogOut, LogIn, CheckCircle, AlertCircle, Undo2, Calendar, Loader2 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
+
+// Face guide SVG path (head/face shape)
+const FaceGuide = () => (
+  <svg viewBox="0 0 200 260" className="w-48 h-60 sm:w-56 sm:h-72" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M100 10 C45 10, 15 60, 15 110 C15 170, 45 230, 100 250 C155 230, 185 170, 185 110 C185 60, 155 10, 100 10Z" 
+      stroke="white" strokeWidth="2.5" strokeDasharray="8 4" opacity="0.6" fill="none"/>
+  </svg>
+);
 
 export const AttendancePage = () => {
   const videoRef = useRef(null);
@@ -35,12 +44,45 @@ export const AttendancePage = () => {
   const [registerMode, setRegisterMode] = useState(false);
   const [registerPhoto, setRegisterPhoto] = useState(null);
   const [registering, setRegistering] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [storedDescriptor, setStoredDescriptor] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
+    loadFaceModels();
     fetchData();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const loadFaceModels = async () => {
+    try {
+      const MODEL_URL = '/models';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      ]);
+      setModelsLoaded(true);
+    } catch (e) {
+      console.error('Failed to load face models:', e);
+    }
+  };
+
+  const detectFaceDescriptor = async (imageElement) => {
+    if (!modelsLoaded) return null;
+    const detection = await faceapi.detectSingleFace(imageElement, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks().withFaceDescriptor();
+    return detection ? Array.from(detection.descriptor) : null;
+  };
+
+  const compareFaces = (desc1, desc2) => {
+    if (!desc1 || !desc2 || desc1.length !== desc2.length) return 0;
+    const distance = faceapi.euclideanDistance(desc1, desc2);
+    // Convert distance to percentage (0 distance = 100%, 1.0+ distance = 0%)
+    const score = Math.max(0, Math.min(100, Math.round((1 - distance) * 100)));
+    return score;
+  };
 
   const fetchData = async () => {
     try {
@@ -56,6 +98,14 @@ export const AttendancePage = () => {
       setHasBackdate(recordsRes.data.has_backdate_token);
       setFaceRegistered(faceRes.data.registered);
       setFacePhoto(faceRes.data.face_photo);
+      
+      // Load stored face descriptor
+      if (faceRes.data.registered) {
+        try {
+          const descRes = await axios.get(`${API}/attendance/face-descriptor`, { withCredentials: true });
+          if (descRes.data.face_descriptor) setStoredDescriptor(descRes.data.face_descriptor);
+        } catch {}
+      }
     } catch (e) {
       console.error(e);
     } finally { setLoading(false); }
@@ -101,14 +151,36 @@ export const AttendancePage = () => {
     
     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     setCapturedPhoto(dataUrl);
-    
-    // Simple face detection score (placeholder - compares with profile photo)
-    // In production, use face-api.js or server-side comparison
-    let score = Math.floor(Math.random() * 30) + 70; // Simulated 70-100%
-    if (!profilePhoto) score = 50; // Low score if no profile photo
-    setFaceScore(score);
-    
     stopCamera();
+    
+    // Real face comparison using face-api.js
+    if (modelsLoaded && storedDescriptor) {
+      setAnalyzing(true);
+      setFaceScore(null);
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = dataUrl;
+        await new Promise(r => { img.onload = r; });
+        
+        const descriptor = await detectFaceDescriptor(img);
+        if (descriptor) {
+          const score = compareFaces(storedDescriptor, descriptor);
+          setFaceScore(score);
+        } else {
+          setFaceScore(0);
+          toast.error('Wajah tidak terdeteksi. Pastikan wajah terlihat jelas.');
+        }
+      } catch (e) {
+        console.error('Face comparison error:', e);
+        setFaceScore(50);
+      } finally {
+        setAnalyzing(false);
+      }
+    } else {
+      // Fallback if models not loaded or no stored descriptor
+      setFaceScore(50);
+    }
   };
 
   const submitAttendance = async () => {
@@ -187,12 +259,32 @@ export const AttendancePage = () => {
     if (!registerPhoto) return;
     setRegistering(true);
     try {
+      // Extract face descriptor
+      let descriptor = null;
+      if (modelsLoaded) {
+        const img = new Image();
+        img.src = registerPhoto;
+        await new Promise(r => { img.onload = r; });
+        descriptor = await detectFaceDescriptor(img);
+        if (!descriptor) {
+          toast.error('Wajah tidak terdeteksi dalam foto. Pastikan wajah terlihat jelas dan coba lagi.');
+          setRegistering(false);
+          return;
+        }
+      }
+      
+      // Upload photo
       const blob = await (await fetch(registerPhoto)).blob();
       const fd = new FormData();
       fd.append('file', blob, 'face_register.jpg');
       const uploadRes = await axios.post(`${API}/upload/profile-picture`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       
-      await axios.post(`${API}/attendance/register-face`, { photo_url: uploadRes.data.url }, { withCredentials: true });
+      // Register face with descriptor
+      await axios.post(`${API}/attendance/register-face`, { 
+        photo_url: uploadRes.data.url,
+        face_descriptor: descriptor
+      }, { withCredentials: true });
+      
       toast.success('Wajah berhasil didaftarkan! Sekarang Anda bisa absen.');
       setRegisterMode(false);
       setRegisterPhoto(null);
@@ -383,7 +475,7 @@ export const AttendancePage = () => {
                   <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                   {!cameraReady && <div className="absolute inset-0 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-48 h-48 border-2 border-white/50 rounded-full"></div>
+                    <FaceGuide />
                   </div>
                   <p className="absolute bottom-3 left-0 right-0 text-center text-white text-xs bg-black/50 py-1">
                     Posisikan wajah Anda di dalam lingkaran
@@ -404,13 +496,19 @@ export const AttendancePage = () => {
                   <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                   {!cameraReady && <div className="absolute inset-0 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-48 h-48 border-2 border-white/50 rounded-full"></div>
+                    <FaceGuide />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <img src={capturedPhoto} alt="Foto" className="w-full rounded-lg" />
-                  {faceScore !== null && (
+                  {analyzing && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                      <p className="text-sm text-blue-700">Menganalisa wajah...</p>
+                    </div>
+                  )}
+                  {!analyzing && faceScore !== null && (
                     <div className={`p-3 rounded-lg text-center ${faceScore >= 70 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
                       <p className={`text-lg font-bold ${faceScore >= 70 ? 'text-emerald-700' : 'text-amber-700'}`}>Kemiripan: {faceScore}%</p>
                       <p className="text-xs text-gray-600">{faceScore >= 70 ? 'Wajah terverifikasi' : 'Kemiripan rendah — akan menunggu approval HRD'}</p>

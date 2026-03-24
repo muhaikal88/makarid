@@ -4767,24 +4767,36 @@ async def get_face_status(request: Request):
 
 @api_router.post("/attendance/register-face")
 async def register_face(request: Request):
-    """Register employee face photo for attendance verification"""
+    """Register employee face photo and descriptor for attendance verification"""
     session = await get_session_user(request)
     body = await request.json()
     photo_url = body.get("photo_url")
+    face_descriptor = body.get("face_descriptor")  # 128-float array from face-api.js
     
     if not photo_url:
         raise HTTPException(status_code=400, detail="Foto wajah diperlukan")
     
-    await db.employees.update_one(
-        {"id": session["user_id"]},
-        {"$set": {
-            "face_photo": photo_url,
-            "face_registered_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }}
-    )
+    update_data = {
+        "face_photo": photo_url,
+        "face_registered_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    if face_descriptor:
+        update_data["face_descriptor"] = face_descriptor
+    
+    await db.employees.update_one({"id": session["user_id"]}, {"$set": update_data})
     
     return {"message": "Wajah berhasil didaftarkan", "face_photo": photo_url}
+
+@api_router.get("/attendance/face-descriptor")
+async def get_face_descriptor(request: Request):
+    """Get stored face descriptor for comparison"""
+    session = await get_session_user(request)
+    emp = await db.employees.find_one({"id": session["user_id"]}, {"_id": 0, "face_descriptor": 1, "face_photo": 1})
+    return {
+        "face_descriptor": emp.get("face_descriptor") if emp else None,
+        "face_photo": emp.get("face_photo") if emp else None
+    }
 
 
 
