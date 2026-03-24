@@ -30,6 +30,11 @@ export const AttendancePage = () => {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [faceScore, setFaceScore] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [faceRegistered, setFaceRegistered] = useState(null); // null=loading, true/false
+  const [facePhoto, setFacePhoto] = useState(null);
+  const [registerMode, setRegisterMode] = useState(false);
+  const [registerPhoto, setRegisterPhoto] = useState(null);
+  const [registering, setRegistering] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -39,19 +44,18 @@ export const AttendancePage = () => {
 
   const fetchData = async () => {
     try {
-      const [sessionRes, todayRes, recordsRes] = await Promise.all([
+      const [sessionRes, todayRes, recordsRes, faceRes] = await Promise.all([
         axios.get(`${API}/auth/me-session`, { withCredentials: true }),
         axios.get(`${API}/attendance/today`, { withCredentials: true }),
         axios.get(`${API}/attendance/my`, { withCredentials: true }),
+        axios.get(`${API}/attendance/face-status`, { withCredentials: true }),
       ]);
       setSession(sessionRes.data);
       setToday(todayRes.data);
       setRecords(recordsRes.data.records || []);
       setHasBackdate(recordsRes.data.has_backdate_token);
-      
-      // Get employee profile photo
-      const profileRes = await axios.get(`${API}/profile/me`, { withCredentials: true });
-      setProfilePhoto(profileRes.data.picture);
+      setFaceRegistered(faceRes.data.registered);
+      setFacePhoto(faceRes.data.face_photo);
     } catch (e) {
       console.error(e);
     } finally { setLoading(false); }
@@ -153,6 +157,51 @@ export const AttendancePage = () => {
     } catch (e) { toast.error(e.response?.data?.detail || 'Gagal'); }
   };
 
+  const startRegisterCamera = () => {
+    setRegisterMode(true);
+    setRegisterPhoto(null);
+    setCameraOpen(true);
+    setCameraReady(false);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } })
+      .then(stream => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => setCameraReady(true);
+        }
+      })
+      .catch(() => { toast.error('Tidak bisa mengakses kamera'); setCameraOpen(false); setRegisterMode(false); });
+  };
+
+  const captureRegisterPhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    setRegisterPhoto(canvas.toDataURL('image/jpeg', 0.8));
+    stopCamera();
+  };
+
+  const submitRegisterFace = async () => {
+    if (!registerPhoto) return;
+    setRegistering(true);
+    try {
+      const blob = await (await fetch(registerPhoto)).blob();
+      const fd = new FormData();
+      fd.append('file', blob, 'face_register.jpg');
+      const uploadRes = await axios.post(`${API}/upload/profile-picture`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      
+      await axios.post(`${API}/attendance/register-face`, { photo_url: uploadRes.data.url }, { withCredentials: true });
+      toast.success('Wajah berhasil didaftarkan! Sekarang Anda bisa absen.');
+      setRegisterMode(false);
+      setRegisterPhoto(null);
+      setCameraOpen(false);
+      fetchData();
+    } catch (e) { toast.error(e.response?.data?.detail || 'Gagal mendaftarkan wajah'); }
+    finally { setRegistering(false); }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#2E4DA7]"></div></div>;
   }
@@ -169,6 +218,40 @@ export const AttendancePage = () => {
           <p className="text-white/70 mt-1 text-sm">{dateStr}</p>
         </CardContent>
       </Card>
+
+      {/* Face Registration Required */}
+      {faceRegistered === false && (
+        <Card className="border-0 shadow-sm border-l-4 border-l-amber-500 bg-amber-50">
+          <CardContent className="p-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                <Camera className="w-8 h-8 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-800 text-base">Daftarkan Wajah Anda</h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  Anda perlu mendaftarkan foto wajah terlebih dahulu sebelum bisa melakukan absensi. Foto ini akan digunakan untuk verifikasi identitas saat absen.
+                </p>
+              </div>
+              <Button className="bg-amber-600 hover:bg-amber-700 shrink-0" onClick={startRegisterCamera} data-testid="btn-register-face">
+                <Camera className="w-4 h-4 mr-2" />Daftarkan Wajah
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Face Registered Info */}
+      {faceRegistered && facePhoto && (
+        <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <img src={facePhoto} alt="Face" className="w-10 h-10 rounded-full object-cover border-2 border-emerald-300" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-emerald-800">Wajah terdaftar</p>
+            <p className="text-xs text-emerald-600">Siap untuk absensi</p>
+          </div>
+          <Button variant="ghost" size="sm" className="text-emerald-700 text-xs" onClick={startRegisterCamera}>Perbarui</Button>
+        </div>
+      )}
 
       {/* Today Status */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -207,7 +290,7 @@ export const AttendancePage = () => {
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3">
         {!today?.clock_in && (
-          <Button className="h-14 bg-emerald-600 hover:bg-emerald-700 text-base" onClick={() => startCamera('clock_in')} data-testid="btn-clock-in">
+          <Button className="h-14 bg-emerald-600 hover:bg-emerald-700 text-base" onClick={() => startCamera('clock_in')} disabled={!faceRegistered} data-testid="btn-clock-in">
             <Camera className="w-5 h-5 mr-2" />Absen Masuk
           </Button>
         )}
@@ -222,7 +305,7 @@ export const AttendancePage = () => {
                 <Coffee className="w-5 h-5 mr-2" />Selesai Break
               </Button>
             ) : <div />}
-            <Button className="h-14 bg-blue-600 hover:bg-blue-700 text-base" onClick={() => startCamera('clock_out')} data-testid="btn-clock-out">
+            <Button className="h-14 bg-blue-600 hover:bg-blue-700 text-base" onClick={() => startCamera('clock_out')} disabled={!faceRegistered} data-testid="btn-clock-out">
               <Camera className="w-5 h-5 mr-2" />Absen Pulang
             </Button>
           </>
@@ -282,46 +365,89 @@ export const AttendancePage = () => {
         </CardContent>
       </Card>
 
-      {/* Camera Dialog */}
-      <Dialog open={cameraOpen || !!capturedPhoto} onOpenChange={(v) => { if (!v) { stopCamera(); setCapturedPhoto(null); } }}>
+      {/* Camera Dialog - for both registration and attendance */}
+      <Dialog open={cameraOpen || !!capturedPhoto || !!registerPhoto} onOpenChange={(v) => { 
+        if (!v) { stopCamera(); setCapturedPhoto(null); setRegisterPhoto(null); setRegisterMode(false); } 
+      }}>
         <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
           <DialogHeader className="p-4 pb-0">
-            <DialogTitle>{currentAction === 'clock_in' ? 'Absen Masuk' : 'Absen Pulang'} — Foto Wajah</DialogTitle>
+            <DialogTitle>
+              {registerMode ? 'Daftarkan Wajah Anda' : currentAction === 'clock_in' ? 'Absen Masuk' : 'Absen Pulang'} — Foto Wajah
+            </DialogTitle>
           </DialogHeader>
           <div className="p-4 space-y-4">
-            {!capturedPhoto ? (
-              <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
-                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                {!cameraReady && <div className="absolute inset-0 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-48 border-2 border-white/50 rounded-full"></div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <img src={capturedPhoto} alt="Foto" className="w-full rounded-lg" />
-                {faceScore !== null && (
-                  <div className={`p-3 rounded-lg text-center ${faceScore >= 70 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
-                    <p className={`text-lg font-bold ${faceScore >= 70 ? 'text-emerald-700' : 'text-amber-700'}`}>Kemiripan: {faceScore}%</p>
-                    <p className="text-xs text-gray-600">{faceScore >= 70 ? 'Wajah terverifikasi' : 'Kemiripan rendah — akan menunggu approval HRD'}</p>
+            {registerMode ? (
+              /* Face Registration Mode */
+              !registerPhoto ? (
+                <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                  {!cameraReady && <div className="absolute inset-0 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-48 h-48 border-2 border-white/50 rounded-full"></div>
                   </div>
-                )}
-              </div>
+                  <p className="absolute bottom-3 left-0 right-0 text-center text-white text-xs bg-black/50 py-1">
+                    Posisikan wajah Anda di dalam lingkaran
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <img src={registerPhoto} alt="Register" className="w-full rounded-lg" />
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                    <p className="text-sm text-blue-700">Pastikan foto jelas dan wajah terlihat dengan baik</p>
+                  </div>
+                </div>
+              )
+            ) : (
+              /* Attendance Mode */
+              !capturedPhoto ? (
+                <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                  {!cameraReady && <div className="absolute inset-0 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-48 h-48 border-2 border-white/50 rounded-full"></div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <img src={capturedPhoto} alt="Foto" className="w-full rounded-lg" />
+                  {faceScore !== null && (
+                    <div className={`p-3 rounded-lg text-center ${faceScore >= 70 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
+                      <p className={`text-lg font-bold ${faceScore >= 70 ? 'text-emerald-700' : 'text-amber-700'}`}>Kemiripan: {faceScore}%</p>
+                      <p className="text-xs text-gray-600">{faceScore >= 70 ? 'Wajah terverifikasi' : 'Kemiripan rendah — akan menunggu approval HRD'}</p>
+                    </div>
+                  )}
+                </div>
+              )
             )}
             <canvas ref={canvasRef} className="hidden" />
           </div>
           <DialogFooter className="p-4 pt-0">
-            {!capturedPhoto ? (
-              <Button onClick={capturePhoto} disabled={!cameraReady} className="w-full h-12 bg-[#2E4DA7]">
-                <Camera className="w-5 h-5 mr-2" />Ambil Foto
-              </Button>
-            ) : (
-              <div className="flex gap-2 w-full">
-                <Button variant="outline" className="flex-1" onClick={() => { setCapturedPhoto(null); startCamera(currentAction); }}>Ulangi</Button>
-                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={submitAttendance} disabled={submitting}>
-                  {submitting ? 'Mengirim...' : 'Kirim Absen'}
+            {registerMode ? (
+              !registerPhoto ? (
+                <Button onClick={captureRegisterPhoto} disabled={!cameraReady} className="w-full h-12 bg-[#2E4DA7]">
+                  <Camera className="w-5 h-5 mr-2" />Ambil Foto
                 </Button>
-              </div>
+              ) : (
+                <div className="flex gap-2 w-full">
+                  <Button variant="outline" className="flex-1" onClick={() => { setRegisterPhoto(null); startRegisterCamera(); }}>Ulangi</Button>
+                  <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={submitRegisterFace} disabled={registering}>
+                    {registering ? 'Mendaftarkan...' : 'Daftarkan Wajah'}
+                  </Button>
+                </div>
+              )
+            ) : (
+              !capturedPhoto ? (
+                <Button onClick={capturePhoto} disabled={!cameraReady} className="w-full h-12 bg-[#2E4DA7]">
+                  <Camera className="w-5 h-5 mr-2" />Ambil Foto
+                </Button>
+              ) : (
+                <div className="flex gap-2 w-full">
+                  <Button variant="outline" className="flex-1" onClick={() => { setCapturedPhoto(null); startCamera(currentAction); }}>Ulangi</Button>
+                  <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={submitAttendance} disabled={submitting}>
+                    {submitting ? 'Mengirim...' : 'Kirim Absen'}
+                  </Button>
+                </div>
+              )
             )}
           </DialogFooter>
         </DialogContent>

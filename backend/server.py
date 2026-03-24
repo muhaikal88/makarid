@@ -4751,6 +4751,43 @@ class AttendanceSettings(BaseModel):
     break_end: str = "13:00"
     allow_backdate: bool = False  # Global setting
 
+@api_router.get("/attendance/face-status")
+async def get_face_status(request: Request):
+    """Check if employee has registered face photo"""
+    session = await get_session_user(request)
+    emp = await db.employees.find_one({"id": session["user_id"]}, {"_id": 0})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    face_photo = emp.get("face_photo")
+    return {
+        "registered": bool(face_photo),
+        "face_photo": face_photo
+    }
+
+@api_router.post("/attendance/register-face")
+async def register_face(request: Request):
+    """Register employee face photo for attendance verification"""
+    session = await get_session_user(request)
+    body = await request.json()
+    photo_url = body.get("photo_url")
+    
+    if not photo_url:
+        raise HTTPException(status_code=400, detail="Foto wajah diperlukan")
+    
+    await db.employees.update_one(
+        {"id": session["user_id"]},
+        {"$set": {
+            "face_photo": photo_url,
+            "face_registered_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Wajah berhasil didaftarkan", "face_photo": photo_url}
+
+
+
 @api_router.get("/attendance/settings")
 async def get_attendance_settings(request: Request):
     """Get attendance settings for company"""
@@ -4810,6 +4847,11 @@ async def clock_attendance(request: Request):
     
     # Check employee-specific settings
     emp = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    
+    # Block clock_in/clock_out if face not registered
+    if action in ("clock_in", "clock_out") and not emp.get("face_photo"):
+        raise HTTPException(status_code=400, detail="Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu di menu Profil.")
+    
     emp_allow_outside = emp.get("allow_outside_network", settings.get("allow_outside_network", False))
     
     # Check IP if office IPs are configured
