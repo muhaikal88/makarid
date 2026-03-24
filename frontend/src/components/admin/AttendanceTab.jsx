@@ -192,7 +192,8 @@ export const AttendanceTab = ({ language }) => {
                       <TableHead>Masuk</TableHead>
                       <TableHead>Pulang</TableHead>
                       <TableHead>Durasi Kerja</TableHead>
-                      <TableHead>Break</TableHead>
+                      <TableHead>Break Mulai</TableHead>
+                      <TableHead>Break Selesai</TableHead>
                       <TableHead>Durasi Break</TableHead>
                       <TableHead>Skor</TableHead>
                       <TableHead>Status</TableHead>
@@ -213,9 +214,8 @@ export const AttendanceTab = ({ language }) => {
                               <Badge className="bg-blue-100 text-blue-700">{calcDuration(r.clock_in, r.clock_out)}</Badge>
                             ) : <span className="text-xs text-gray-400">-</span>}
                           </TableCell>
-                          <TableCell className="text-xs">
-                            {r.break_start ? `${r.break_start?.slice(0,5)}${r.break_end ? ` - ${r.break_end?.slice(0,5)}` : ' - ...'}` : '-'}
-                          </TableCell>
+                          <TableCell className="text-sm">{r.break_start?.slice(0,5) || '-'}</TableCell>
+                          <TableCell className="text-sm">{r.break_end?.slice(0,5) || '-'}</TableCell>
                           <TableCell>
                             {r.break_start && r.break_end ? (
                               <Badge className="bg-amber-100 text-amber-700">{calcDuration(r.break_start, r.break_end)}</Badge>
@@ -338,7 +338,7 @@ export const AttendanceTab = ({ language }) => {
                 <Table>
                   <TableHeader><TableRow className="bg-slate-50">
                     <TableHead>Tanggal</TableHead><TableHead>Karyawan</TableHead><TableHead>Masuk</TableHead>
-                    <TableHead>Pulang</TableHead><TableHead>Durasi</TableHead><TableHead>Break</TableHead><TableHead>Skor</TableHead><TableHead>Status</TableHead>
+                    <TableHead>Pulang</TableHead><TableHead>Durasi</TableHead><TableHead>Break Mulai</TableHead><TableHead>Break Selesai</TableHead><TableHead>Durasi Break</TableHead><TableHead>Skor</TableHead><TableHead>Status</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
                     {monthRecords.map(r => (
@@ -350,8 +350,10 @@ export const AttendanceTab = ({ language }) => {
                         <TableCell>
                           {r.clock_in && r.clock_out ? <Badge className="bg-blue-100 text-blue-700">{calcDuration(r.clock_in, r.clock_out)}</Badge> : <span className="text-xs text-gray-400">-</span>}
                         </TableCell>
-                        <TableCell className="text-xs">
-                          {r.break_start && r.break_end ? calcDuration(r.break_start, r.break_end) : r.break_start ? `${r.break_start?.slice(0,5)}-...` : '-'}
+                        <TableCell className="text-sm">{r.break_start?.slice(0,5) || '-'}</TableCell>
+                        <TableCell className="text-sm">{r.break_end?.slice(0,5) || '-'}</TableCell>
+                        <TableCell>
+                          {r.break_start && r.break_end ? <Badge className="bg-amber-100 text-amber-700">{calcDuration(r.break_start, r.break_end)}</Badge> : <span className="text-xs text-gray-400">-</span>}
                         </TableCell>
                         <TableCell><Badge className="bg-slate-100 text-slate-700">{r.clock_in_score || 0}%</Badge></TableCell>
                         <TableCell><Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
