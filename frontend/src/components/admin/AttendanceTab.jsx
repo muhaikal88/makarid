@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../ui/table';
-import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2, Camera } from 'lucide-react';
+import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2, Camera, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
@@ -27,6 +27,27 @@ export const AttendanceTab = ({ language }) => {
   const [monthRecords, setMonthRecords] = useState([]);
   const [selectedPending, setSelectedPending] = useState([]);
   const [newIp, setNewIp] = useState('');
+  const [searchAttendance, setSearchAttendance] = useState('');
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
+
+  const calcDuration = (start, end) => {
+    if (!start || !end) return null;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins < 0) mins += 24 * 60;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}j ${m}m`;
+  };
+
+  const fetchByDate = async (date) => {
+    setFilterDate(date);
+    try {
+      const res = await axios.get(`${API}/attendance/company?date=${date}`, { withCredentials: true });
+      setTodayRecords(res.data);
+    } catch (e) { console.error(e); }
+  };
 
   const toggleSelectPending = (id) => {
     setSelectedPending(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -142,39 +163,75 @@ export const AttendanceTab = ({ language }) => {
       {/* Today's Attendance */}
       {tab === 'today' && (
         <Card className="border-0 shadow-sm">
-          <CardHeader><CardTitle className="text-base">Absensi Hari Ini</CardTitle></CardHeader>
-          <CardContent>
-            {todayRecords.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">Belum ada absensi hari ini</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader><TableRow className="bg-slate-50">
-                    <TableHead>Karyawan</TableHead><TableHead>Masuk</TableHead><TableHead>Pulang</TableHead>
-                    <TableHead>Break</TableHead><TableHead>Skor</TableHead><TableHead>Status</TableHead>
-                  </TableRow></TableHeader>
-                  <TableBody>
-                    {todayRecords.map(r => (
-                      <TableRow key={r.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-8 h-8"><AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(r.employee_name)}</AvatarFallback></Avatar>
-                            <div><p className="text-sm font-medium">{r.employee_name}</p><p className="text-xs text-gray-500">{r.employee_email}</p></div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">{r.clock_in || '-'}</TableCell>
-                        <TableCell className="text-sm">{r.clock_out || '-'}</TableCell>
-                        <TableCell className="text-xs">{r.break_start && r.break_end ? `${r.break_start}-${r.break_end}` : r.break_start ? `${r.break_start}-...` : '-'}</TableCell>
-                        <TableCell><Badge className={r.clock_in_score >= (settings?.face_threshold||70) ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>{r.clock_in_score || 0}%</Badge></TableCell>
-                        <TableCell><Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
-                          {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Pending'}
-                        </Badge></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle className="text-base">Absensi {filterDate === new Date().toISOString().slice(0, 10) ? 'Hari Ini' : filterDate}</CardTitle>
+              <div className="flex gap-2">
+                <div className="relative flex-1 sm:w-48">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input placeholder="Cari karyawan..." value={searchAttendance} onChange={(e) => setSearchAttendance(e.target.value)} className="pl-8 h-9 text-sm" />
+                </div>
+                <Input type="date" value={filterDate} onChange={(e) => fetchByDate(e.target.value)} className="w-40 h-9 text-sm" />
               </div>
-            )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const filtered = todayRecords.filter(r => {
+                if (!searchAttendance) return true;
+                const s = searchAttendance.toLowerCase();
+                return r.employee_name?.toLowerCase().includes(s) || r.employee_email?.toLowerCase().includes(s);
+              });
+              return filtered.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">{searchAttendance ? 'Tidak ditemukan' : 'Belum ada absensi'}</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader><TableRow className="bg-slate-50">
+                      <TableHead>Karyawan</TableHead>
+                      <TableHead>Masuk</TableHead>
+                      <TableHead>Pulang</TableHead>
+                      <TableHead>Durasi Kerja</TableHead>
+                      <TableHead>Break</TableHead>
+                      <TableHead>Durasi Break</TableHead>
+                      <TableHead>Skor</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {filtered.map(r => (
+                        <TableRow key={r.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="w-8 h-8"><AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(r.employee_name)}</AvatarFallback></Avatar>
+                              <div><p className="text-sm font-medium">{r.employee_name}</p><p className="text-xs text-gray-500">{r.employee_email}</p></div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">{r.clock_in?.slice(0,5) || '-'}</TableCell>
+                          <TableCell className="text-sm">{r.clock_out?.slice(0,5) || '-'}</TableCell>
+                          <TableCell>
+                            {r.clock_in && r.clock_out ? (
+                              <Badge className="bg-blue-100 text-blue-700">{calcDuration(r.clock_in, r.clock_out)}</Badge>
+                            ) : <span className="text-xs text-gray-400">-</span>}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {r.break_start ? `${r.break_start?.slice(0,5)}${r.break_end ? ` - ${r.break_end?.slice(0,5)}` : ' - ...'}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {r.break_start && r.break_end ? (
+                              <Badge className="bg-amber-100 text-amber-700">{calcDuration(r.break_start, r.break_end)}</Badge>
+                            ) : <span className="text-xs text-gray-400">-</span>}
+                          </TableCell>
+                          <TableCell><Badge className={r.clock_in_score >= (settings?.face_threshold||70) ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>{r.clock_in_score || 0}%</Badge></TableCell>
+                          <TableCell><Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
+                            {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Pending'}
+                          </Badge></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
@@ -281,15 +338,21 @@ export const AttendanceTab = ({ language }) => {
                 <Table>
                   <TableHeader><TableRow className="bg-slate-50">
                     <TableHead>Tanggal</TableHead><TableHead>Karyawan</TableHead><TableHead>Masuk</TableHead>
-                    <TableHead>Pulang</TableHead><TableHead>Skor</TableHead><TableHead>Status</TableHead>
+                    <TableHead>Pulang</TableHead><TableHead>Durasi</TableHead><TableHead>Break</TableHead><TableHead>Skor</TableHead><TableHead>Status</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
                     {monthRecords.map(r => (
                       <TableRow key={r.id}>
                         <TableCell className="text-sm">{r.date}{r.is_backdate && <Badge className="ml-1 bg-purple-100 text-purple-700 text-[10px]">mundur</Badge>}</TableCell>
                         <TableCell className="text-sm font-medium">{r.employee_name}</TableCell>
-                        <TableCell className="text-sm">{r.clock_in || '-'}</TableCell>
-                        <TableCell className="text-sm">{r.clock_out || '-'}</TableCell>
+                        <TableCell className="text-sm">{r.clock_in?.slice(0,5) || '-'}</TableCell>
+                        <TableCell className="text-sm">{r.clock_out?.slice(0,5) || '-'}</TableCell>
+                        <TableCell>
+                          {r.clock_in && r.clock_out ? <Badge className="bg-blue-100 text-blue-700">{calcDuration(r.clock_in, r.clock_out)}</Badge> : <span className="text-xs text-gray-400">-</span>}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {r.break_start && r.break_end ? calcDuration(r.break_start, r.break_end) : r.break_start ? `${r.break_start?.slice(0,5)}-...` : '-'}
+                        </TableCell>
                         <TableCell><Badge className="bg-slate-100 text-slate-700">{r.clock_in_score || 0}%</Badge></TableCell>
                         <TableCell><Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
                           {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Pending'}
