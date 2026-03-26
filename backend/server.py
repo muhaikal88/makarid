@@ -2946,6 +2946,10 @@ class OutletCreate(BaseModel):
     phone: Optional[str] = None
     office_ips: Optional[List[str]] = []
     is_active: bool = True
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    radius_meters: int = 100
+    geo_enabled: bool = False
 
 class OutletUpdate(BaseModel):
     name: Optional[str] = None
@@ -2953,6 +2957,10 @@ class OutletUpdate(BaseModel):
     phone: Optional[str] = None
     office_ips: Optional[List[str]] = None
     is_active: Optional[bool] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    radius_meters: Optional[int] = None
+    geo_enabled: Optional[bool] = None
 
 @api_router.get("/outlets-session")
 async def get_outlets(request: Request):
@@ -2969,6 +2977,8 @@ async def create_outlet(data: OutletCreate, request: Request):
         "company_id": session["company_id"],
         "name": data.name, "address": data.address, "phone": data.phone,
         "office_ips": data.office_ips or [],
+        "latitude": data.latitude, "longitude": data.longitude,
+        "radius_meters": data.radius_meters, "geo_enabled": data.geo_enabled,
         "is_active": data.is_active,
         "created_at": now, "updated_at": now
     }
@@ -5087,6 +5097,29 @@ async def clock_attendance(request: Request):
             if outlet_name: msg += f" ({outlet_name})"
             msg += f". IP Anda: {client_ip}"
             raise HTTPException(status_code=403, detail=msg)
+    
+    # Check geolocation if outlet has geo_enabled
+    if emp.get("outlet_id") and not emp_allow_outside:
+        if not outlet:
+            outlet = await db.outlets.find_one({"id": emp["outlet_id"]}, {"_id": 0})
+        if outlet and outlet.get("geo_enabled") and outlet.get("latitude") and outlet.get("longitude"):
+            emp_geo = geo_location
+            if not emp_geo or not emp_geo.get("lat") or not emp_geo.get("lng"):
+                raise HTTPException(status_code=403, detail=f"Lokasi GPS diperlukan untuk absen di {outlet.get('name', 'outlet ini')}. Pastikan GPS aktif.")
+            
+            import math
+            def haversine(lat1, lon1, lat2, lon2):
+                R = 6371000
+                p1, p2 = math.radians(lat1), math.radians(lat2)
+                dp = math.radians(lat2 - lat1)
+                dl = math.radians(lon2 - lon1)
+                a = math.sin(dp/2)**2 + math.cos(p1) * math.cos(p2) * math.sin(dl/2)**2
+                return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+            
+            distance = haversine(emp_geo["lat"], emp_geo["lng"], outlet["latitude"], outlet["longitude"])
+            max_radius = outlet.get("radius_meters", 100)
+            if distance > max_radius:
+                raise HTTPException(status_code=403, detail=f"Anda berada {int(distance)}m dari {outlet.get('name', 'outlet')}. Maksimal {max_radius}m.")
     
     # Use Asia/Jakarta timezone for attendance time
     from zoneinfo import ZoneInfo
