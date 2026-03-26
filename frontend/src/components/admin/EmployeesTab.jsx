@@ -116,13 +116,49 @@ export const EmployeesTab = ({ language }) => {
     } finally { setSaving(false); }
   };
 
-  const handleDelete = async (emp) => {
-    if (!window.confirm(`Hapus ${emp.name} dari perusahaan?`)) return;
+  const [trashEmployees, setTrashEmployees] = useState([]);
+  const [showTrash, setShowTrash] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, emp: null, text: '' });
+
+  const fetchTrash = async () => {
+    try { const r = await axios.get(`${API}/employees-session-trash`, { withCredentials: true }); setTrashEmployees(r.data); }
+    catch {}
+  };
+
+  useEffect(() => { if (showTrash) fetchTrash(); }, [showTrash]);
+
+  const handleDelete = (emp) => {
+    setDeleteConfirm({ open: true, emp, text: '' });
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirm.text.toLowerCase() !== 'hapus') { toast.error('Ketik "hapus" untuk konfirmasi'); return; }
     try {
-      await axios.delete(`${API}/employees-session/${emp.id}`, { withCredentials: true });
-      toast.success('Karyawan berhasil dihapus');
+      await axios.delete(`${API}/employees-session/${deleteConfirm.emp.id}`, {
+        withCredentials: true, data: { confirm: deleteConfirm.text }
+      });
+      toast.success('Karyawan dipindahkan ke tempat sampah');
+      setDeleteConfirm({ open: false, emp: null, text: '' });
       fetchEmployees();
-    } catch (error) { toast.error('Gagal menghapus'); }
+      fetchTrash();
+    } catch (error) { toast.error(error.response?.data?.detail || 'Gagal menghapus'); }
+  };
+
+  const handleRestore = async (emp) => {
+    try {
+      await axios.post(`${API}/employees-session/${emp.id}/restore`, {}, { withCredentials: true });
+      toast.success(`${emp.name} berhasil dipulihkan`);
+      fetchEmployees(); fetchTrash();
+    } catch { toast.error('Gagal memulihkan'); }
+  };
+
+  const handlePermanentDelete = async (emp) => {
+    if (!window.confirm(`HAPUS PERMANEN ${emp.name}? Data tidak bisa dikembalikan!`)) return;
+    try {
+      await axios.delete(`${API}/employees-session/${emp.id}/permanent`, { withCredentials: true });
+      toast.success('Karyawan dihapus permanen');
+      fetchTrash();
+    } catch { toast.error('Gagal menghapus'); }
   };
 
   const handleToggleActive = async (emp) => {
@@ -219,6 +255,10 @@ export const EmployeesTab = ({ language }) => {
             <Upload className="w-4 h-4 mr-1.5" />{importing ? 'Importing...' : 'Import Excel'}
           </Button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} className="hidden" />
+          <Button variant={showTrash ? 'default' : 'outline'} size="sm" onClick={() => setShowTrash(!showTrash)}
+            className={showTrash ? 'bg-red-600 hover:bg-red-700' : ''}>
+            <Trash2 className="w-4 h-4 mr-1.5" />Sampah{trashEmployees.length > 0 && ` (${trashEmployees.length})`}
+          </Button>
           <Button size="sm" className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90" onClick={() => handleOpen()} data-testid="add-employee-btn">
             <Plus className="w-4 h-4 mr-1.5" />Tambah
           </Button>
@@ -500,6 +540,62 @@ export const EmployeesTab = ({ language }) => {
             <Button variant="outline" onClick={() => setIsFormOpen(false)}>Batal</Button>
             <Button onClick={handleSave} disabled={saving} className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90">
               {saving ? 'Menyimpan...' : (selectedEmp ? 'Update' : 'Simpan')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Trash List */}
+      {showTrash && (
+        <Card className="border-0 shadow-sm border-t-4 border-t-red-400">
+          <CardContent className="p-4">
+            <h3 className="font-semibold text-sm text-red-700 mb-3 flex items-center gap-2"><Trash2 className="w-4 h-4" />Tempat Sampah Karyawan</h3>
+            {trashEmployees.length === 0 ? (
+              <p className="text-center text-gray-500 py-4 text-sm">Tempat sampah kosong</p>
+            ) : (
+              <div className="space-y-2">
+                {trashEmployees.map(emp => (
+                  <div key={emp.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-8 h-8"><AvatarFallback className="bg-gray-400 text-white text-xs">{getInitials(emp.name)}</AvatarFallback></Avatar>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{emp.name}</p>
+                        <p className="text-xs text-gray-500">{emp.email} — dihapus {emp.trashed_at ? new Date(emp.trashed_at).toLocaleDateString('id-ID') : ''}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleRestore(emp)}>Pulihkan</Button>
+                      <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => handlePermanentDelete(emp)}>Hapus Permanen</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={deleteConfirm.open} onOpenChange={(v) => { if (!v) setDeleteConfirm({ open: false, emp: null, text: '' }); }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Hapus Karyawan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-gray-600">
+              Anda akan memindahkan <span className="font-bold">{deleteConfirm.emp?.name}</span> ke tempat sampah.
+              Data absensi akan disembunyikan sampai dipulihkan.
+            </p>
+            <div className="grid gap-2">
+              <Label className="text-sm">Ketik <span className="font-bold text-red-600">hapus</span> untuk konfirmasi:</Label>
+              <Input value={deleteConfirm.text} onChange={(e) => setDeleteConfirm({ ...deleteConfirm, text: e.target.value })}
+                placeholder="hapus" className="font-mono" autoFocus />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, emp: null, text: '' })}>Batal</Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleteConfirm.text.toLowerCase() !== 'hapus'}>
+              Pindahkan ke Sampah
             </Button>
           </DialogFooter>
         </DialogContent>

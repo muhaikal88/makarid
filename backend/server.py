@@ -1480,6 +1480,10 @@ async def get_session_user(request: Request):
         await db.user_sessions.delete_one({"session_token": session_token})
         raise HTTPException(status_code=401, detail="Akun Anda telah dinonaktifkan")
     
+    if user.get("trashed"):
+        await db.user_sessions.delete_one({"session_token": session_token})
+        raise HTTPException(status_code=401, detail="Akun Anda telah dihapus")
+    
     if company_id and company_id not in user.get("companies", []):
         await db.user_sessions.delete_one({"session_token": session_token})
         raise HTTPException(status_code=401, detail="Anda tidak lagi terdaftar di perusahaan ini")
@@ -3109,7 +3113,7 @@ async def get_employees_session(request: Request):
     """Get all employees for current company"""
     session = await require_session_admin(request)
     employees = await db.employees.find(
-        {"companies": session["company_id"]},
+        {"companies": session["company_id"], "$or": [{"trashed": {"$ne": True}}, {"trashed": {"$exists": False}}]},
         {"_id": 0, "password": 0}
     ).sort("name", 1).to_list(1000)
     return employees
@@ -3206,26 +3210,66 @@ async def update_employee_session(employee_id: str, data: EmployeeUpdateSession,
 
 @api_router.delete("/employees-session/{employee_id}")
 async def delete_employee_session(employee_id: str, request: Request):
-    """Remove employee from company"""
+    """Soft delete — move employee to trash"""
     session = await require_session_admin(request)
+    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
     
     emp = await db.employees.find_one({"id": employee_id, "companies": session["company_id"]})
     if not emp:
         raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
     
-    # Remove company from employee's list
-    await db.employees.update_one(
-        {"id": employee_id},
-        {"$pull": {"companies": session["company_id"]}}
-    )
+    # Require typing "hapus" for confirmation
+    confirm = body.get("confirm", "")
+    if confirm.lower() != "hapus":
+        raise HTTPException(status_code=400, detail="Ketik 'hapus' untuk konfirmasi")
     
-    # Delete all active sessions for this employee in this company
-    await db.user_sessions.delete_many({
-        "user_id": employee_id,
-        "company_id": session["company_id"]
-    })
+    # Soft delete: mark as trashed, don't remove from company yet
+    await db.employees.update_one({"id": employee_id}, {"$set": {
+        "trashed": True,
+        "trashed_at": datetime.now(timezone.utc).isoformat(),
+        "trashed_by": session["user_id"],
+        "trashed_company": session["company_id"],
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }})
     
-    return {"message": "Karyawan berhasil dihapus dari perusahaan"}
+    # Kill active sessions
+    await db.user_sessions.delete_many({"user_id": employee_id, "company_id": session["company_id"]})
+    
+    return {"message": "Karyawan dipindahkan ke tempat sampah"}
+
+@api_router.get("/employees-session-trash")
+async def get_trashed_employees(request: Request):
+    """Get trashed employees"""
+    session = await require_session_admin(request)
+    employees = await db.employees.find(
+        {"companies": session["company_id"], "trashed": True},
+        {"_id": 0, "password": 0}
+    ).sort("trashed_at", -1).to_list(100)
+    return employees
+
+@api_router.post("/employees-session/{employee_id}/restore")
+async def restore_employee(employee_id: str, request: Request):
+    """Restore employee from trash"""
+    session = await require_session_admin(request)
+    emp = await db.employees.find_one({"id": employee_id, "companies": session["company_id"], "trashed": True})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan di tempat sampah")
+    
+    await db.employees.update_one({"id": employee_id}, {"$set": {"trashed": False, "updated_at": datetime.now(timezone.utc).isoformat()}, "$unset": {"trashed_at": "", "trashed_by": "", "trashed_company": ""}})
+    return {"message": "Karyawan berhasil dipulihkan"}
+
+@api_router.delete("/employees-session/{employee_id}/permanent")
+async def permanent_delete_employee(employee_id: str, request: Request):
+    """Permanently delete employee"""
+    session = await require_session_admin(request)
+    emp = await db.employees.find_one({"id": employee_id, "companies": session["company_id"], "trashed": True})
+    if not emp:
+        raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
+    
+    # Remove company from list
+    await db.employees.update_one({"id": employee_id}, {"$pull": {"companies": session["company_id"]}})
+    await db.user_sessions.delete_many({"user_id": employee_id, "company_id": session["company_id"]})
+    return {"message": "Karyawan dihapus permanen"}
 
 @api_router.post("/employees-session/{employee_id}/reset-password")
 async def reset_employee_password(employee_id: str, request: Request):
@@ -5287,6 +5331,13 @@ async def get_company_attendance(request: Request, date: Optional[str] = None, m
         query["date"] = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d")
     
     records = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    
+    # Filter out trashed employees
+    trashed_ids = set()
+    trashed_emps = await db.employees.find({"companies": session["company_id"], "trashed": True}, {"_id": 0, "id": 1}).to_list(1000)
+    trashed_ids = {e["id"] for e in trashed_emps}
+    records = [r for r in records if r.get("employee_id") not in trashed_ids]
+    
     return records
 
 @api_router.get("/attendance/export")
@@ -5430,6 +5481,12 @@ async def get_pending_attendance(request: Request):
         "company_id": session["company_id"],
         "status": "pending_approval"
     }, {"_id": 0}).sort("date", -1).to_list(100)
+    
+    # Filter out trashed employees
+    trashed_emps = await db.employees.find({"companies": session["company_id"], "trashed": True}, {"_id": 0, "id": 1}).to_list(1000)
+    trashed_ids = {e["id"] for e in trashed_emps}
+    records = [r for r in records if r.get("employee_id") not in trashed_ids]
+    
     return records
 
 @api_router.put("/attendance/{record_id}/approve")
