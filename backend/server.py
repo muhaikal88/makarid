@@ -5374,11 +5374,13 @@ async def get_company_attendance(request: Request, date: Optional[str] = None, m
     
     records = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
     
-    # Filter out trashed employees
-    trashed_ids = set()
-    trashed_emps = await db.employees.find({"companies": session["company_id"], "trashed": True}, {"_id": 0, "id": 1}).to_list(1000)
-    trashed_ids = {e["id"] for e in trashed_emps}
-    records = [r for r in records if r.get("employee_id") not in trashed_ids]
+    # Filter: only show records for employees still in this company (exclude trashed & permanently deleted)
+    active_emps = await db.employees.find(
+        {"companies": session["company_id"], "$or": [{"trashed": {"$ne": True}}, {"trashed": {"$exists": False}}]},
+        {"_id": 0, "id": 1}
+    ).to_list(10000)
+    active_ids = {e["id"] for e in active_emps}
+    records = [r for r in records if r.get("employee_id") in active_ids]
     
     return records
 
@@ -5397,6 +5399,14 @@ async def export_attendance_excel(request: Request, month: Optional[str] = None,
         filename_part = month
     
     records = await db.attendance.find(query, {"_id": 0}).sort("date", 1).to_list(10000)
+    
+    # Filter: only active employees
+    active_emps = await db.employees.find(
+        {"companies": session["company_id"], "$or": [{"trashed": {"$ne": True}}, {"trashed": {"$exists": False}}]},
+        {"_id": 0, "id": 1}
+    ).to_list(10000)
+    active_ids = {e["id"] for e in active_emps}
+    records = [r for r in records if r.get("employee_id") in active_ids]
     
     import openpyxl
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -5524,10 +5534,13 @@ async def get_pending_attendance(request: Request):
         "status": "pending_approval"
     }, {"_id": 0}).sort("date", -1).to_list(100)
     
-    # Filter out trashed employees
-    trashed_emps = await db.employees.find({"companies": session["company_id"], "trashed": True}, {"_id": 0, "id": 1}).to_list(1000)
-    trashed_ids = {e["id"] for e in trashed_emps}
-    records = [r for r in records if r.get("employee_id") not in trashed_ids]
+    # Only show records for active employees
+    active_emps = await db.employees.find(
+        {"companies": session["company_id"], "$or": [{"trashed": {"$ne": True}}, {"trashed": {"$exists": False}}]},
+        {"_id": 0, "id": 1}
+    ).to_list(10000)
+    active_ids = {e["id"] for e in active_emps}
+    records = [r for r in records if r.get("employee_id") in active_ids]
     
     return records
 
