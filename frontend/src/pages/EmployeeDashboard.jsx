@@ -5,16 +5,18 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '../components/ui/button';
 import {
   Building2, User, CalendarClock, FileText, Settings, LogOut, Globe, Menu, X, LayoutDashboard,
-  CalendarOff, Calendar, Wallet
+  CalendarOff, Calendar, Wallet, UserCircle
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Toaster, toast } from 'sonner';
 import { AttendancePage } from './AttendancePage';
+import { EmployeeBiodata } from './EmployeeBiodata';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
 const sidebarMenu = [
   { id: 'attendance', label: 'Absensi', icon: CalendarClock },
+  { id: 'biodata', label: 'Data Diri', icon: UserCircle },
   { id: 'leave', label: 'Cuti & Izin', icon: CalendarOff, soon: true },
   { id: 'payslip', label: 'Slip Gaji', icon: Wallet, soon: true },
 ];
@@ -157,6 +159,7 @@ export const EmployeeDashboard = () => {
 
         <main className="p-4 sm:p-6">
           {activeTab === 'attendance' && <AttendancePage />}
+          {activeTab === 'biodata' && <EmployeeBiodata />}
           {['leave', 'payslip'].includes(activeTab) && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
