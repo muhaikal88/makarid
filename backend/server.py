@@ -2954,6 +2954,7 @@ class OutletCreate(BaseModel):
     longitude: Optional[float] = None
     radius_meters: int = 100
     geo_enabled: bool = False
+    allow_outside_network: bool = False
 
 class OutletUpdate(BaseModel):
     name: Optional[str] = None
@@ -2965,6 +2966,7 @@ class OutletUpdate(BaseModel):
     longitude: Optional[float] = None
     radius_meters: Optional[int] = None
     geo_enabled: Optional[bool] = None
+    allow_outside_network: Optional[bool] = None
 
 @api_router.get("/outlets-session")
 async def get_outlets(request: Request):
@@ -3076,6 +3078,7 @@ class EmployeeCreateSession(BaseModel):
     employment_type: Optional[str] = None  # tetap, kontrak, magang
     outlet_id: Optional[str] = None
     division_id: Optional[str] = None
+    allow_outside_network: Optional[bool] = None
 
 class EmployeeUpdateSession(BaseModel):
     name: Optional[str] = None
@@ -3107,6 +3110,7 @@ class EmployeeUpdateSession(BaseModel):
     employment_type: Optional[str] = None
     outlet_id: Optional[str] = None
     division_id: Optional[str] = None
+    allow_outside_network: Optional[bool] = None
 
 @api_router.get("/employees-session")
 async def get_employees_session(request: Request):
@@ -5118,23 +5122,35 @@ async def clock_attendance(request: Request):
     if action in ("clock_in", "clock_out") and not emp.get("face_photo"):
         raise HTTPException(status_code=400, detail="Anda belum mendaftarkan wajah. Silakan daftarkan wajah terlebih dahulu di menu Profil.")
     
-    emp_allow_outside = emp.get("allow_outside_network", settings.get("allow_outside_network", False))
-    
-    # Check IP based on employee's outlet (not global)
-    ip_valid = True
-    outlet_ips = []
+    # Determine if employee is allowed outside network
+    # Priority: employee override > outlet setting > global setting
+    emp_allow_outside = emp.get("allow_outside_network")  # None = not set (use outlet/global)
+    outlet = None
     outlet_name = ""
+    outlet_ips = []
+    outlet_allow_outside = False
+    
     if emp.get("outlet_id"):
         outlet = await db.outlets.find_one({"id": emp["outlet_id"]}, {"_id": 0})
         if outlet:
             outlet_ips = outlet.get("office_ips", [])
             outlet_name = outlet.get("name", "")
+            outlet_allow_outside = outlet.get("allow_outside_network", False)
     
-    # Fallback to global settings if outlet has no IPs
+    # Resolve allow_outside: employee > outlet > global
+    if emp_allow_outside is not None:
+        resolved_allow_outside = emp_allow_outside
+    elif outlet:
+        resolved_allow_outside = outlet_allow_outside
+    else:
+        resolved_allow_outside = settings.get("allow_outside_network", False)
+    
+    # Fallback to global IPs if outlet has none
     if not outlet_ips:
         outlet_ips = settings.get("office_ips", [])
     
-    if outlet_ips and not emp_allow_outside:
+    # Check IP
+    if outlet_ips and not resolved_allow_outside:
         ip_valid = any(client_ip.startswith(ip) for ip in outlet_ips)
         if not ip_valid:
             msg = f"Absen hanya bisa dilakukan dari jaringan kantor"
@@ -5143,10 +5159,7 @@ async def clock_attendance(request: Request):
             raise HTTPException(status_code=403, detail=msg)
     
     # Check geolocation if outlet has geo_enabled
-    if emp.get("outlet_id") and not emp_allow_outside:
-        if not outlet:
-            outlet = await db.outlets.find_one({"id": emp["outlet_id"]}, {"_id": 0})
-        if outlet and outlet.get("geo_enabled") and outlet.get("latitude") and outlet.get("longitude"):
+    if outlet and outlet.get("geo_enabled") and outlet.get("latitude") and outlet.get("longitude") and not resolved_allow_outside:
             emp_geo = geo_location
             if not emp_geo or not emp_geo.get("lat") or not emp_geo.get("lng"):
                 raise HTTPException(status_code=403, detail=f"Lokasi GPS diperlukan untuk absen di {outlet.get('name', 'outlet ini')}. Pastikan GPS aktif.")

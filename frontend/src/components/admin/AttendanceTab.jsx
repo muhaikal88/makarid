@@ -644,31 +644,13 @@ export const AttendanceTab = ({ language }) => {
               <div className="grid gap-1.5"><Label className="text-xs">Selesai Break</Label><Input type="time" value={settings.break_end} onChange={(e) => setSettings({ ...settings, break_end: e.target.value })} /></div>
             </div>
 
-            {/* IP Kantor */}
-            <div className="space-y-2">
-              <Label className="font-medium">IP Jaringan Kantor</Label>
-              <div className="flex flex-wrap gap-2">
-                {(settings.office_ips || []).map((ip, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-mono">
-                    {ip}
-                    <button onClick={() => removeIp(i)} className="hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Input value={newIp} onChange={(e) => setNewIp(e.target.value)} placeholder="Contoh: 103.139.245" className="font-mono"
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addIp())} />
-                <Button variant="outline" onClick={addIp}><Plus className="w-4 h-4" /></Button>
-              </div>
-              <p className="text-xs text-gray-500">IP prefix jaringan kantor. Karyawan hanya bisa absen dari IP yang cocok.</p>
+            {/* IP Kantor & Luar Jaringan — moved to per-outlet */}
+            <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-700">
+              Setting IP jaringan dan izin absen dari luar kantor sekarang dikelola per outlet di menu <span className="font-bold">Outlet / Cabang</span>. Override per karyawan tersedia di menu <span className="font-bold">Data Karyawan</span>.
             </div>
 
             {/* Toggles */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                <div><p className="text-sm font-medium">Izinkan Absen dari Luar Kantor</p><p className="text-xs text-gray-500">Default untuk semua karyawan (bisa di-override per karyawan)</p></div>
-                <Switch checked={settings.allow_outside_network} onCheckedChange={(v) => setSettings({ ...settings, allow_outside_network: v })} />
-              </div>
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                 <div><p className="text-sm font-medium">Izinkan Absen Mundur Tanggal</p><p className="text-xs text-gray-500">Global setting. Jika off, karyawan perlu akses khusus dari HRD.</p></div>
                 <Switch checked={settings.allow_backdate} onCheckedChange={(v) => setSettings({ ...settings, allow_backdate: v })} />

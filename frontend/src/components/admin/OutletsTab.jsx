@@ -20,7 +20,8 @@ export const OutletsTab = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '', address: '', phone: '', office_ips: [], is_active: true,
-    latitude: '', longitude: '', radius_meters: 100, geo_enabled: false
+    latitude: '', longitude: '', radius_meters: 100, geo_enabled: false,
+    allow_outside_network: false
   });
   const [newIp, setNewIp] = useState('');
 
@@ -37,7 +38,8 @@ export const OutletsTab = () => {
         name: o.name, address: o.address || '', phone: o.phone || '',
         office_ips: o.office_ips || [], is_active: o.is_active !== false,
         latitude: o.latitude || '', longitude: o.longitude || '',
-        radius_meters: o.radius_meters || 100, geo_enabled: o.geo_enabled || false
+        radius_meters: o.radius_meters || 100, geo_enabled: o.geo_enabled || false,
+        allow_outside_network: o.allow_outside_network || false
       });
     } else {
       setSelected(null);
@@ -119,6 +121,11 @@ export const OutletsTab = () => {
                   </div>
                 ) : (
                   <p className="text-xs text-amber-600 mt-2 flex items-center gap-1"><Wifi className="w-3 h-3" />Bebas IP</p>
+                )}
+
+                {/* Allow outside badge */}
+                {o.allow_outside_network && (
+                  <p className="text-xs text-blue-600 mt-1">Bebas jaringan — karyawan bisa absen dari luar</p>
                 )}
 
                 {/* Geo Info */}
@@ -223,6 +230,14 @@ export const OutletsTab = () => {
                 )}
               </div>
               <p className="text-xs text-gray-500">{form.geo_enabled ? 'Karyawan wajib berada dalam radius saat absen.' : 'Nonaktif — karyawan bisa absen dari lokasi mana saja.'}</p>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+              <Switch checked={form.allow_outside_network} onCheckedChange={(v) => setForm({ ...form, allow_outside_network: v })} />
+              <div>
+                <Label className="font-medium text-sm">Izinkan Absen dari Luar Jaringan</Label>
+                <p className="text-xs text-gray-500">Karyawan outlet ini bisa absen dari IP/lokasi mana saja (bisa di-override per karyawan)</p>
+              </div>
             </div>
 
             <div className="flex items-center gap-3">

@@ -36,7 +36,7 @@ export const EmployeesTab = ({ language }) => {
     id_number: '', education: '', major: '', province: '', city: '', district: '',
     village: '', full_address: '', bank_name: '', bank_account: '', bank_holder: '',
     emergency_contact: '', emergency_phone: '', salary: '', employment_type: '',
-    outlet_id: '', division_id: ''
+    outlet_id: '', division_id: '', allow_outside_network: null
   });
 
   useEffect(() => { fetchEmployees(); fetchOutletsDivisions(); }, []);
@@ -79,7 +79,7 @@ export const EmployeesTab = ({ language }) => {
         bank_holder: emp.bank_holder || '',
         emergency_contact: emp.emergency_contact || '', emergency_phone: emp.emergency_phone || '',
         salary: emp.salary || '', employment_type: emp.employment_type || '',
-        outlet_id: emp.outlet_id || '', division_id: emp.division_id || ''
+        outlet_id: emp.outlet_id || '', division_id: emp.division_id || '', allow_outside_network: emp.allow_outside_network ?? null
       });
     } else {
       setSelectedEmp(null);
@@ -89,7 +89,7 @@ export const EmployeesTab = ({ language }) => {
         id_number: '', education: '', major: '', province: '', city: '', district: '',
         village: '', full_address: '', bank_name: '', bank_account: '', bank_holder: '',
         emergency_contact: '', emergency_phone: '', salary: '', employment_type: '',
-        outlet_id: '', division_id: ''
+        outlet_id: '', division_id: '', allow_outside_network: null
       });
     }
     setIsFormOpen(true);
@@ -506,6 +506,17 @@ export const EmployeesTab = ({ language }) => {
                     </select>
                   </div>
                   <div className="grid gap-1.5"><Label className="text-xs">Gaji (Rp)</Label><Input type="number" value={form.salary} onChange={(e) => setForm({ ...form, salary: e.target.value })} /></div>
+                </div>
+                {/* Allow outside network override */}
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg col-span-full">
+                  <select value={form.allow_outside_network === null ? 'default' : form.allow_outside_network ? 'yes' : 'no'}
+                    onChange={(e) => setForm({ ...form, allow_outside_network: e.target.value === 'default' ? null : e.target.value === 'yes' })}
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="default">Ikuti Setting Outlet</option>
+                    <option value="yes">Boleh Absen dari Luar</option>
+                    <option value="no">Wajib dari Jaringan Kantor</option>
+                  </select>
+                  <p className="text-xs text-gray-500 flex-1">Override izin absen luar jaringan khusus karyawan ini</p>
                 </div>
               </div>
             </div>
