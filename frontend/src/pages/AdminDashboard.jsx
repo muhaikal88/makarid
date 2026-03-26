@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import {
   Building2, Briefcase, FileText, Globe, Bell, User, Settings, LogOut,
   LayoutDashboard, Trash2, ClipboardList, Users, CalendarClock, CalendarOff,
-  Calendar, Wallet, ChevronLeft, Menu, X
+  Calendar, Wallet, ChevronLeft, Menu, X, Store, Layers
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -24,6 +24,8 @@ import { TrashTab } from '../components/admin/TrashTab';
 import { ActivityLogTab } from '../components/admin/ActivityLogTab';
 import { EmployeesTab } from '../components/admin/EmployeesTab';
 import { AttendanceTab } from '../components/admin/AttendanceTab';
+import { OutletsTab } from '../components/admin/OutletsTab';
+import { DivisionsTab } from '../components/admin/DivisionsTab';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -41,6 +43,10 @@ const sidebarMenu = [
     { id: 'applications', label: 'Lamaran Masuk', icon: FileText },
     { id: 'trash', label: 'Tempat Sampah', icon: Trash2, badge: 'trash' },
     { id: 'logs', label: 'Log Aktivitas', icon: ClipboardList },
+  ]},
+  { section: 'PERUSAHAAN', items: [
+    { id: 'outlets', label: 'Outlet / Cabang', icon: Store },
+    { id: 'divisions', label: 'Divisi', icon: Layers },
   ]},
   { section: 'KARYAWAN', items: [
     { id: 'employees', label: 'Data Karyawan', icon: Users },
@@ -391,6 +397,8 @@ export const AdminDashboard = () => {
           {activeTab === 'logs' && <ActivityLogTab language={language} />}
           {activeTab === 'employees' && <EmployeesTab language={language} />}
           {activeTab === 'attendance' && <AttendanceTab language={language} />}
+          {activeTab === 'outlets' && <OutletsTab />}
+          {activeTab === 'divisions' && <DivisionsTab />}
           {['leave','holidays','payroll'].includes(activeTab) && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">

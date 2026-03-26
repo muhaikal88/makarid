@@ -2937,6 +2937,98 @@ async def update_company_info_session_json(data: CompanyInfoUpdate, request: Req
 
 
 
+
+# ============ OUTLET / BRANCH MANAGEMENT ============
+
+class OutletCreate(BaseModel):
+    name: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    office_ips: Optional[List[str]] = []
+    is_active: bool = True
+
+class OutletUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    office_ips: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+@api_router.get("/outlets-session")
+async def get_outlets(request: Request):
+    session = await require_session_admin(request)
+    outlets = await db.outlets.find({"company_id": session["company_id"]}, {"_id": 0}).sort("name", 1).to_list(100)
+    return outlets
+
+@api_router.post("/outlets-session")
+async def create_outlet(data: OutletCreate, request: Request):
+    session = await require_session_admin(request)
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "id": str(uuid.uuid4()),
+        "company_id": session["company_id"],
+        "name": data.name, "address": data.address, "phone": data.phone,
+        "office_ips": data.office_ips or [],
+        "is_active": data.is_active,
+        "created_at": now, "updated_at": now
+    }
+    await db.outlets.insert_one(doc)
+    return {"message": "Outlet berhasil ditambahkan", "id": doc["id"]}
+
+@api_router.put("/outlets-session/{outlet_id}")
+async def update_outlet(outlet_id: str, data: OutletUpdate, request: Request):
+    session = await require_session_admin(request)
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.outlets.update_one({"id": outlet_id, "company_id": session["company_id"]}, {"$set": update_data})
+    return {"message": "Outlet berhasil diupdate"}
+
+@api_router.delete("/outlets-session/{outlet_id}")
+async def delete_outlet(outlet_id: str, request: Request):
+    session = await require_session_admin(request)
+    await db.outlets.delete_one({"id": outlet_id, "company_id": session["company_id"]})
+    return {"message": "Outlet berhasil dihapus"}
+
+# ============ DIVISION MANAGEMENT ============
+
+class DivisionCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+@api_router.get("/divisions-session")
+async def get_divisions(request: Request):
+    session = await require_session_admin(request)
+    divisions = await db.divisions.find({"company_id": session["company_id"]}, {"_id": 0}).sort("name", 1).to_list(100)
+    return divisions
+
+@api_router.post("/divisions-session")
+async def create_division(data: DivisionCreate, request: Request):
+    session = await require_session_admin(request)
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "id": str(uuid.uuid4()),
+        "company_id": session["company_id"],
+        "name": data.name, "description": data.description,
+        "created_at": now, "updated_at": now
+    }
+    await db.divisions.insert_one(doc)
+    return {"message": "Divisi berhasil ditambahkan", "id": doc["id"]}
+
+@api_router.put("/divisions-session/{div_id}")
+async def update_division(div_id: str, data: DivisionCreate, request: Request):
+    session = await require_session_admin(request)
+    await db.divisions.update_one({"id": div_id, "company_id": session["company_id"]}, {"$set": {
+        "name": data.name, "description": data.description, "updated_at": datetime.now(timezone.utc).isoformat()
+    }})
+    return {"message": "Divisi berhasil diupdate"}
+
+@api_router.delete("/divisions-session/{div_id}")
+async def delete_division(div_id: str, request: Request):
+    session = await require_session_admin(request)
+    await db.divisions.delete_one({"id": div_id, "company_id": session["company_id"]})
+    return {"message": "Divisi berhasil dihapus"}
+
+
 # ============ EMPLOYEE MANAGEMENT (Session-based for Company Admin) ============
 
 class EmployeeCreateSession(BaseModel):
@@ -2968,6 +3060,8 @@ class EmployeeCreateSession(BaseModel):
     emergency_phone: Optional[str] = None
     salary: Optional[int] = None
     employment_type: Optional[str] = None  # tetap, kontrak, magang
+    outlet_id: Optional[str] = None
+    division_id: Optional[str] = None
 
 class EmployeeUpdateSession(BaseModel):
     name: Optional[str] = None
@@ -2997,6 +3091,8 @@ class EmployeeUpdateSession(BaseModel):
     emergency_phone: Optional[str] = None
     salary: Optional[int] = None
     employment_type: Optional[str] = None
+    outlet_id: Optional[str] = None
+    division_id: Optional[str] = None
 
 @api_router.get("/employees-session")
 async def get_employees_session(request: Request):
@@ -3214,6 +3310,8 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
         'bank_holder': ['atas nama rekening', 'atas nama', 'bank holder'],
         'emergency_contact': ['kontak darurat', 'emergency contact'],
         'emergency_phone': ['telepon darurat', 'emergency phone'],
+        'outlet_name': ['outlet', 'cabang', 'branch', 'outlet/cabang'],
+        'division_name': ['divisi', 'division'],
     }
     
     for i, h in enumerate(headers):
@@ -3242,6 +3340,12 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
     # Get company name for emails
     company_obj = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0, "name": 1})
     company_name_for_email = company_obj.get("name", "") if company_obj else ""
+    
+    # Pre-load outlets and divisions for name→id mapping
+    all_outlets = await db.outlets.find({"company_id": session["company_id"]}, {"_id": 0}).to_list(100)
+    all_divisions = await db.divisions.find({"company_id": session["company_id"]}, {"_id": 0}).to_list(100)
+    outlet_map = {o["name"].lower(): o["id"] for o in all_outlets}
+    division_map = {d["name"].lower(): d["id"] for d in all_divisions}
     
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         try:
@@ -3299,6 +3403,8 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
                     "bank_holder": get_cell(row, 'bank_holder'),
                     "emergency_contact": get_cell(row, 'emergency_contact'),
                     "emergency_phone": get_cell(row, 'emergency_phone'),
+                    "outlet_id": outlet_map.get(get_cell(row, 'outlet_name').lower(), ""),
+                    "division_id": division_map.get(get_cell(row, 'division_name').lower(), ""),
                     "picture": None,
                     "companies": [session["company_id"]],
                     "is_active": True, "auth_provider": "email",
@@ -4960,13 +5066,27 @@ async def clock_attendance(request: Request):
     
     emp_allow_outside = emp.get("allow_outside_network", settings.get("allow_outside_network", False))
     
-    # Check IP if office IPs are configured
+    # Check IP based on employee's outlet (not global)
     ip_valid = True
-    office_ips = settings.get("office_ips", [])
-    if office_ips and not emp_allow_outside:
-        ip_valid = any(client_ip.startswith(ip) for ip in office_ips)
+    outlet_ips = []
+    outlet_name = ""
+    if emp.get("outlet_id"):
+        outlet = await db.outlets.find_one({"id": emp["outlet_id"]}, {"_id": 0})
+        if outlet:
+            outlet_ips = outlet.get("office_ips", [])
+            outlet_name = outlet.get("name", "")
+    
+    # Fallback to global settings if outlet has no IPs
+    if not outlet_ips:
+        outlet_ips = settings.get("office_ips", [])
+    
+    if outlet_ips and not emp_allow_outside:
+        ip_valid = any(client_ip.startswith(ip) for ip in outlet_ips)
         if not ip_valid:
-            raise HTTPException(status_code=403, detail=f"Absen hanya bisa dilakukan dari jaringan kantor. IP Anda: {client_ip}")
+            msg = f"Absen hanya bisa dilakukan dari jaringan kantor"
+            if outlet_name: msg += f" ({outlet_name})"
+            msg += f". IP Anda: {client_ip}"
+            raise HTTPException(status_code=403, detail=msg)
     
     # Use Asia/Jakarta timezone for attendance time
     from zoneinfo import ZoneInfo

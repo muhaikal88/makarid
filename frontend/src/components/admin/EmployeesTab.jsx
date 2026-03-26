@@ -27,16 +27,30 @@ export const EmployeesTab = ({ language }) => {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef(null);
+  const [outlets, setOutlets] = useState([]);
+  const [divisions, setDivisions] = useState([]);
 
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', position: '', department: '', join_date: '', password: '',
+    name: '', email: '', phone: '', position: '', department: '', join_date: '',
     birth_place: '', birth_date: '', gender: '', marital_status: '', religion: '',
     id_number: '', education: '', major: '', province: '', city: '', district: '',
     village: '', full_address: '', bank_name: '', bank_account: '', bank_holder: '',
-    emergency_contact: '', emergency_phone: '', salary: '', employment_type: ''
+    emergency_contact: '', emergency_phone: '', salary: '', employment_type: '',
+    outlet_id: '', division_id: ''
   });
 
-  useEffect(() => { fetchEmployees(); }, []);
+  useEffect(() => { fetchEmployees(); fetchOutletsDivisions(); }, []);
+
+  const fetchOutletsDivisions = async () => {
+    try {
+      const [o, d] = await Promise.all([
+        axios.get(`${API}/outlets-session`, { withCredentials: true }),
+        axios.get(`${API}/divisions-session`, { withCredentials: true })
+      ]);
+      setOutlets(o.data);
+      setDivisions(d.data);
+    } catch {}
+  };
 
   const fetchEmployees = async () => {
     try {
@@ -64,16 +78,18 @@ export const EmployeesTab = ({ language }) => {
         bank_name: emp.bank_name || '', bank_account: emp.bank_account || '',
         bank_holder: emp.bank_holder || '',
         emergency_contact: emp.emergency_contact || '', emergency_phone: emp.emergency_phone || '',
-        salary: emp.salary || '', employment_type: emp.employment_type || ''
+        salary: emp.salary || '', employment_type: emp.employment_type || '',
+        outlet_id: emp.outlet_id || '', division_id: emp.division_id || ''
       });
     } else {
       setSelectedEmp(null);
       setForm({
-        name: '', email: '', phone: '', position: '', department: '', join_date: '', password: '',
+        name: '', email: '', phone: '', position: '', department: '', join_date: '',
         birth_place: '', birth_date: '', gender: '', marital_status: '', religion: '',
         id_number: '', education: '', major: '', province: '', city: '', district: '',
         village: '', full_address: '', bank_name: '', bank_account: '', bank_holder: '',
-        emergency_contact: '', emergency_phone: '', salary: '', employment_type: ''
+        emergency_contact: '', emergency_phone: '', salary: '', employment_type: '',
+        outlet_id: '', division_id: ''
       });
     }
     setIsFormOpen(true);
@@ -81,6 +97,8 @@ export const EmployeesTab = ({ language }) => {
 
   const handleSave = async () => {
     if (!form.name || !form.email) { toast.error('Nama dan email wajib diisi'); return; }
+    if (!form.outlet_id) { toast.error('Outlet wajib dipilih'); return; }
+    if (!form.division_id) { toast.error('Divisi wajib dipilih'); return; }
     setSaving(true);
     try {
       const cleanData = { ...form, salary: form.salary ? parseInt(form.salary) : null };
@@ -152,7 +170,7 @@ export const EmployeesTab = ({ language }) => {
       'Nama', 'Email', 'Telepon', 'No KTP/NIK', 'Jenis Kelamin', 'Tempat Lahir', 'Tanggal Lahir',
       'Agama', 'Status Pernikahan', 'Pendidikan', 'Jurusan',
       'Provinsi', 'Kota/Kabupaten', 'Kecamatan', 'Kelurahan', 'Alamat Lengkap',
-      'Posisi', 'Departemen', 'Tanggal Masuk', 'Status Kerja', 'Gaji',
+      'Outlet', 'Divisi', 'Posisi', 'Departemen', 'Tanggal Masuk', 'Status Kerja', 'Gaji',
       'Nama Bank', 'No Rekening', 'Atas Nama Rekening',
       'Kontak Darurat', 'Telepon Darurat'
     ];
@@ -160,7 +178,7 @@ export const EmployeesTab = ({ language }) => {
       'John Doe', 'john@company.com', '08123456789', '3201010101010001', 'Laki-laki', 'Jakarta', '1995-05-15',
       'Islam', 'Menikah', 'S1', 'Teknik Informatika',
       'DKI Jakarta', 'Jakarta Selatan', 'Kebayoran', 'Senayan', 'Jl. Sudirman No. 1 RT 001/RW 002',
-      'Staff IT', 'IT', '2026-01-15', 'Tetap', '5000000',
+      'Lucky Cell Ciracas', 'Sales', 'Staff IT', 'IT', '2026-01-15', 'Tetap', '5000000',
       'BCA', '1234567890', 'John Doe',
       'Jane Doe', '08198765432'
     ];
@@ -250,8 +268,9 @@ export const EmployeesTab = ({ language }) => {
                 <TableHeader>
                   <TableRow className="bg-slate-50">
                     <TableHead>Karyawan</TableHead>
+                    <TableHead className="hidden sm:table-cell">Outlet</TableHead>
+                    <TableHead className="hidden sm:table-cell">Divisi</TableHead>
                     <TableHead className="hidden sm:table-cell">Posisi</TableHead>
-                    <TableHead className="hidden md:table-cell">Departemen</TableHead>
                     <TableHead className="hidden md:table-cell">Bergabung</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
@@ -272,8 +291,9 @@ export const EmployeesTab = ({ language }) => {
                           </div>
                         </div>
                       </TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm text-gray-600">{outlets.find(o => o.id === emp.outlet_id)?.name || '-'}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm text-gray-600">{divisions.find(d => d.id === emp.division_id)?.name || '-'}</TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-gray-600">{emp.position || '-'}</TableCell>
-                      <TableCell className="hidden md:table-cell text-sm text-gray-600">{emp.department || '-'}</TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-gray-600">
                         {emp.join_date ? new Date(emp.join_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                       </TableCell>
@@ -411,6 +431,24 @@ export const EmployeesTab = ({ language }) => {
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Kepegawaian</p>
               <div className="grid gap-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Outlet / Cabang *</Label>
+                    <select value={form.outlet_id} onChange={(e) => setForm({ ...form, outlet_id: e.target.value })}
+                      className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">-- Pilih Outlet --</option>
+                      {outlets.filter(o => o.is_active).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">Divisi *</Label>
+                    <select value={form.division_id} onChange={(e) => setForm({ ...form, division_id: e.target.value })}
+                      className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="">-- Pilih Divisi --</option>
+                      {divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                  </div>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="grid gap-1.5"><Label className="text-xs">Posisi/Jabatan</Label><Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} /></div>
                   <div className="grid gap-1.5"><Label className="text-xs">Departemen</Label><Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} /></div>
