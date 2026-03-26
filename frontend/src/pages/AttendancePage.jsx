@@ -185,7 +185,12 @@ export const AttendancePage = () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
+    // Mirror horizontally to match selfie view
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0);
+    // Reset transform for text overlay
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     
     // --- Stamp timestamp & geo on photo ---
     const now = new Date();
@@ -313,7 +318,11 @@ export const AttendancePage = () => {
     const video = videoRef.current;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    const regCtx = canvas.getContext('2d');
+    regCtx.translate(canvas.width, 0);
+    regCtx.scale(-1, 1);
+    regCtx.drawImage(video, 0, 0);
+    regCtx.setTransform(1, 0, 0, 1, 0, 0);
     setRegisterPhoto(canvas.toDataURL('image/jpeg', 0.8));
     stopCamera();
   };
@@ -679,7 +688,7 @@ export const AttendancePage = () => {
               /* Face Registration Mode */
               !registerPhoto ? (
                 <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
-                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
                   {!cameraReady && <div className="absolute inset-0 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <FaceGuide />
@@ -700,7 +709,7 @@ export const AttendancePage = () => {
               /* Attendance Mode */
               !capturedPhoto ? (
                 <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
-                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
                   {!cameraReady && <div className="absolute inset-0 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <FaceGuide />
