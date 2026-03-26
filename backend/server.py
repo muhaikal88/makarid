@@ -3494,6 +3494,35 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
     }
 
 
+
+@api_router.get("/company-settings-session")
+async def get_company_settings_session(request: Request):
+    """Get company settings via session auth"""
+    session = await require_session_admin(request)
+    company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return {
+        "custom_domains": company.get("custom_domains"),
+        "smtp_settings": company.get("smtp_settings"),
+    }
+
+@api_router.put("/company-settings-session")
+async def update_company_settings_session(request: Request):
+    """Update company settings via session auth"""
+    session = await require_session_admin(request)
+    body = await request.json()
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if "custom_domains" in body:
+        update_data["custom_domains"] = body["custom_domains"]
+    if "smtp_settings" in body:
+        update_data["smtp_settings"] = body["smtp_settings"]
+    
+    await db.companies.update_one({"id": session["company_id"]}, {"$set": update_data})
+    return {"message": "Pengaturan berhasil disimpan"}
+
+
 # ============ COMPANY SETTINGS ROUTES (For Company Admin) ============
 
 class CompanySettingsUpdate(BaseModel):
