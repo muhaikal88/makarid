@@ -32,6 +32,9 @@ export const AttendanceTab = ({ language }) => {
   const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyStatus, setHistoryStatus] = useState('all');
+  const [historyEmployee, setHistoryEmployee] = useState('all');
 
   const handleExport = async (type) => {
     setExporting(true);
@@ -384,51 +387,128 @@ export const AttendanceTab = ({ language }) => {
       {tab === 'history' && (
         <Card className="border-0 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Riwayat Absensi</CardTitle>
-              <div className="flex gap-2">
-                <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-40" />
-                <Button variant="outline" size="sm" onClick={() => handleExport('month')} disabled={exporting}>
-                  <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}
-                </Button>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Riwayat Absensi</CardTitle>
+                <div className="flex gap-2">
+                  <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-40 h-9 text-sm" />
+                  <Button variant="outline" size="sm" className="h-9" onClick={() => handleExport('month')} disabled={exporting}>
+                    <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}
+                  </Button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <div className="relative flex-1 min-w-[150px]">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input placeholder="Cari nama/email..." value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} className="pl-8 h-9 text-sm" />
+                </div>
+                <select value={historyStatus} onChange={(e) => setHistoryStatus(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+                  <option value="all">Semua Status</option>
+                  <option value="approved">OK</option>
+                  <option value="pending_approval">Pending</option>
+                  <option value="rejected">Ditolak</option>
+                </select>
+                <select value={historyEmployee} onChange={(e) => setHistoryEmployee(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm max-w-[180px]">
+                  <option value="all">Semua Karyawan</option>
+                  {[...new Set(monthRecords.map(r => r.employee_name))].sort().map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {monthRecords.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">Tidak ada data untuk bulan ini</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader><TableRow className="bg-slate-50">
-                    <TableHead>Tanggal</TableHead><TableHead>Karyawan</TableHead><TableHead>Masuk</TableHead>
-                    <TableHead>Pulang</TableHead><TableHead>Durasi</TableHead><TableHead>Break Mulai</TableHead><TableHead>Break Selesai</TableHead><TableHead>Durasi Break</TableHead><TableHead>Skor</TableHead><TableHead>Status</TableHead>
-                  </TableRow></TableHeader>
-                  <TableBody>
-                    {monthRecords.map(r => (
-                      <TableRow key={r.id}>
-                        <TableCell className="text-sm">{r.date}{r.is_backdate && <Badge className="ml-1 bg-purple-100 text-purple-700 text-[10px]">mundur</Badge>}</TableCell>
-                        <TableCell className="text-sm font-medium">{r.employee_name}</TableCell>
-                        <TableCell className="text-sm">{r.clock_in?.slice(0,5) || '-'}</TableCell>
-                        <TableCell className="text-sm">{r.clock_out?.slice(0,5) || '-'}</TableCell>
-                        <TableCell>
-                          {r.clock_in && r.clock_out ? <Badge className="bg-blue-100 text-blue-700">{calcDuration(r.clock_in, r.clock_out)}</Badge> : <span className="text-xs text-gray-400">-</span>}
-                        </TableCell>
-                        <TableCell className="text-sm">{r.break_start?.slice(0,5) || '-'}</TableCell>
-                        <TableCell className="text-sm">{r.break_end?.slice(0,5) || '-'}</TableCell>
-                        <TableCell>
-                          {r.break_start && r.break_end ? <Badge className="bg-amber-100 text-amber-700">{calcDuration(r.break_start, r.break_end)}</Badge> : <span className="text-xs text-gray-400">-</span>}
-                        </TableCell>
-                        <TableCell><Badge className="bg-slate-100 text-slate-700">{r.clock_in_score || 0}%</Badge></TableCell>
-                        <TableCell><Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
-                          {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Pending'}
-                        </Badge></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+            {(() => {
+              const filtered = monthRecords.filter(r => {
+                if (historyStatus !== 'all' && r.status !== historyStatus) return false;
+                if (historyEmployee !== 'all' && r.employee_name !== historyEmployee) return false;
+                if (historySearch) {
+                  const s = historySearch.toLowerCase();
+                  if (!r.employee_name?.toLowerCase().includes(s) && !r.employee_email?.toLowerCase().includes(s)) return false;
+                }
+                return true;
+              });
+              
+              return filtered.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">Tidak ada data</p>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500">{filtered.length} record</p>
+                  {filtered.map(r => {
+                    const geoIn = r.clock_in_geo || {};
+                    const geoOut = r.clock_out_geo || {};
+                    return (
+                    <div key={r.id} className={`p-4 rounded-lg border ${r.status === 'approved' ? 'bg-white border-slate-200' : r.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-8 h-8"><AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(r.employee_name)}</AvatarFallback></Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{r.employee_name}</p>
+                            <p className="text-xs text-gray-500">{r.employee_email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{r.date}</span>
+                          {r.is_backdate && <Badge className="bg-purple-100 text-purple-700 text-[10px]">mundur</Badge>}
+                          <Badge className={r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}>
+                            {r.status === 'approved' ? 'OK' : r.status === 'rejected' ? 'Ditolak' : 'Pending'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Time Grid */}
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 text-xs mb-3">
+                        <div className="p-2 bg-slate-50 rounded"><span className="text-gray-500">Masuk</span><p className="font-bold text-sm">{r.clock_in?.slice(0,5) || '--:--'}</p></div>
+                        <div className="p-2 bg-slate-50 rounded"><span className="text-gray-500">Pulang</span><p className="font-bold text-sm">{r.clock_out?.slice(0,5) || '--:--'}</p></div>
+                        <div className="p-2 bg-blue-50 rounded"><span className="text-blue-600">Durasi</span><p className="font-bold text-sm text-blue-700">{calcDuration(r.clock_in, r.clock_out) || '--'}</p></div>
+                        <div className="p-2 bg-slate-50 rounded"><span className="text-gray-500">Break Mulai</span><p className="font-bold text-sm">{r.break_start?.slice(0,5) || '--:--'}</p></div>
+                        <div className="p-2 bg-slate-50 rounded"><span className="text-gray-500">Break Selesai</span><p className="font-bold text-sm">{r.break_end?.slice(0,5) || '--:--'}</p></div>
+                        <div className="p-2 bg-amber-50 rounded"><span className="text-amber-600">Break</span><p className="font-bold text-sm text-amber-700">{calcDuration(r.break_start, r.break_end) || '--'}</p></div>
+                      </div>
+                      
+                      {/* Photos + Details */}
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        {r.clock_in_photo && (
+                          <div className="cursor-pointer" onClick={() => setPreviewPhoto(r.clock_in_photo)}>
+                            <img src={r.clock_in_photo} alt="Masuk" className="w-16 h-16 rounded-lg object-cover border hover:border-blue-400" />
+                            <p className="text-[10px] text-gray-500 text-center mt-0.5">Masuk</p>
+                          </div>
+                        )}
+                        {r.clock_out_photo && (
+                          <div className="cursor-pointer" onClick={() => setPreviewPhoto(r.clock_out_photo)}>
+                            <img src={r.clock_out_photo} alt="Pulang" className="w-16 h-16 rounded-lg object-cover border hover:border-blue-400" />
+                            <p className="text-[10px] text-gray-500 text-center mt-0.5">Pulang</p>
+                          </div>
+                        )}
+                        {r.break_start_photo && (
+                          <div className="cursor-pointer" onClick={() => setPreviewPhoto(r.break_start_photo)}>
+                            <img src={r.break_start_photo} alt="Break" className="w-16 h-16 rounded-lg object-cover border hover:border-blue-400" />
+                            <p className="text-[10px] text-gray-500 text-center mt-0.5">Break</p>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-[200px] space-y-1">
+                          <div className="flex gap-4">
+                            <span className="text-gray-500">Skor Masuk: <span className="font-medium">{r.clock_in_score || 0}%</span></span>
+                            {r.clock_out_score && <span className="text-gray-500">Pulang: <span className="font-medium">{r.clock_out_score}%</span></span>}
+                          </div>
+                          <div className="flex gap-4">
+                            {r.clock_in_ip && <span className="text-gray-400">IP: {r.clock_in_ip}</span>}
+                          </div>
+                          {geoIn.address && (
+                            <p className="text-gray-500 flex items-start gap-1"><MapPin className="w-3 h-3 shrink-0 mt-0.5" />{geoIn.address}</p>
+                          )}
+                          {geoOut.address && geoOut.address !== geoIn.address && (
+                            <p className="text-gray-500 flex items-start gap-1"><MapPin className="w-3 h-3 shrink-0 mt-0.5" />Pulang: {geoOut.address}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
