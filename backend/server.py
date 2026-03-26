@@ -5136,6 +5136,139 @@ async def get_company_attendance(request: Request, date: Optional[str] = None, m
     records = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
     return records
 
+@api_router.get("/attendance/export")
+async def export_attendance_excel(request: Request, month: Optional[str] = None, date: Optional[str] = None):
+    """Export attendance to Excel (.xlsx)"""
+    session = await require_session_admin(request)
+    
+    query = {"company_id": session["company_id"]}
+    filename_part = "semua"
+    if date:
+        query["date"] = date
+        filename_part = date
+    elif month:
+        query["date"] = {"$regex": f"^{month}"}
+        filename_part = month
+    
+    records = await db.attendance.find(query, {"_id": 0}).sort("date", 1).to_list(10000)
+    
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Absensi"
+    
+    # Header style
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="2E4DA7", end_color="2E4DA7", fill_type="solid")
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+    
+    headers = [
+        "No", "Tanggal", "Nama Karyawan", "Email", 
+        "Jam Masuk", "Jam Pulang", "Durasi Kerja",
+        "Break Mulai", "Break Selesai", "Durasi Break",
+        "Skor Masuk", "Skor Pulang", "IP Masuk", "IP Pulang",
+        "Lokasi Masuk", "Lokasi Pulang", "Status", "Backdate", "Catatan"
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_align
+        cell.border = thin_border
+    
+    # Helper: calc duration
+    def calc_dur(start, end):
+        if not start or not end: return ""
+        try:
+            sh, sm = int(start[:2]), int(start[3:5])
+            eh, em = int(end[:2]), int(end[3:5])
+            mins = (eh * 60 + em) - (sh * 60 + sm)
+            if mins < 0: mins += 24 * 60
+            return f"{mins // 60}j {mins % 60}m"
+        except: return ""
+    
+    # Status label
+    status_map = {"approved": "OK", "pending_approval": "Menunggu", "rejected": "Ditolak"}
+    
+    # Data fill styles
+    green_fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+    red_fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
+    yellow_fill = PatternFill(start_color="FFF8E1", end_color="FFF8E1", fill_type="solid")
+    
+    for idx, r in enumerate(records, 1):
+        row = idx + 1
+        geo_in = r.get("clock_in_geo", {}) or {}
+        geo_out = r.get("clock_out_geo", {}) or {}
+        
+        values = [
+            idx,
+            r.get("date", ""),
+            r.get("employee_name", ""),
+            r.get("employee_email", ""),
+            (r.get("clock_in") or "")[:5],
+            (r.get("clock_out") or "")[:5],
+            calc_dur(r.get("clock_in"), r.get("clock_out")),
+            (r.get("break_start") or "")[:5],
+            (r.get("break_end") or "")[:5],
+            calc_dur(r.get("break_start"), r.get("break_end")),
+            r.get("clock_in_score", ""),
+            r.get("clock_out_score", ""),
+            r.get("clock_in_ip", ""),
+            r.get("clock_out_ip", ""),
+            geo_in.get("address", ""),
+            geo_out.get("address", ""),
+            status_map.get(r.get("status", ""), r.get("status", "")),
+            "Ya" if r.get("is_backdate") else "",
+            r.get("notes", "") or ""
+        ]
+        
+        for col, val in enumerate(values, 1):
+            cell = ws.cell(row=row, column=col, value=val)
+            cell.border = thin_border
+            cell.alignment = Alignment(vertical="center")
+        
+        # Color row by status
+        status = r.get("status", "")
+        fill = green_fill if status == "approved" else red_fill if status == "rejected" else yellow_fill if status == "pending_approval" else None
+        if fill:
+            for col in range(1, len(headers) + 1):
+                ws.cell(row=row, column=col).fill = fill
+    
+    # Auto-width columns
+    for col in range(1, len(headers) + 1):
+        max_len = len(str(headers[col - 1]))
+        for row in range(2, len(records) + 2):
+            val = ws.cell(row=row, column=col).value
+            if val: max_len = max(max_len, len(str(val)))
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = min(max_len + 2, 40)
+    
+    # Freeze header
+    ws.freeze_panes = "A2"
+    
+    # Save to bytes
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0, "name": 1})
+    company_name = (company.get("name", "company") if company else "company").replace(" ", "_")
+    
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=Absensi_{company_name}_{filename_part}.xlsx"}
+    )
+
+
+
 @api_router.get("/attendance/pending")
 async def get_pending_attendance(request: Request):
     """Get attendance records pending approval"""

@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../ui/table';
-import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2, Camera, Search, Eye, MapPin } from 'lucide-react';
+import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2, Camera, Search, Eye, MapPin, Download } from 'lucide-react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { toast } from 'sonner';
 
@@ -31,6 +31,25 @@ export const AttendanceTab = ({ language }) => {
   const [searchAttendance, setSearchAttendance] = useState('');
   const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
   const [previewPhoto, setPreviewPhoto] = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async (type) => {
+    setExporting(true);
+    try {
+      const params = type === 'date' ? `date=${filterDate}` : `month=${selectedMonth}`;
+      const res = await axios.get(`${API}/attendance/export?${params}`, {
+        withCredentials: true, responseType: 'blob'
+      });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Absensi_${type === 'date' ? filterDate : selectedMonth}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Export berhasil');
+    } catch (e) { toast.error('Gagal export'); }
+    finally { setExporting(false); }
+  };
 
   const calcDuration = (start, end) => {
     if (!start || !end) return null;
@@ -174,6 +193,9 @@ export const AttendanceTab = ({ language }) => {
                   <Input placeholder="Cari karyawan..." value={searchAttendance} onChange={(e) => setSearchAttendance(e.target.value)} className="pl-8 h-9 text-sm" />
                 </div>
                 <Input type="date" value={filterDate} onChange={(e) => fetchByDate(e.target.value)} className="w-40 h-9 text-sm" />
+                <Button variant="outline" size="sm" className="h-9 shrink-0" onClick={() => handleExport('date')} disabled={exporting}>
+                  <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -364,7 +386,12 @@ export const AttendanceTab = ({ language }) => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Riwayat Absensi</CardTitle>
-              <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-40" />
+              <div className="flex gap-2">
+                <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-40" />
+                <Button variant="outline" size="sm" onClick={() => handleExport('month')} disabled={exporting}>
+                  <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
