@@ -28,13 +28,17 @@ export const AttendanceTab = ({ language }) => {
   const [monthRecords, setMonthRecords] = useState([]);
   const [selectedPending, setSelectedPending] = useState([]);
   const [newIp, setNewIp] = useState('');
-  const [searchAttendance, setSearchAttendance] = useState('');
   const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const [exporting, setExporting] = useState(false);
-  const [historySearch, setHistorySearch] = useState('');
-  const [historyStatus, setHistoryStatus] = useState('all');
-  const [historyEmployee, setHistoryEmployee] = useState('all');
+  const [outlets, setOutlets] = useState([]);
+  const [divisions, setDivisions] = useState([]);
+  
+  // Unified filters
+  const [fSearch, setFSearch] = useState('');
+  const [fOutlet, setFOutlet] = useState('all');
+  const [fDivision, setFDivision] = useState('all');
+  const [fStatus, setFStatus] = useState('all');
 
   const handleExport = async (type) => {
     setExporting(true);
@@ -93,18 +97,41 @@ export const AttendanceTab = ({ language }) => {
 
   const fetchAll = async () => {
     try {
-      const [settingsRes, todayRes, pendingRes, empRes] = await Promise.all([
+      const [settingsRes, todayRes, pendingRes, empRes, outletRes, divRes] = await Promise.all([
         axios.get(`${API}/attendance/settings`, { withCredentials: true }),
         axios.get(`${API}/attendance/company`, { withCredentials: true }),
         axios.get(`${API}/attendance/pending`, { withCredentials: true }),
         axios.get(`${API}/employees-session`, { withCredentials: true }),
+        axios.get(`${API}/outlets-session`, { withCredentials: true }),
+        axios.get(`${API}/divisions-session`, { withCredentials: true }),
       ]);
       setSettings(settingsRes.data);
       setTodayRecords(todayRes.data);
       setPendingRecords(pendingRes.data);
       setEmployees(empRes.data);
+      setOutlets(outletRes.data);
+      setDivisions(divRes.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  };
+
+  // Build employee lookup for outlet/division
+  const empLookup = {};
+  employees.forEach(e => { empLookup[e.id] = e; });
+
+  // Unified filter function
+  const applyFilters = (records) => {
+    return records.filter(r => {
+      const emp = empLookup[r.employee_id] || {};
+      if (fSearch) {
+        const s = fSearch.toLowerCase();
+        if (!r.employee_name?.toLowerCase().includes(s) && !r.employee_email?.toLowerCase().includes(s)) return false;
+      }
+      if (fOutlet !== 'all' && emp.outlet_id !== fOutlet) return false;
+      if (fDivision !== 'all' && emp.division_id !== fDivision) return false;
+      if (fStatus !== 'all' && r.status !== fStatus) return false;
+      return true;
+    });
   };
 
   const fetchMonth = async () => {
@@ -165,6 +192,24 @@ export const AttendanceTab = ({ language }) => {
 
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E4DA7]"></div></div>;
 
+  const FilterBar = ({ extra }) => (
+    <div className="flex flex-wrap gap-2 mb-3">
+      <div className="relative flex-1 min-w-[140px]">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input placeholder="Cari nama/email..." value={fSearch} onChange={(e) => setFSearch(e.target.value)} className="pl-8 h-9 text-sm" />
+      </div>
+      <select value={fOutlet} onChange={(e) => setFOutlet(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm max-w-[160px]">
+        <option value="all">Semua Outlet</option>
+        {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+      </select>
+      <select value={fDivision} onChange={(e) => setFDivision(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm max-w-[160px]">
+        <option value="all">Semua Divisi</option>
+        {divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+      </select>
+      {extra}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       {/* Sub tabs */}
@@ -191,10 +236,6 @@ export const AttendanceTab = ({ language }) => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="text-base">Absensi {filterDate === new Date().toISOString().slice(0, 10) ? 'Hari Ini' : filterDate}</CardTitle>
               <div className="flex gap-2">
-                <div className="relative flex-1 sm:w-48">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input placeholder="Cari karyawan..." value={searchAttendance} onChange={(e) => setSearchAttendance(e.target.value)} className="pl-8 h-9 text-sm" />
-                </div>
                 <Input type="date" value={filterDate} onChange={(e) => fetchByDate(e.target.value)} className="w-40 h-9 text-sm" />
                 <Button variant="outline" size="sm" className="h-9 shrink-0" onClick={() => handleExport('date')} disabled={exporting}>
                   <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}
@@ -203,12 +244,9 @@ export const AttendanceTab = ({ language }) => {
             </div>
           </CardHeader>
           <CardContent>
+            <FilterBar />
             {(() => {
-              const filtered = todayRecords.filter(r => {
-                if (!searchAttendance) return true;
-                const s = searchAttendance.toLowerCase();
-                return r.employee_name?.toLowerCase().includes(s) || r.employee_email?.toLowerCase().includes(s);
-              });
+              const filtered = applyFilters(todayRecords);
               return filtered.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">{searchAttendance ? 'Tidak ditemukan' : 'Belum ada absensi'}</p>
               ) : (
@@ -283,18 +321,21 @@ export const AttendanceTab = ({ language }) => {
             </div>
           </CardHeader>
           <CardContent>
-            {pendingRecords.length === 0 ? (
+            <FilterBar />
+            {(() => {
+              const filtered = applyFilters(pendingRecords);
+              return filtered.length === 0 ? (
               <p className="text-center text-gray-500 py-8">Tidak ada absen yang perlu disetujui</p>
             ) : (
               <div className="space-y-2">
                 {/* Select All */}
                 <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                  <input type="checkbox" checked={selectedPending.length === pendingRecords.length && pendingRecords.length > 0}
-                    onChange={toggleSelectAll} className="rounded" />
-                  <span className="text-xs font-medium text-gray-600">Pilih Semua</span>
+                  <input type="checkbox" checked={selectedPending.length === filtered.length && filtered.length > 0}
+                    onChange={() => setSelectedPending(prev => prev.length === filtered.length ? [] : filtered.map(r => r.id))} className="rounded" />
+                  <span className="text-xs font-medium text-gray-600">Pilih Semua ({filtered.length})</span>
                 </div>
                 
-                {pendingRecords.map(r => {
+                {filtered.map(r => {
                   const photo = r.pending_change?.photo_url || r.clock_in_photo || r.clock_out_photo;
                   const geoAddr = r.pending_change?.geo_location?.address || r.clock_in_geo?.address || '';
                   return (
@@ -369,7 +410,8 @@ export const AttendanceTab = ({ language }) => {
                   );
                 })}
               </div>
-            )}
+            );
+            })()}
           </CardContent>
         </Card>
       )}
@@ -387,47 +429,27 @@ export const AttendanceTab = ({ language }) => {
       {tab === 'history' && (
         <Card className="border-0 shadow-sm">
           <CardHeader>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Riwayat Absensi</CardTitle>
-                <div className="flex gap-2">
-                  <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-40 h-9 text-sm" />
-                  <Button variant="outline" size="sm" className="h-9" onClick={() => handleExport('month')} disabled={exporting}>
-                    <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}
-                  </Button>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <div className="relative flex-1 min-w-[150px]">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input placeholder="Cari nama/email..." value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} className="pl-8 h-9 text-sm" />
-                </div>
-                <select value={historyStatus} onChange={(e) => setHistoryStatus(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="all">Semua Status</option>
-                  <option value="approved">OK</option>
-                  <option value="pending_approval">Pending</option>
-                  <option value="rejected">Ditolak</option>
-                </select>
-                <select value={historyEmployee} onChange={(e) => setHistoryEmployee(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm max-w-[180px]">
-                  <option value="all">Semua Karyawan</option>
-                  {[...new Set(monthRecords.map(r => r.employee_name))].sort().map(name => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Riwayat Absensi</CardTitle>
+              <div className="flex gap-2">
+                <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-40 h-9 text-sm" />
+                <Button variant="outline" size="sm" className="h-9" onClick={() => handleExport('month')} disabled={exporting}>
+                  <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}
+                </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
+            <FilterBar extra={
+              <select value={fStatus} onChange={(e) => setFStatus(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+                <option value="all">Semua Status</option>
+                <option value="approved">OK</option>
+                <option value="pending_approval">Pending</option>
+                <option value="rejected">Ditolak</option>
+              </select>
+            } />
             {(() => {
-              const filtered = monthRecords.filter(r => {
-                if (historyStatus !== 'all' && r.status !== historyStatus) return false;
-                if (historyEmployee !== 'all' && r.employee_name !== historyEmployee) return false;
-                if (historySearch) {
-                  const s = historySearch.toLowerCase();
-                  if (!r.employee_name?.toLowerCase().includes(s) && !r.employee_email?.toLowerCase().includes(s)) return false;
-                }
-                return true;
-              });
+              const filtered = applyFilters(monthRecords);
               
               return filtered.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">Tidak ada data</p>
@@ -516,6 +538,20 @@ export const AttendanceTab = ({ language }) => {
       {/* Backdate & Face Update Access */}
       {tab === 'backdate' && (
         <div className="space-y-4">
+          <FilterBar />
+          {(() => {
+            const filteredEmps = employees.filter(e => {
+              if (!e.is_active) return false;
+              if (fSearch) {
+                const s = fSearch.toLowerCase();
+                if (!e.name?.toLowerCase().includes(s) && !e.email?.toLowerCase().includes(s)) return false;
+              }
+              if (fOutlet !== 'all' && e.outlet_id !== fOutlet) return false;
+              if (fDivision !== 'all' && e.division_id !== fDivision) return false;
+              return true;
+            });
+            return (
+            <>
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Akses Absen Mundur</CardTitle>
@@ -523,11 +559,14 @@ export const AttendanceTab = ({ language }) => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {employees.filter(e => e.is_active).map(emp => (
+                {filteredEmps.map(emp => (
                   <div key={emp.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-8 h-8"><AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(emp.name)}</AvatarFallback></Avatar>
-                      <div><p className="text-sm font-medium">{emp.name}</p><p className="text-xs text-gray-500">{emp.position || emp.email}</p></div>
+                      <div>
+                        <p className="text-sm font-medium">{emp.name}</p>
+                        <p className="text-xs text-gray-500">{outlets.find(o => o.id === emp.outlet_id)?.name || ''} {emp.position || emp.email}</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {emp.backdate_token && !emp.backdate_token.used ? (
@@ -551,7 +590,7 @@ export const AttendanceTab = ({ language }) => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {employees.filter(e => e.is_active).map(emp => (
+                {filteredEmps.map(emp => (
                   <div key={`face-${emp.id}`} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-8 h-8"><AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(emp.name)}</AvatarFallback></Avatar>
@@ -574,6 +613,9 @@ export const AttendanceTab = ({ language }) => {
               </div>
             </CardContent>
           </Card>
+            </>
+            );
+          })()}
         </div>
       )}
 
