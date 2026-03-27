@@ -65,6 +65,49 @@ const picTokoMenu = [
   ]},
 ];
 
+const SidebarGroup = ({ group, activeTab, setActiveTab, setSidebarOpen, trashApps }) => {
+  const hasActive = group.items.some(i => i.id === activeTab);
+  const [expanded, setExpanded] = useState(hasActive);
+  
+  useEffect(() => {
+    if (hasActive) setExpanded(true);
+  }, [hasActive]);
+
+  return (
+    <div className="mb-1">
+      <button onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-50 transition-colors">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{group.section}</span>
+        <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`overflow-hidden transition-all duration-200 ${expanded ? 'max-h-96' : 'max-h-0'}`}>
+        {group.items.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          const badgeCount = item.badge === 'trash' ? trashApps.length : 0;
+          return (
+            <button key={item.id} disabled={item.soon}
+              onClick={() => { if (!item.soon) { setActiveTab(item.id); setSidebarOpen(false); } }}
+              className={`w-full flex items-center gap-3 px-4 pl-7 py-2 text-sm transition-colors ${
+                isActive ? 'bg-[#2E4DA7]/10 text-[#2E4DA7] font-medium border-r-2 border-[#2E4DA7]' :
+                item.soon ? 'text-gray-300 cursor-not-allowed' :
+                'text-gray-600 hover:bg-slate-50 hover:text-gray-900'
+              }`}
+              data-testid={`sidebar-${item.id}`}>
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="flex-1 text-left">{item.label}</span>
+              {badgeCount > 0 && <span className="px-1.5 py-0.5 text-[10px] bg-red-100 text-red-600 rounded-full">{badgeCount}</span>}
+              {item.soon && <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-400 rounded-full">Segera</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export const AdminDashboard = () => {
   const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
@@ -290,38 +333,8 @@ export const AdminDashboard = () => {
         {/* Menu */}
         <nav className="flex-1 overflow-y-auto py-2">
           {sidebarMenu.map((group) => (
-            <div key={group.section} className="mb-2">
-              <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{group.section}</p>
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                const badgeCount = item.badge === 'trash' ? trashApps.length : 0;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      if (!item.soon) { setActiveTab(item.id); setSidebarOpen(false); }
-                    }}
-                    disabled={item.soon}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                      isActive ? 'bg-[#2E4DA7]/10 text-[#2E4DA7] font-medium border-r-2 border-[#2E4DA7]' :
-                      item.soon ? 'text-gray-300 cursor-not-allowed' :
-                      'text-gray-600 hover:bg-slate-50 hover:text-gray-900'
-                    }`}
-                    data-testid={`sidebar-${item.id}`}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {badgeCount > 0 && (
-                      <span className="px-1.5 py-0.5 text-[10px] bg-red-100 text-red-600 rounded-full">{badgeCount}</span>
-                    )}
-                    {item.soon && (
-                      <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-400 rounded-full">Segera</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <SidebarGroup key={group.section} group={group} activeTab={activeTab}
+              setActiveTab={setActiveTab} setSidebarOpen={setSidebarOpen} trashApps={trashApps} />
           ))}
         </nav>
 
