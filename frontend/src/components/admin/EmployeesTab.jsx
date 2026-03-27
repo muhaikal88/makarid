@@ -243,6 +243,12 @@ export const EmployeesTab = ({ language }) => {
     URL.revokeObjectURL(url);
   };
 
+  const [fOutlet, setFOutlet] = useState('all');
+  const [fDivision, setFDivision] = useState('all');
+  const [fStatus, setFStatus] = useState('all');
+  const [fType, setFType] = useState('all');
+  const [fData, setFData] = useState('all');
+
   const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
   const isIncomplete = (emp) => {
@@ -253,9 +259,21 @@ export const EmployeesTab = ({ language }) => {
   const hasInvalidNik = (emp) => emp.id_number && !/^\d{16}$/.test(emp.id_number);
 
   const filtered = employees.filter(emp => {
-    const s = search.toLowerCase();
-    return !s || emp.name?.toLowerCase().includes(s) || emp.email?.toLowerCase().includes(s) ||
-      emp.position?.toLowerCase().includes(s) || emp.department?.toLowerCase().includes(s);
+    if (search) {
+      const s = search.toLowerCase();
+      if (!emp.name?.toLowerCase().includes(s) && !emp.email?.toLowerCase().includes(s) &&
+        !emp.position?.toLowerCase().includes(s) && !emp.phone?.toLowerCase().includes(s)) return false;
+    }
+    if (fOutlet !== 'all' && emp.outlet_id !== fOutlet) return false;
+    if (fDivision !== 'all' && emp.division_id !== fDivision) return false;
+    if (fStatus === 'active' && !emp.is_active) return false;
+    if (fStatus === 'inactive' && emp.is_active) return false;
+    if (fType !== 'all' && emp.employment_type !== fType) return false;
+    if (fData === 'incomplete' && !isIncomplete(emp)) return false;
+    if (fData === 'complete' && isIncomplete(emp)) return false;
+    if (fData === 'no_nik' && emp.id_number) return false;
+    if (fData === 'invalid_nik' && !hasInvalidNik(emp)) return false;
+    return true;
   });
 
   if (loading) {
@@ -265,26 +283,64 @@ export const EmployeesTab = ({ language }) => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input placeholder="Cari karyawan..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input placeholder="Cari nama, email, posisi, telepon..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={downloadTemplate}>
+              <Download className="w-4 h-4 mr-1.5" />Template
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={importing}>
+              <Upload className="w-4 h-4 mr-1.5" />{importing ? 'Importing...' : 'Import'}
+            </Button>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} className="hidden" />
+            <Button variant={showTrash ? 'default' : 'outline'} size="sm" onClick={() => setShowTrash(!showTrash)}
+              className={showTrash ? 'bg-red-600 hover:bg-red-700' : ''}>
+              <Trash2 className="w-4 h-4 mr-1.5" />Sampah{trashEmployees.length > 0 && ` (${trashEmployees.length})`}
+            </Button>
+            <Button size="sm" className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90" onClick={() => handleOpen()} data-testid="add-employee-btn">
+              <Plus className="w-4 h-4 mr-1.5" />Tambah
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={downloadTemplate}>
-            <Download className="w-4 h-4 mr-1.5" />Template
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={importing}>
-            <Upload className="w-4 h-4 mr-1.5" />{importing ? 'Importing...' : 'Import Excel'}
-          </Button>
-          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleImport} className="hidden" />
-          <Button variant={showTrash ? 'default' : 'outline'} size="sm" onClick={() => setShowTrash(!showTrash)}
-            className={showTrash ? 'bg-red-600 hover:bg-red-700' : ''}>
-            <Trash2 className="w-4 h-4 mr-1.5" />Sampah{trashEmployees.length > 0 && ` (${trashEmployees.length})`}
-          </Button>
-          <Button size="sm" className="bg-[#2E4DA7] hover:bg-[#2E4DA7]/90" onClick={() => handleOpen()} data-testid="add-employee-btn">
-            <Plus className="w-4 h-4 mr-1.5" />Tambah
-          </Button>
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2">
+          <select value={fOutlet} onChange={(e) => setFOutlet(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+            <option value="all">Semua Outlet</option>
+            {outlets.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </select>
+          <select value={fDivision} onChange={(e) => setFDivision(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+            <option value="all">Semua Divisi</option>
+            {divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+          <select value={fStatus} onChange={(e) => setFStatus(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+            <option value="all">Semua Status</option>
+            <option value="active">Aktif</option>
+            <option value="inactive">Nonaktif</option>
+          </select>
+          <select value={fType} onChange={(e) => setFType(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+            <option value="all">Semua Tipe Kerja</option>
+            <option value="Tetap">Tetap</option>
+            <option value="Kontrak">Kontrak</option>
+            <option value="Magang">Magang</option>
+            <option value="Paruh Waktu">Paruh Waktu</option>
+          </select>
+          <select value={fData} onChange={(e) => setFData(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+            <option value="all">Semua Data</option>
+            <option value="incomplete">Data Belum Lengkap</option>
+            <option value="complete">Data Lengkap</option>
+            <option value="no_nik">Belum Ada NIK</option>
+            <option value="invalid_nik">NIK Tidak Valid</option>
+          </select>
+          {(fOutlet !== 'all' || fDivision !== 'all' || fStatus !== 'all' || fType !== 'all' || fData !== 'all') && (
+            <Button variant="ghost" size="sm" className="h-9 text-xs text-gray-500" onClick={() => { setFOutlet('all'); setFDivision('all'); setFStatus('all'); setFType('all'); setFData('all'); }}>
+              Reset Filter
+            </Button>
+          )}
+          <span className="text-xs text-gray-500 self-center">{filtered.length} dari {employees.length} karyawan</span>
         </div>
       </div>
 
