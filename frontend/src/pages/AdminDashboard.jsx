@@ -13,6 +13,7 @@ import {
 } from '../components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Toaster, toast } from 'sonner';
+import { RefreshControl } from '../components/RefreshControl';
 
 import { OverviewTab } from '../components/admin/OverviewTab';
 import { JobsTab } from '../components/admin/JobsTab';
@@ -359,6 +360,7 @@ export const AdminDashboard = () => {
               </h2>
             </div>
             <div className="flex items-center gap-2">
+              <RefreshControl onRefresh={fetchData} label="Data" />
               <Button variant="ghost" size="icon" className="relative h-8 w-8" data-testid="notifications-btn">
                 <Bell className="w-4 h-4" />
                 {stats.pendingApplications > 0 && (

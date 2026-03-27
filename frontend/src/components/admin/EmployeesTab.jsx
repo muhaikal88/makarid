@@ -15,6 +15,7 @@ import {
 import { Switch } from '../ui/switch';
 import { Users, Plus, Search, Upload, Edit, Trash2, Download, Mail, Phone, Briefcase, Building2, Calendar, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
+import { RefreshControl } from '../RefreshControl';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -290,6 +291,7 @@ export const EmployeesTab = ({ language }) => {
             <Input placeholder="Cari nama, email, posisi, telepon..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
           </div>
           <div className="flex gap-2 flex-wrap">
+            <RefreshControl onRefresh={() => { fetchEmployees(); fetchOutletsDivisions(); fetchTrash(); }} />
             <Button variant="outline" size="sm" onClick={downloadTemplate}>
               <Download className="w-4 h-4 mr-1.5" />Template
             </Button>

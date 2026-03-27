@@ -9,6 +9,7 @@ import { Switch } from '../ui/switch';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Building2, Plus, Edit, Trash2, MapPin, Wifi, X, Navigation, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { RefreshControl } from '../RefreshControl';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -91,7 +92,7 @@ export const OutletsTab = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{outlets.length} outlet</p>
+        <div className="flex items-center gap-2"><p className="text-sm text-gray-500">{outlets.length} outlet</p><RefreshControl onRefresh={fetchData} /></div>
         <Button size="sm" className="bg-[#2E4DA7]" onClick={() => handleOpen()}><Plus className="w-4 h-4 mr-1.5" />Tambah Outlet</Button>
       </div>
 

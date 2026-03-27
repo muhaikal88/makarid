@@ -13,6 +13,7 @@ import {
 import { CalendarClock, Settings, Check, X, Clock, Plus, Trash2, Shield, UserCheck, Undo2, Camera, Search, Eye, MapPin, Download } from 'lucide-react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { toast } from 'sonner';
+import { RefreshControl } from '../RefreshControl';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -235,7 +236,8 @@ export const AttendanceTab = ({ language }) => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="text-base">Absensi {filterDate === new Date().toISOString().slice(0, 10) ? 'Hari Ini' : filterDate}</CardTitle>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <RefreshControl onRefresh={fetchAll} label="Refresh" />
                 <Input type="date" value={filterDate} onChange={(e) => fetchByDate(e.target.value)} className="w-40 h-9 text-sm" />
                 <Button variant="outline" size="sm" className="h-9 shrink-0" onClick={() => handleExport('date')} disabled={exporting}>
                   <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}
@@ -309,7 +311,7 @@ export const AttendanceTab = ({ language }) => {
               <CardTitle className="text-base">Menunggu Approval ({pendingRecords.length})</CardTitle>
               {pendingRecords.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">{selectedPending.length} dipilih</span>
+                  <RefreshControl onRefresh={fetchAll} />
                   <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={selectedPending.length === 0} onClick={() => handleBulkApprove(true)}>
                     <Check className="w-3.5 h-3.5 mr-1" />Setujui
                   </Button>
@@ -432,6 +434,7 @@ export const AttendanceTab = ({ language }) => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Riwayat Absensi</CardTitle>
               <div className="flex gap-2">
+                <RefreshControl onRefresh={fetchMonth} />
                 <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-40 h-9 text-sm" />
                 <Button variant="outline" size="sm" className="h-9" onClick={() => handleExport('month')} disabled={exporting}>
                   <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'Excel'}

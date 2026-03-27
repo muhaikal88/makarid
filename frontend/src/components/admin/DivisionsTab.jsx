@@ -7,6 +7,7 @@ import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Layers, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { RefreshControl } from '../RefreshControl';
 
 const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 
@@ -52,7 +53,7 @@ export const DivisionsTab = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{divisions.length} divisi</p>
+        <div className="flex items-center gap-2"><p className="text-sm text-gray-500">{divisions.length} divisi</p><RefreshControl onRefresh={fetch} /></div>
         <Button size="sm" className="bg-[#2E4DA7]" onClick={() => handleOpen()}><Plus className="w-4 h-4 mr-1.5" />Tambah Divisi</Button>
       </div>
 
