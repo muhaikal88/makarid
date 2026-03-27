@@ -3499,11 +3499,6 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
                     "created_at": now,
                     **emp_data
                 }
-                    "picture": None,
-                    "companies": [session["company_id"]],
-                    "is_active": True, "auth_provider": "email",
-                    "created_at": now, "updated_at": now
-                }
                 await db.employees.insert_one(emp_doc)
                 
                 # Send password email (non-blocking)
