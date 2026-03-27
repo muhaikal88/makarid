@@ -248,7 +248,7 @@ export const AttendanceTab = ({ language }) => {
             {(() => {
               const filtered = applyFilters(todayRecords);
               return filtered.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">{searchAttendance ? 'Tidak ditemukan' : 'Belum ada absensi'}</p>
+                <p className="text-center text-gray-500 py-8">{fSearch ? 'Tidak ditemukan' : 'Belum ada absensi'}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
