@@ -5128,7 +5128,12 @@ async def clock_attendance(request: Request):
     action = body.get("action")  # clock_in, clock_out, break_start, break_end
     photo_url = body.get("photo_url")
     face_score = body.get("face_score", 0)
-    client_ip = request.headers.get("x-real-ip", request.headers.get("x-forwarded-for", request.client.host))
+    client_ip = (
+        request.headers.get("cf-connecting-ip") or  # Cloudflare real IP
+        request.headers.get("x-real-ip") or
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip() or
+        request.client.host
+    )
     geo_location = body.get("geo_location")  # {lat, lng, acc}
     backdate = body.get("date")
     backtime = body.get("time")
@@ -5706,6 +5711,23 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 # ============ OG META FOR SOCIAL CRAWLERS ============
+
+@api_router.get("/my-ip")
+async def get_my_ip(request: Request):
+    """Debug endpoint: show what IP the server sees"""
+    return {
+        "cf_connecting_ip": request.headers.get("cf-connecting-ip"),
+        "x_real_ip": request.headers.get("x-real-ip"),
+        "x_forwarded_for": request.headers.get("x-forwarded-for"),
+        "client_host": request.client.host,
+        "resolved_ip": (
+            request.headers.get("cf-connecting-ip") or
+            request.headers.get("x-real-ip") or
+            request.headers.get("x-forwarded-for", "").split(",")[0].strip() or
+            request.client.host
+        )
+    }
+
 
 @api_router.get("/og-meta")
 async def og_meta(request: Request, path: str = "/"):
