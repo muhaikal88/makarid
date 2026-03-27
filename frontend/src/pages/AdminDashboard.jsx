@@ -36,7 +36,7 @@ const defaultJobForm = {
   allow_existing_applicant: true
 };
 
-const sidebarMenu = [
+const fullMenu = [
   { section: 'REKRUTMEN', items: [
     { id: 'overview', label: 'Ringkasan', icon: LayoutDashboard },
     { id: 'jobs', label: 'Lowongan Kerja', icon: Briefcase },
@@ -57,6 +57,13 @@ const sidebarMenu = [
   ]},
 ];
 
+const picTokoMenu = [
+  { section: 'MONITORING', items: [
+    { id: 'employees', label: 'Data Karyawan', icon: Users },
+    { id: 'attendance', label: 'Absensi', icon: CalendarClock },
+  ]},
+];
+
 export const AdminDashboard = () => {
   const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
@@ -68,6 +75,9 @@ export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isPicToko = session?.admin_role === 'pic_toko';
+  const sidebarMenu = isPicToko ? picTokoMenu : fullMenu;
 
   // Filters
   const [filterStatus, setFilterStatus] = useState('all');
@@ -99,6 +109,7 @@ export const AdminDashboard = () => {
       if (response.data.role !== 'admin') { navigate('/company-login'); return; }
       setSession(response.data);
       setAuthLoading(false);
+      if (response.data.admin_role === 'pic_toko') setActiveTab('employees');
       fetchData();
     } catch { navigate('/company-login'); }
   };
@@ -315,14 +326,18 @@ export const AdminDashboard = () => {
 
         {/* Sidebar Footer */}
         <div className="border-t p-3 space-y-1">
-          <button onClick={() => navigate('/admin/company-profile')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-slate-50 rounded-lg">
-            <Building2 className="w-4 h-4" /> Profil Perusahaan
-          </button>
+          {!isPicToko && (
+            <>
+              <button onClick={() => navigate('/admin/company-profile')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-slate-50 rounded-lg">
+                <Building2 className="w-4 h-4" /> Profil Perusahaan
+              </button>
+              <button onClick={() => navigate('/admin/settings')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-slate-50 rounded-lg">
+                <Settings className="w-4 h-4" /> Pengaturan
+              </button>
+            </>
+          )}
           <button onClick={() => navigate('/admin/profile')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-slate-50 rounded-lg">
             <User className="w-4 h-4" /> Profil Saya
-          </button>
-          <button onClick={() => navigate('/admin/settings')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-slate-50 rounded-lg">
-            <Settings className="w-4 h-4" /> Pengaturan
           </button>
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg" data-testid="logout-btn">
             <LogOut className="w-4 h-4" /> Keluar

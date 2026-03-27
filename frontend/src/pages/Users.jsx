@@ -72,13 +72,10 @@ export const Users = () => {
   
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'admin',
-    company_id: '',
-    is_active: true
+    name: '', email: '', password: '', role: 'admin', company_id: '', is_active: true,
+    assigned_outlets: []
   });
+  const [availableOutlets, setAvailableOutlets] = useState([]);
 
   useEffect(() => {
     fetchUsers();
@@ -255,7 +252,10 @@ export const Users = () => {
                           (user.companies && Array.isArray(user.companies) && user.companies.includes(filterCompany));
     
     // Role filter
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
+    const matchesRole = filterRole === 'all' || 
+      (filterRole === 'pic_toko' ? user.admin_role === 'pic_toko' : 
+       filterRole === 'admin' ? (user.role === 'admin' && user.admin_role !== 'pic_toko') : 
+       user.role === filterRole);
     
     return matchesSearch && matchesCompany && matchesRole;
   });
@@ -276,8 +276,11 @@ export const Users = () => {
     return company?.name || '-';
   };
 
-  const getRoleBadge = (role) => {
-    if (role === 'admin') {
+  const getRoleBadge = (user) => {
+    if (user.role === 'admin') {
+      if (user.admin_role === 'pic_toko') {
+        return <Badge className="bg-purple-600 hover:bg-purple-600">PIC Toko</Badge>;
+      }
       return <Badge className="bg-[#2E4DA7] hover:bg-[#2E4DA7]">{t('admin')}</Badge>;
     }
     return <Badge variant="secondary">{t('employee')}</Badge>;
@@ -346,6 +349,7 @@ export const Users = () => {
                 <SelectContent>
                   <SelectItem value="all">Semua Peran</SelectItem>
                   <SelectItem value="admin">Admin Perusahaan</SelectItem>
+                  <SelectItem value="pic_toko">PIC Toko</SelectItem>
                   <SelectItem value="employee">Karyawan</SelectItem>
                 </SelectContent>
               </Select>
@@ -412,7 +416,7 @@ export const Users = () => {
                           {user.email}
                         </div>
                       </TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
+                      <TableCell>{getRoleBadge(user)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-gray-600">
                           <Building2 className="w-4 h-4" />
@@ -603,6 +607,7 @@ export const Users = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">{t('admin')}</SelectItem>
+                    <SelectItem value="pic_toko">PIC Toko</SelectItem>
                     <SelectItem value="employee">{t('employee')}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -611,7 +616,14 @@ export const Users = () => {
                 <Label htmlFor="company">{t('company')}</Label>
                 <Select
                   value={formData.company_id}
-                  onValueChange={(value) => setFormData({ ...formData, company_id: value })}
+                  onValueChange={async (value) => {
+                    setFormData({ ...formData, company_id: value, assigned_outlets: [] });
+                    // Fetch outlets for selected company
+                    try {
+                      const res = await axios.get(`${API}/companies/${value}/outlets`, { headers: getAuthHeaders() });
+                      setAvailableOutlets(res.data);
+                    } catch { setAvailableOutlets([]); }
+                  }}
                 >
                   <SelectTrigger data-testid="user-company-select">
                     <SelectValue placeholder={t('selectCompany')} />
@@ -625,6 +637,32 @@ export const Users = () => {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Outlet selection for PIC Toko */}
+              {formData.role === 'pic_toko' && formData.company_id && (
+                <div className="grid gap-2">
+                  <Label>Outlet yang Bisa Diakses *</Label>
+                  {availableOutlets.length === 0 ? (
+                    <p className="text-xs text-gray-500">Tidak ada outlet. Tambahkan outlet terlebih dahulu di dashboard perusahaan.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                      {availableOutlets.map(o => (
+                        <label key={o.id} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" className="rounded"
+                            checked={formData.assigned_outlets?.includes(o.id) || false}
+                            onChange={(e) => {
+                              const outlets = formData.assigned_outlets || [];
+                              setFormData({ ...formData, assigned_outlets: e.target.checked ? [...outlets, o.id] : outlets.filter(x => x !== o.id) });
+                            }} />
+                          <span className="text-sm">{o.name}</span>
+                          {o.address && <span className="text-xs text-gray-400">— {o.address}</span>}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <div className="flex items-center justify-between">
                 <Label htmlFor="is_active">{t('status')}</Label>
                 <div className="flex items-center gap-2">

@@ -100,18 +100,22 @@ class CompanyAdminBase(BaseModel):
     email: EmailStr
     name: str
     picture: Optional[str] = None
-    companies: List[str] = []  # List of company_ids user is admin of
-    totp_secret: Optional[str] = None  # For Google Authenticator
+    companies: List[str] = []
+    totp_secret: Optional[str] = None
     totp_enabled: bool = False
     is_active: bool = True
-    auth_provider: str = "email"  # "email" or "google"
+    auth_provider: str = "email"
+    admin_role: str = "admin"  # "admin" or "pic_toko"
+    assigned_outlets: Optional[List[str]] = None  # For pic_toko: list of outlet_ids
 
 class CompanyAdminCreate(BaseModel):
     email: EmailStr
     name: str
-    password: Optional[str] = None  # Optional if using Google OAuth
-    company_id: str  # Initial company
+    password: Optional[str] = None
+    company_id: str
     auth_provider: str = "email"
+    admin_role: str = "admin"
+    assigned_outlets: Optional[List[str]] = None
 
 class CompanyAdmin(CompanyAdminBase):
     model_config = ConfigDict(extra="ignore")
@@ -194,7 +198,8 @@ class UserCreate(BaseModel):
     name: str
     password: str
     role: str = UserRole.ADMIN
-    company_id: str  # REQUIRED
+    company_id: str
+    assigned_outlets: Optional[List[str]] = None
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
@@ -1505,6 +1510,15 @@ async def get_me_session(request: Request):
     # Get license info
     license_status, days_remaining = get_license_status(company) if company else ("active", None)
     
+    # Get admin_role and assigned_outlets for admin users
+    admin_role = None
+    assigned_outlets = None
+    if session["role"] == "admin":
+        admin_doc = await db.company_admins.find_one({"id": session["user_id"]}, {"_id": 0, "admin_role": 1, "assigned_outlets": 1})
+        if admin_doc:
+            admin_role = admin_doc.get("admin_role", "admin")
+            assigned_outlets = admin_doc.get("assigned_outlets", [])
+    
     return {
         "user_id": session["user_id"],
         "email": session["email"],
@@ -1515,6 +1529,8 @@ async def get_me_session(request: Request):
         "company_slug": company.get("slug") if company else None,
         "custom_domain": custom_careers_domain,
         "role": session["role"],
+        "admin_role": admin_role,
+        "assigned_outlets": assigned_outlets,
         "license_type": company.get("license_type", "trial") if company else None,
         "license_end": company.get("license_end") if company else None,
         "license_status": license_status,
@@ -2969,6 +2985,14 @@ class OutletUpdate(BaseModel):
     allow_outside_network: Optional[bool] = None
 
 @api_router.get("/outlets-session")
+
+@api_router.get("/companies/{company_id}/outlets")
+async def get_company_outlets(company_id: str, current_user: dict = Depends(require_super_admin)):
+    """Get outlets for a company (superadmin use)"""
+    outlets = await db.outlets.find({"company_id": company_id}, {"_id": 0}).sort("name", 1).to_list(100)
+    return outlets
+
+
 async def get_outlets(request: Request):
     session = await require_session_admin(request)
     outlets = await db.outlets.find({"company_id": session["company_id"]}, {"_id": 0}).sort("name", 1).to_list(100)
@@ -4908,6 +4932,8 @@ async def get_users(current_user: dict = Depends(require_super_admin)):
             "company_names": company_names,
             "is_active": admin.get("is_active", True),
             "auth_provider": admin.get("auth_provider", "email"),
+            "admin_role": admin.get("admin_role", "admin"),
+            "assigned_outlets": admin.get("assigned_outlets", []),
             "totp_enabled": admin.get("totp_enabled", False),
             "totp_secret": bool(admin.get("totp_secret")),
             "created_at": admin["created_at"] if isinstance(admin["created_at"], str) else admin["created_at"].isoformat(),
@@ -4949,7 +4975,7 @@ async def create_user(data: UserCreate, current_user: dict = Depends(require_sup
     
     now = datetime.now(timezone.utc).isoformat()
     
-    if data.role == "admin":
+    if data.role == "admin" or data.role == "pic_toko":
         user_id = f"admin_{uuid.uuid4().hex[:12]}"
         user_doc = {
             "id": user_id,
@@ -4959,6 +4985,8 @@ async def create_user(data: UserCreate, current_user: dict = Depends(require_sup
             "companies": [data.company_id],
             "is_active": True,
             "auth_provider": "email",
+            "admin_role": data.role,  # "admin" or "pic_toko"
+            "assigned_outlets": data.assigned_outlets or [],
             "created_at": now,
             "updated_at": now
         }
