@@ -1527,6 +1527,7 @@ async def get_me_session(request: Request):
         "company_id": session["company_id"],
         "company_name": company["name"] if company else None,
         "company_slug": company.get("slug") if company else None,
+        "company_logo": company.get("logo_url") if company else None,
         "custom_domain": custom_careers_domain,
         "role": session["role"],
         "admin_role": admin_role,

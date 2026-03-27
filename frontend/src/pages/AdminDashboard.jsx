@@ -317,9 +317,13 @@ export const AdminDashboard = () => {
         {/* Sidebar Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 bg-[#2E4DA7] rounded-lg flex items-center justify-center shrink-0">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
+            {session?.company_logo ? (
+              <img src={session.company_logo} alt="" className="w-9 h-9 rounded-lg object-contain border bg-white shrink-0" />
+            ) : (
+              <div className="w-9 h-9 bg-[#2E4DA7] rounded-lg flex items-center justify-center shrink-0">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+            )}
             <div className="min-w-0">
               <p className="font-bold text-sm text-gray-900 truncate">{session?.company_name}</p>
               <p className="text-[11px] text-gray-500 truncate">{session?.name}</p>
