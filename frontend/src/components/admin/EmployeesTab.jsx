@@ -96,9 +96,25 @@ export const EmployeesTab = ({ language }) => {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.email) { toast.error('Nama dan email wajib diisi'); return; }
+    // Mandatory validation
+    if (!form.name?.trim()) { toast.error('Nama wajib diisi'); return; }
+    if (!form.email?.trim()) { toast.error('Email wajib diisi'); return; }
     if (!form.outlet_id) { toast.error('Outlet wajib dipilih'); return; }
     if (!form.division_id) { toast.error('Divisi wajib dipilih'); return; }
+    if (!form.position?.trim()) { toast.error('Posisi/Jabatan wajib diisi'); return; }
+    
+    // NIK validation (optional but if filled must be 16 digits)
+    if (form.id_number && !/^\d{16}$/.test(form.id_number)) {
+      toast.error('No. KTP/NIK harus 16 digit angka');
+      return;
+    }
+    
+    // Email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      toast.error('Format email tidak valid');
+      return;
+    }
+    
     setSaving(true);
     try {
       const cleanData = { ...form, salary: form.salary ? parseInt(form.salary) : null };
@@ -229,6 +245,13 @@ export const EmployeesTab = ({ language }) => {
 
   const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
+  const isIncomplete = (emp) => {
+    const mandatory = ['name', 'email', 'outlet_id', 'division_id', 'position'];
+    return mandatory.some(f => !emp[f] || String(emp[f]).trim() === '');
+  };
+
+  const hasInvalidNik = (emp) => emp.id_number && !/^\d{16}$/.test(emp.id_number);
+
   const filtered = employees.filter(emp => {
     const s = search.toLowerCase();
     return !s || emp.name?.toLowerCase().includes(s) || emp.email?.toLowerCase().includes(s) ||
@@ -293,6 +316,22 @@ export const EmployeesTab = ({ language }) => {
         </Card>
       </div>
 
+      {/* Warning: incomplete data */}
+      {(() => {
+        const incompleteCount = employees.filter(isIncomplete).length;
+        const invalidNikCount = employees.filter(hasInvalidNik).length;
+        if (incompleteCount === 0 && invalidNikCount === 0) return null;
+        return (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-sm">
+            <span className="text-amber-600 font-bold shrink-0">!</span>
+            <div>
+              {incompleteCount > 0 && <p className="text-amber-800"><span className="font-bold">{incompleteCount} karyawan</span> data wajib belum lengkap (outlet/divisi/posisi)</p>}
+              {invalidNikCount > 0 && <p className="text-red-700"><span className="font-bold">{invalidNikCount} karyawan</span> NIK tidak valid (harus 16 digit angka)</p>}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Table */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-0">
@@ -325,7 +364,11 @@ export const EmployeesTab = ({ language }) => {
                             <AvatarFallback className="bg-[#2E4DA7] text-white text-xs">{getInitials(emp.name)}</AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 text-sm truncate">{emp.name}</p>
+                            <p className="font-medium text-gray-900 text-sm truncate flex items-center gap-1">
+                              {emp.name}
+                              {isIncomplete(emp) && <span title="Data wajib belum lengkap" className="inline-block w-2 h-2 bg-amber-500 rounded-full shrink-0"></span>}
+                              {hasInvalidNik(emp) && <span title="NIK tidak valid" className="inline-block w-2 h-2 bg-red-500 rounded-full shrink-0"></span>}
+                            </p>
                             <p className="text-xs text-gray-500 truncate">{emp.email}</p>
                             {emp.phone && <p className="text-xs text-gray-400 sm:hidden">{emp.phone}</p>}
                           </div>
@@ -390,8 +433,11 @@ export const EmployeesTab = ({ language }) => {
                     <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label className="text-xs">No. KTP/NIK</Label>
-                    <Input value={form.id_number} onChange={(e) => setForm({ ...form, id_number: e.target.value })} />
+                    <Label className="text-xs">No. KTP/NIK <span className="text-gray-400">(16 digit)</span></Label>
+                    <Input value={form.id_number} inputMode="numeric" maxLength={16}
+                      onChange={(e) => setForm({ ...form, id_number: e.target.value.replace(/\D/g, '').slice(0, 16) })}
+                      className={form.id_number && form.id_number.length !== 16 ? 'border-red-300' : ''} />
+                    {form.id_number && form.id_number.length !== 16 && <p className="text-[10px] text-red-500">{form.id_number.length}/16 digit</p>}
                   </div>
                   <div className="grid gap-1.5">
                     <Label className="text-xs">Jenis Kelamin</Label>
@@ -490,7 +536,7 @@ export const EmployeesTab = ({ language }) => {
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="grid gap-1.5"><Label className="text-xs">Posisi/Jabatan</Label><Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} /></div>
+                  <div className="grid gap-1.5"><Label className="text-xs">Posisi/Jabatan *</Label><Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} /></div>
                   <div className="grid gap-1.5"><Label className="text-xs">Departemen</Label><Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} /></div>
                 </div>
                 <div className="grid sm:grid-cols-3 gap-3">

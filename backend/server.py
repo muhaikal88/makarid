@@ -3127,6 +3127,20 @@ async def create_employee_session(data: EmployeeCreateSession, request: Request)
     """Create new employee for current company"""
     session = await require_session_admin(request)
     
+    # Mandatory validation
+    if not data.name or not data.name.strip():
+        raise HTTPException(status_code=400, detail="Nama wajib diisi")
+    if not data.email:
+        raise HTTPException(status_code=400, detail="Email wajib diisi")
+    if not data.outlet_id:
+        raise HTTPException(status_code=400, detail="Outlet wajib dipilih")
+    if not data.division_id:
+        raise HTTPException(status_code=400, detail="Divisi wajib dipilih")
+    
+    # NIK validation (optional but must be 16 digits if provided)
+    if data.id_number and not re.match(r'^\d{16}$', data.id_number):
+        raise HTTPException(status_code=400, detail="No. KTP/NIK harus 16 digit angka")
+    
     # Check if email already exists in this company
     existing = await db.employees.find_one({"email": data.email, "companies": session["company_id"]})
     if existing:
@@ -3411,12 +3425,13 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
             email = get_cell(row, 'email').lower()
             
             if not name or not email:
+                errors.append(f"Baris {row_idx}: Nama dan Email wajib diisi")
                 continue
             
-            # Check existing
-            existing = await db.employees.find_one({"email": email, "companies": session["company_id"]})
-            if existing:
-                skipped += 1
+            # Validate NIK
+            nik = get_cell(row, 'id_number')
+            if nik and not re.match(r'^\d{16}$', nik):
+                errors.append(f"Baris {row_idx}: NIK '{nik}' harus 16 digit angka")
                 continue
             
             salary_str = get_cell(row, 'salary')
@@ -3425,44 +3440,65 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
                 try: salary_val = int(float(salary_str))
                 except: pass
             
-            # Check if employee exists in other companies
+            # Build update data
+            emp_data = {
+                "name": name, "phone": get_cell(row, 'phone'),
+                "id_number": nik,
+                "gender": get_cell(row, 'gender'),
+                "birth_place": get_cell(row, 'birth_place'),
+                "birth_date": get_cell(row, 'birth_date'),
+                "religion": get_cell(row, 'religion'),
+                "marital_status": get_cell(row, 'marital_status'),
+                "education": get_cell(row, 'education'),
+                "major": get_cell(row, 'major'),
+                "province": get_cell(row, 'province'),
+                "city": get_cell(row, 'city'),
+                "district": get_cell(row, 'district'),
+                "village": get_cell(row, 'village'),
+                "full_address": get_cell(row, 'full_address'),
+                "position": get_cell(row, 'position'),
+                "department": get_cell(row, 'department'),
+                "join_date": get_cell(row, 'join_date'),
+                "employment_type": get_cell(row, 'employment_type'),
+                "salary": salary_val,
+                "bank_name": get_cell(row, 'bank_name'),
+                "bank_account": get_cell(row, 'bank_account'),
+                "bank_holder": get_cell(row, 'bank_holder'),
+                "emergency_contact": get_cell(row, 'emergency_contact'),
+                "emergency_phone": get_cell(row, 'emergency_phone'),
+                "outlet_id": outlet_map.get(get_cell(row, 'outlet_name').lower(), ""),
+                "division_id": division_map.get(get_cell(row, 'division_name').lower(), ""),
+                "updated_at": now
+            }
+            # Remove empty values
+            emp_data = {k: v for k, v in emp_data.items() if v is not None and v != ""}
+            
+            # Check existing in this company → UPDATE (replace data)
+            existing = await db.employees.find_one({"email": email, "companies": session["company_id"]})
+            if existing:
+                await db.employees.update_one({"email": email}, {"$set": emp_data})
+                imported += 1
+                continue
+            
+            # Check existing in other companies → add to company
             existing_emp = await db.employees.find_one({"email": email})
             if existing_emp:
+                emp_data["updated_at"] = now
                 await db.employees.update_one(
                     {"email": email},
-                    {"$addToSet": {"companies": session["company_id"]}, "$set": {"updated_at": now}}
+                    {"$addToSet": {"companies": session["company_id"]}, "$set": emp_data}
                 )
             else:
                 pwd = generate_secure_password()
                 emp_doc = {
                     "id": f"emp_{uuid.uuid4().hex[:12]}",
-                    "email": email, "name": name, "password": hash_password(pwd),
-                    "phone": get_cell(row, 'phone'),
-                    "id_number": get_cell(row, 'id_number'),
-                    "gender": get_cell(row, 'gender'),
-                    "birth_place": get_cell(row, 'birth_place'),
-                    "birth_date": get_cell(row, 'birth_date'),
-                    "religion": get_cell(row, 'religion'),
-                    "marital_status": get_cell(row, 'marital_status'),
-                    "education": get_cell(row, 'education'),
-                    "major": get_cell(row, 'major'),
-                    "province": get_cell(row, 'province'),
-                    "city": get_cell(row, 'city'),
-                    "district": get_cell(row, 'district'),
-                    "village": get_cell(row, 'village'),
-                    "full_address": get_cell(row, 'full_address'),
-                    "position": get_cell(row, 'position'),
-                    "department": get_cell(row, 'department'),
-                    "join_date": get_cell(row, 'join_date'),
-                    "employment_type": get_cell(row, 'employment_type'),
-                    "salary": salary_val,
-                    "bank_name": get_cell(row, 'bank_name'),
-                    "bank_account": get_cell(row, 'bank_account'),
-                    "bank_holder": get_cell(row, 'bank_holder'),
-                    "emergency_contact": get_cell(row, 'emergency_contact'),
-                    "emergency_phone": get_cell(row, 'emergency_phone'),
-                    "outlet_id": outlet_map.get(get_cell(row, 'outlet_name').lower(), ""),
-                    "division_id": division_map.get(get_cell(row, 'division_name').lower(), ""),
+                    "email": email, "password": hash_password(pwd),
+                    "picture": None,
+                    "companies": [session["company_id"]],
+                    "is_active": True, "auth_provider": "email",
+                    "created_at": now,
+                    **emp_data
+                }
                     "picture": None,
                     "companies": [session["company_id"]],
                     "is_active": True, "auth_provider": "email",
@@ -3488,7 +3524,7 @@ async def import_employees_excel(request: Request, file: UploadFile = File(...))
     )
     
     return {
-        "message": f"Import selesai: {imported} ditambahkan, {skipped} dilewati (sudah ada)",
+        "message": f"Import selesai: {imported} ditambahkan/diupdate" + (f", {len(errors)} error" if errors else ""),
         "imported": imported, "skipped": skipped,
         "errors": errors[:10]
     }
