@@ -3000,6 +3000,12 @@ async def get_outlets(request: Request):
 @api_router.post("/outlets-session")
 async def create_outlet(data: OutletCreate, request: Request):
     session = await require_session_admin(request)
+    
+    # Check duplicate name
+    existing = await db.outlets.find_one({"company_id": session["company_id"], "name": {"$regex": f"^{re.escape(data.name.strip())}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Outlet '{data.name}' sudah ada")
+    
     now = datetime.now(timezone.utc).isoformat()
     doc = {
         "id": str(uuid.uuid4()),
@@ -3018,6 +3024,13 @@ async def create_outlet(data: OutletCreate, request: Request):
 async def update_outlet(outlet_id: str, data: OutletUpdate, request: Request):
     session = await require_session_admin(request)
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    # Check duplicate name on rename
+    if "name" in update_data:
+        existing = await db.outlets.find_one({"company_id": session["company_id"], "name": {"$regex": f"^{re.escape(update_data['name'].strip())}$", "$options": "i"}, "id": {"$ne": outlet_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail=f"Outlet '{update_data['name']}' sudah ada")
+    
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.outlets.update_one({"id": outlet_id, "company_id": session["company_id"]}, {"$set": update_data})
     return {"message": "Outlet berhasil diupdate"}
