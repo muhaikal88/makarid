@@ -98,7 +98,7 @@ export const AttendanceTab = ({ language }) => {
 
   const fetchAll = async () => {
     try {
-      const [settingsRes, todayRes, pendingRes, empRes, outletRes, divRes] = await Promise.all([
+      const results = await Promise.allSettled([
         axios.get(`${API}/attendance/settings`, { withCredentials: true }),
         axios.get(`${API}/attendance/company`, { withCredentials: true }),
         axios.get(`${API}/attendance/pending`, { withCredentials: true }),
@@ -106,12 +106,12 @@ export const AttendanceTab = ({ language }) => {
         axios.get(`${API}/outlets-session`, { withCredentials: true }),
         axios.get(`${API}/divisions-session`, { withCredentials: true }),
       ]);
-      setSettings(settingsRes.data);
-      setTodayRecords(todayRes.data);
-      setPendingRecords(pendingRes.data);
-      setEmployees(empRes.data);
-      setOutlets(outletRes.data);
-      setDivisions(divRes.data);
+      if (results[0].status === 'fulfilled') setSettings(results[0].value.data);
+      if (results[1].status === 'fulfilled') setTodayRecords(results[1].value.data);
+      if (results[2].status === 'fulfilled') setPendingRecords(results[2].value.data);
+      if (results[3].status === 'fulfilled') setEmployees(results[3].value.data);
+      if (results[4].status === 'fulfilled') setOutlets(results[4].value.data);
+      if (results[5].status === 'fulfilled') setDivisions(results[5].value.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };

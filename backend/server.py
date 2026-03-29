@@ -2985,15 +2985,13 @@ class OutletUpdate(BaseModel):
     geo_enabled: Optional[bool] = None
     allow_outside_network: Optional[bool] = None
 
-@api_router.get("/outlets-session")
-
 @api_router.get("/companies/{company_id}/outlets")
 async def get_company_outlets(company_id: str, current_user: dict = Depends(require_super_admin)):
     """Get outlets for a company (superadmin use)"""
     outlets = await db.outlets.find({"company_id": company_id}, {"_id": 0}).sort("name", 1).to_list(100)
     return outlets
 
-
+@api_router.get("/outlets-session")
 async def get_outlets(request: Request):
     session = await require_session_admin(request)
     outlets = await db.outlets.find({"company_id": session["company_id"]}, {"_id": 0}).sort("name", 1).to_list(100)
