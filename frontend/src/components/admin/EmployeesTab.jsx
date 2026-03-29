@@ -249,6 +249,8 @@ export const EmployeesTab = ({ language }) => {
   const [fStatus, setFStatus] = useState('all');
   const [fType, setFType] = useState('all');
   const [fData, setFData] = useState('all');
+  const [page, setPage] = useState(1);
+  const perPage = 20;
 
   const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
@@ -276,6 +278,19 @@ export const EmployeesTab = ({ language }) => {
     if (fData === 'invalid_nik' && !hasInvalidNik(emp)) return false;
     return true;
   });
+
+  // Reset page when filter changes
+  useEffect(() => { setPage(1); }, [search, fOutlet, fDivision, fStatus, fType, fData]);
+
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
+
+  // Chart data
+  const chartByOutlet = outlets.map(o => ({ name: o.name, count: employees.filter(e => e.outlet_id === o.id).length })).filter(x => x.count > 0);
+  const chartByDivision = divisions.map(d => ({ name: d.name, count: employees.filter(e => e.division_id === d.id).length })).filter(x => x.count > 0);
+  const chartByType = ['Tetap', 'Kontrak', 'Magang', 'Paruh Waktu'].map(t => ({ name: t, count: employees.filter(e => e.employment_type === t).length })).filter(x => x.count > 0);
+  const chartByGender = ['Laki-laki', 'Perempuan'].map(g => ({ name: g, count: employees.filter(e => e.gender === g).length })).filter(x => x.count > 0);
+  const noOutlet = employees.filter(e => !e.outlet_id).length;
 
   if (loading) {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2E4DA7]"></div></div>;
@@ -374,6 +389,77 @@ export const EmployeesTab = ({ language }) => {
         </Card>
       </div>
 
+      {/* Charts */}
+      {employees.length > 0 && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* By Outlet */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-3">
+              <p className="text-xs font-bold text-gray-400 uppercase mb-2">Per Outlet</p>
+              {chartByOutlet.length === 0 ? <p className="text-xs text-gray-400">Belum ada data</p> : (
+                <div className="space-y-1.5">
+                  {chartByOutlet.map(x => (
+                    <div key={x.name}>
+                      <div className="flex justify-between text-xs"><span className="truncate">{x.name}</span><span className="font-bold">{x.count}</span></div>
+                      <div className="h-1.5 bg-slate-100 rounded-full"><div className="h-full bg-[#2E4DA7] rounded-full" style={{width: `${(x.count / employees.length) * 100}%`}} /></div>
+                    </div>
+                  ))}
+                  {noOutlet > 0 && <p className="text-[10px] text-amber-600">{noOutlet} belum ada outlet</p>}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          {/* By Divisi */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-3">
+              <p className="text-xs font-bold text-gray-400 uppercase mb-2">Per Divisi</p>
+              {chartByDivision.length === 0 ? <p className="text-xs text-gray-400">Belum ada data</p> : (
+                <div className="space-y-1.5">
+                  {chartByDivision.map(x => (
+                    <div key={x.name}>
+                      <div className="flex justify-between text-xs"><span className="truncate">{x.name}</span><span className="font-bold">{x.count}</span></div>
+                      <div className="h-1.5 bg-slate-100 rounded-full"><div className="h-full bg-emerald-500 rounded-full" style={{width: `${(x.count / employees.length) * 100}%`}} /></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          {/* By Tipe Kerja */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-3">
+              <p className="text-xs font-bold text-gray-400 uppercase mb-2">Tipe Kerja</p>
+              {chartByType.length === 0 ? <p className="text-xs text-gray-400">Belum ada data</p> : (
+                <div className="space-y-1.5">
+                  {chartByType.map(x => (
+                    <div key={x.name}>
+                      <div className="flex justify-between text-xs"><span>{x.name}</span><span className="font-bold">{x.count}</span></div>
+                      <div className="h-1.5 bg-slate-100 rounded-full"><div className="h-full bg-purple-500 rounded-full" style={{width: `${(x.count / employees.length) * 100}%`}} /></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          {/* By Gender */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-3">
+              <p className="text-xs font-bold text-gray-400 uppercase mb-2">Jenis Kelamin</p>
+              {chartByGender.length === 0 ? <p className="text-xs text-gray-400">Belum ada data</p> : (
+                <div className="space-y-1.5">
+                  {chartByGender.map(x => (
+                    <div key={x.name}>
+                      <div className="flex justify-between text-xs"><span>{x.name}</span><span className="font-bold">{x.count}</span></div>
+                      <div className="h-1.5 bg-slate-100 rounded-full"><div className={`h-full rounded-full ${x.name === 'Laki-laki' ? 'bg-blue-500' : 'bg-pink-500'}`} style={{width: `${(x.count / employees.length) * 100}%`}} /></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Warning: incomplete data */}
       {(() => {
         const incompleteCount = employees.filter(isIncomplete).length;
@@ -414,7 +500,7 @@ export const EmployeesTab = ({ language }) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((emp) => (
+                  {paged.map((emp) => (
                     <TableRow key={emp.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -458,6 +544,25 @@ export const EmployeesTab = ({ language }) => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between p-3 border-t">
+              <p className="text-xs text-gray-500">
+                {(page - 1) * perPage + 1}-{Math.min(page * perPage, filtered.length)} dari {filtered.length}
+              </p>
+              <div className="flex gap-1">
+                <Button variant="outline" size="sm" className="h-8" disabled={page <= 1} onClick={() => setPage(1)}>{'<<'}</Button>
+                <Button variant="outline" size="sm" className="h-8" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>{'<'}</Button>
+                {Array.from({length: Math.min(5, totalPages)}, (_, i) => {
+                  let p = page <= 3 ? i + 1 : page >= totalPages - 2 ? totalPages - 4 + i : page - 2 + i;
+                  if (p < 1 || p > totalPages) return null;
+                  return <Button key={p} size="sm" className={`h-8 w-8 ${p === page ? 'bg-[#2E4DA7] text-white' : ''}`} variant={p === page ? 'default' : 'outline'} onClick={() => setPage(p)}>{p}</Button>;
+                })}
+                <Button variant="outline" size="sm" className="h-8" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>{'>'}</Button>
+                <Button variant="outline" size="sm" className="h-8" disabled={page >= totalPages} onClick={() => setPage(totalPages)}>{'>>'}</Button>
+              </div>
             </div>
           )}
         </CardContent>
