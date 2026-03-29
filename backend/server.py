@@ -3292,7 +3292,254 @@ async def delete_employee_session(employee_id: str, request: Request):
     return {"message": "Karyawan dipindahkan ke tempat sampah"}
 
 @api_router.get("/employees-session-trash")
+
+@api_router.get("/employees-session/export/excel")
+async def export_employees_excel(request: Request):
+    """Export all employees to Excel with summary sheet"""
+    session = await require_session_admin(request)
+    
+    employees = await db.employees.find(
+        {"companies": session["company_id"], "$or": [{"trashed": {"$ne": True}}, {"trashed": {"$exists": False}}]},
+        {"_id": 0, "password": 0}
+    ).sort("name", 1).to_list(10000)
+    
+    all_outlets = await db.outlets.find({"company_id": session["company_id"]}, {"_id": 0}).to_list(100)
+    all_divisions = await db.divisions.find({"company_id": session["company_id"]}, {"_id": 0}).to_list(100)
+    outlet_map = {o["id"]: o["name"] for o in all_outlets}
+    division_map = {d["id"]: d["name"] for d in all_divisions}
+    
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    
+    wb = openpyxl.Workbook()
+    
+    # === Sheet 1: Data Karyawan ===
+    ws = wb.active
+    ws.title = "Data Karyawan"
+    
+    hfont = Font(bold=True, color="FFFFFF", size=10)
+    hfill = PatternFill(start_color="2E4DA7", end_color="2E4DA7", fill_type="solid")
+    halign = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    
+    headers = [
+        "No", "Nama", "Email", "Telepon", "No KTP/NIK", "Jenis Kelamin",
+        "Tempat Lahir", "Tanggal Lahir", "Agama", "Status Nikah",
+        "Pendidikan", "Jurusan", "Outlet", "Divisi", "Posisi", "Departemen",
+        "Tipe Kerja", "Tanggal Masuk", "Gaji",
+        "Provinsi", "Kota", "Kecamatan", "Kelurahan", "Alamat Lengkap",
+        "Bank", "No Rekening", "Atas Nama",
+        "Kontak Darurat", "Telp Darurat", "Status"
+    ]
+    
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font = hfont; cell.fill = hfill; cell.alignment = halign; cell.border = border
+    
+    active_fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+    inactive_fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
+    
+    for idx, e in enumerate(employees, 1):
+        row = idx + 1
+        values = [
+            idx, e.get("name",""), e.get("email",""), e.get("phone",""), e.get("id_number",""),
+            e.get("gender",""), e.get("birth_place",""), e.get("birth_date",""),
+            e.get("religion",""), e.get("marital_status",""),
+            e.get("education",""), e.get("major",""),
+            outlet_map.get(e.get("outlet_id"), ""), division_map.get(e.get("division_id"), ""),
+            e.get("position",""), e.get("department",""),
+            e.get("employment_type",""), e.get("join_date",""),
+            e.get("salary",""),
+            e.get("province",""), e.get("city",""), e.get("district",""),
+            e.get("village",""), e.get("full_address",""),
+            e.get("bank_name",""), e.get("bank_account",""), e.get("bank_holder",""),
+            e.get("emergency_contact",""), e.get("emergency_phone",""),
+            "Aktif" if e.get("is_active") else "Nonaktif"
+        ]
+        fill = active_fill if e.get("is_active") else inactive_fill
+        for col, v in enumerate(values, 1):
+            cell = ws.cell(row=row, column=col, value=v)
+            cell.border = border; cell.fill = fill
+    
+    for col in range(1, len(headers) + 1):
+        max_len = len(str(headers[col-1]))
+        for row in range(2, len(employees) + 2):
+            val = ws.cell(row=row, column=col).value
+            if val: max_len = max(max_len, min(len(str(val)), 30))
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = max_len + 2
+    ws.freeze_panes = "A2"
+    
+    # === Sheet 2: Summary ===
+    ws2 = wb.create_sheet("Summary")
+    ws2.column_dimensions['A'].width = 25
+    ws2.column_dimensions['B'].width = 15
+    
+    title_font = Font(bold=True, size=14, color="2E4DA7")
+    section_font = Font(bold=True, size=11)
+    
+    company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0, "name": 1})
+    company_name = company.get("name", "") if company else ""
+    
+    ws2.cell(row=1, column=1, value=f"Laporan Data Karyawan - {company_name}").font = title_font
+    ws2.cell(row=2, column=1, value=f"Tanggal: {datetime.now(timezone.utc).strftime('%d/%m/%Y')}")
+    
+    r = 4
+    ws2.cell(row=r, column=1, value="RINGKASAN").font = section_font
+    r += 1
+    total = len(employees)
+    active = len([e for e in employees if e.get("is_active")])
+    ws2.cell(row=r, column=1, value="Total Karyawan"); ws2.cell(row=r, column=2, value=total); r += 1
+    ws2.cell(row=r, column=1, value="Aktif"); ws2.cell(row=r, column=2, value=active); r += 1
+    ws2.cell(row=r, column=1, value="Nonaktif"); ws2.cell(row=r, column=2, value=total - active); r += 2
+    
+    ws2.cell(row=r, column=1, value="PER OUTLET").font = section_font; r += 1
+    from collections import Counter
+    outlet_counts = Counter(outlet_map.get(e.get("outlet_id"), "Belum ada outlet") for e in employees)
+    for name, count in outlet_counts.most_common():
+        ws2.cell(row=r, column=1, value=name); ws2.cell(row=r, column=2, value=count); r += 1
+    r += 1
+    
+    ws2.cell(row=r, column=1, value="PER DIVISI").font = section_font; r += 1
+    div_counts = Counter(division_map.get(e.get("division_id"), "Belum ada divisi") for e in employees)
+    for name, count in div_counts.most_common():
+        ws2.cell(row=r, column=1, value=name); ws2.cell(row=r, column=2, value=count); r += 1
+    r += 1
+    
+    ws2.cell(row=r, column=1, value="PER TIPE KERJA").font = section_font; r += 1
+    type_counts = Counter(e.get("employment_type", "Belum diisi") for e in employees)
+    for name, count in type_counts.most_common():
+        ws2.cell(row=r, column=1, value=name); ws2.cell(row=r, column=2, value=count); r += 1
+    r += 1
+    
+    ws2.cell(row=r, column=1, value="PER JENIS KELAMIN").font = section_font; r += 1
+    gender_counts = Counter(e.get("gender", "Belum diisi") for e in employees)
+    for name, count in gender_counts.most_common():
+        ws2.cell(row=r, column=1, value=name); ws2.cell(row=r, column=2, value=count); r += 1
+    
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    from fastapi.responses import StreamingResponse
+    fname = company_name.replace(" ", "_")
+    return StreamingResponse(output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=Data_Karyawan_{fname}.xlsx"})
+
+
+@api_router.get("/employees-session-trash")
 async def get_trashed_employees(request: Request):
+    """Get trashed employees"""
+    session = await require_session_admin(request)
+    employees = await db.employees.find(
+        {"companies": session["company_id"], "trashed": True},
+        {"_id": 0, "password": 0}
+    ).sort("trashed_at", -1).to_list(100)
+    return employees
+
+@api_router.get("/employees-session/export/pdf")
+async def export_employees_pdf(request: Request):
+    """Export employees summary to PDF"""
+    session = await require_session_admin(request)
+    
+    employees = await db.employees.find(
+        {"companies": session["company_id"], "$or": [{"trashed": {"$ne": True}}, {"trashed": {"$exists": False}}]},
+        {"_id": 0, "password": 0}
+    ).sort("name", 1).to_list(10000)
+    
+    all_outlets = await db.outlets.find({"company_id": session["company_id"]}, {"_id": 0}).to_list(100)
+    all_divisions = await db.divisions.find({"company_id": session["company_id"]}, {"_id": 0}).to_list(100)
+    outlet_map = {o["id"]: o["name"] for o in all_outlets}
+    division_map = {d["id"]: d["name"] for d in all_divisions}
+    
+    company = await db.companies.find_one({"id": session["company_id"]}, {"_id": 0, "name": 1})
+    company_name = company.get("name", "") if company else ""
+    
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Table as RLTable, TableStyle, Paragraph, Spacer
+    from collections import Counter
+    
+    output = io.BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=landscape(A4), topMargin=30, bottomMargin=30)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('Title2', parent=styles['Title'], fontSize=16, textColor=colors.HexColor("#2E4DA7"))
+    
+    elements.append(Paragraph(f"Laporan Data Karyawan - {company_name}", title_style))
+    elements.append(Paragraph(f"Tanggal: {datetime.now(timezone.utc).strftime('%d/%m/%Y')} | Total: {len(employees)} karyawan", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Summary table
+    total = len(employees)
+    active = len([e for e in employees if e.get("is_active")])
+    summary_data = [
+        ["Ringkasan", "Jumlah"],
+        ["Total Karyawan", str(total)],
+        ["Aktif", str(active)],
+        ["Nonaktif", str(total - active)],
+    ]
+    
+    outlet_counts = Counter(outlet_map.get(e.get("outlet_id"), "-") for e in employees)
+    summary_data.append(["", ""])
+    summary_data.append(["Per Outlet", "Jumlah"])
+    for name, count in outlet_counts.most_common():
+        summary_data.append([name, str(count)])
+    
+    div_counts = Counter(division_map.get(e.get("division_id"), "-") for e in employees)
+    summary_data.append(["", ""])
+    summary_data.append(["Per Divisi", "Jumlah"])
+    for name, count in div_counts.most_common():
+        summary_data.append([name, str(count)])
+    
+    t = RLTable(summary_data, colWidths=[200, 80])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2E4DA7")),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    elements.append(t)
+    elements.append(Spacer(1, 20))
+    
+    # Employee table
+    elements.append(Paragraph("Daftar Karyawan", styles['Heading2']))
+    emp_headers = ["No", "Nama", "Email", "Outlet", "Divisi", "Posisi", "Tipe", "Status"]
+    emp_data = [emp_headers]
+    for idx, e in enumerate(employees, 1):
+        emp_data.append([
+            str(idx), e.get("name",""), e.get("email",""),
+            outlet_map.get(e.get("outlet_id"), "-"), division_map.get(e.get("division_id"), "-"),
+            e.get("position",""), e.get("employment_type",""),
+            "Aktif" if e.get("is_active") else "Nonaktif"
+        ])
+    
+    t2 = RLTable(emp_data, colWidths=[30, 120, 150, 90, 80, 90, 60, 50], repeatRows=1)
+    t2.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2E4DA7")),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8F9FA")]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    elements.append(t2)
+    
+    doc.build(elements)
+    output.seek(0)
+    
+    from fastapi.responses import StreamingResponse
+    fname = company_name.replace(" ", "_")
+    return StreamingResponse(output,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=Data_Karyawan_{fname}.pdf"})
+
+
     """Get trashed employees"""
     session = await require_session_admin(request)
     employees = await db.employees.find(

@@ -307,6 +307,20 @@ export const EmployeesTab = ({ language }) => {
           </div>
           <div className="flex gap-2 flex-wrap">
             <RefreshControl onRefresh={() => { fetchEmployees(); fetchOutletsDivisions(); fetchTrash(); }} />
+            <Button variant="outline" size="sm" onClick={async () => {
+              try {
+                const res = await axios.get(`${API}/employees-session/export/excel`, { withCredentials: true, responseType: 'blob' });
+                const url = URL.createObjectURL(res.data); const a = document.createElement('a'); a.href = url; a.download = 'Data_Karyawan.xlsx'; a.click(); URL.revokeObjectURL(url);
+                toast.success('Export Excel berhasil');
+              } catch { toast.error('Gagal export'); }
+            }}><Download className="w-4 h-4 mr-1.5" />Excel</Button>
+            <Button variant="outline" size="sm" onClick={async () => {
+              try {
+                const res = await axios.get(`${API}/employees-session/export/pdf`, { withCredentials: true, responseType: 'blob' });
+                const url = URL.createObjectURL(res.data); const a = document.createElement('a'); a.href = url; a.download = 'Data_Karyawan.pdf'; a.click(); URL.revokeObjectURL(url);
+                toast.success('Export PDF berhasil');
+              } catch { toast.error('Gagal export'); }
+            }}><Download className="w-4 h-4 mr-1.5" />PDF</Button>
             <Button variant="outline" size="sm" onClick={downloadTemplate}>
               <Download className="w-4 h-4 mr-1.5" />Template
             </Button>
