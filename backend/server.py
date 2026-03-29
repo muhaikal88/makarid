@@ -5596,12 +5596,15 @@ async def get_pending_attendance(request: Request):
     session = await require_session_admin(request)
     records = await db.attendance.find({
         "company_id": session["company_id"],
-        "status": "pending_approval"
+        "$or": [
+            {"status": "pending_approval"},
+            {"pending_change": {"$ne": None, "$exists": True}}
+        ]
     }, {"_id": 0}).sort("date", -1).to_list(100)
     
-    # Only show records for active employees
+    # Filter: exclude only permanently deleted employees (trashed still show for approval)
     active_emps = await db.employees.find(
-        {"companies": session["company_id"], "$or": [{"trashed": {"$ne": True}}, {"trashed": {"$exists": False}}]},
+        {"companies": session["company_id"]},
         {"_id": 0, "id": 1}
     ).to_list(10000)
     active_ids = {e["id"] for e in active_emps}
