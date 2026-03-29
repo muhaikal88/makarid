@@ -5488,7 +5488,7 @@ async def export_attendance_excel(request: Request, month: Optional[str] = None,
     )
     
     headers = [
-        "No", "Tanggal", "Nama Karyawan", "Email", 
+        "No", "Tanggal", "Nama Karyawan", "Email", "Outlet", "Divisi",
         "Jam Masuk", "Jam Pulang", "Durasi Kerja",
         "Break Mulai", "Break Selesai", "Durasi Break",
         "Skor Masuk", "Skor Pulang", "IP Masuk", "IP Pulang",
@@ -5521,16 +5521,29 @@ async def export_attendance_excel(request: Request, month: Optional[str] = None,
     red_fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
     yellow_fill = PatternFill(start_color="FFF8E1", end_color="FFF8E1", fill_type="solid")
     
+    # Build outlet/division lookup
+    all_outlets = await db.outlets.find({"company_id": session["company_id"]}, {"_id": 0}).to_list(100)
+    all_divisions = await db.divisions.find({"company_id": session["company_id"]}, {"_id": 0}).to_list(100)
+    outlet_lookup = {o["id"]: o["name"] for o in all_outlets}
+    division_lookup = {d["id"]: d["name"] for d in all_divisions}
+    emp_lookup = {}
+    all_emps = await db.employees.find({"companies": session["company_id"]}, {"_id": 0, "id": 1, "outlet_id": 1, "division_id": 1}).to_list(10000)
+    for e in all_emps:
+        emp_lookup[e["id"]] = e
+    
     for idx, r in enumerate(records, 1):
         row = idx + 1
         geo_in = r.get("clock_in_geo", {}) or {}
         geo_out = r.get("clock_out_geo", {}) or {}
+        emp = emp_lookup.get(r.get("employee_id"), {})
         
         values = [
             idx,
             r.get("date", ""),
             r.get("employee_name", ""),
             r.get("employee_email", ""),
+            outlet_lookup.get(emp.get("outlet_id"), ""),
+            division_lookup.get(emp.get("division_id"), ""),
             (r.get("clock_in") or "")[:5],
             (r.get("clock_out") or "")[:5],
             calc_dur(r.get("clock_in"), r.get("clock_out")),

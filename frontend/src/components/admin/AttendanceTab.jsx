@@ -116,9 +116,16 @@ export const AttendanceTab = ({ language }) => {
     finally { setLoading(false); }
   };
 
-  // Build employee lookup for outlet/division
+  // Build lookups
   const empLookup = {};
   employees.forEach(e => { empLookup[e.id] = e; });
+  const outletLookup = {};
+  outlets.forEach(o => { outletLookup[o.id] = o.name; });
+  const divisionLookup = {};
+  divisions.forEach(d => { divisionLookup[d.id] = d.name; });
+
+  const getEmpOutlet = (r) => outletLookup[empLookup[r.employee_id]?.outlet_id] || '-';
+  const getEmpDivision = (r) => divisionLookup[empLookup[r.employee_id]?.division_id] || '-';
 
   // Unified filter function
   const applyFilters = (records) => {
@@ -256,6 +263,8 @@ export const AttendanceTab = ({ language }) => {
                   <Table>
                     <TableHeader><TableRow className="bg-slate-50">
                       <TableHead>Karyawan</TableHead>
+                      <TableHead className="hidden lg:table-cell">Outlet</TableHead>
+                      <TableHead className="hidden lg:table-cell">Divisi</TableHead>
                       <TableHead>Masuk</TableHead>
                       <TableHead>Pulang</TableHead>
                       <TableHead>Durasi Kerja</TableHead>
@@ -274,6 +283,8 @@ export const AttendanceTab = ({ language }) => {
                               <div><p className="text-sm font-medium">{r.employee_name}</p><p className="text-xs text-gray-500">{r.employee_email}</p></div>
                             </div>
                           </TableCell>
+                          <TableCell className="hidden lg:table-cell text-xs text-gray-600">{getEmpOutlet(r)}</TableCell>
+                          <TableCell className="hidden lg:table-cell text-xs text-gray-600">{getEmpDivision(r)}</TableCell>
                           <TableCell className="text-sm">{r.clock_in?.slice(0,5) || '-'}</TableCell>
                           <TableCell className="text-sm">{r.clock_out?.slice(0,5) || '-'}</TableCell>
                           <TableCell>
@@ -358,6 +369,7 @@ export const AttendanceTab = ({ language }) => {
                           <div>
                             <p className="font-medium text-sm">{r.employee_name}</p>
                             <p className="text-xs text-gray-500">{r.date} | {r.employee_email}</p>
+                            <p className="text-xs text-blue-600">{getEmpOutlet(r)} — {getEmpDivision(r)}</p>
                           </div>
                           <div className="flex gap-1.5 shrink-0">
                             {photo && (
@@ -471,6 +483,7 @@ export const AttendanceTab = ({ language }) => {
                           <div>
                             <p className="text-sm font-medium">{r.employee_name}</p>
                             <p className="text-xs text-gray-500">{r.employee_email}</p>
+                            <p className="text-xs text-blue-600">{getEmpOutlet(r)} — {getEmpDivision(r)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
